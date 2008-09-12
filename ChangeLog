@@ -1,0 +1,29 @@
+2008-09-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* autogen.sh:
+	* AUTHORS:
+	* COPYING:
+	* INSTALL:
+	* NEWS:
+	* README:
+	* Makefile.am:
+	* configure.ac:
+	* src/Makefile.am: Add files required by automake.
+
+	* src/hildon-home.c: Add hildon-home application. Implement
+	notifications.
+
+	* src/hd-notification-manager.c:
+	* src/hd-notification-manager.h:
+	* src/notification-manager.xml: Add support for
+	org.freedesktop.Notifications D-Bus API. Based on diablo
+	hildon-desktop code. Add support for notification plugins.
+
+	* src/notification.conf.in: Add configuration for notification
+	plugins.
+
+	* debian/changelog:
+	* debian/control:
+	* debian/hildon-home.install:
+	* debian/rules: Add debian package files.
+

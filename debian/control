@@ -1,0 +1,19 @@
+Source: hildon-home
+Section: x11
+Priority: optional
+Maintainer: Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+Build-Depends: debhelper (>= 4.0.0), pkg-config, libhildon1-dev (>= 2.1.4), libosso-gnomevfs2-dev, libdbus-1-dev (>= 1.0.2), libhildondesktop1-dev (>= 2.1.2), libsqlite3-dev
+Standards-Version: 3.6.0
+
+Package: hildon-home
+Section: x11
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${launcher:Depends}
+Description: Hildon Home application
+
+Package: hildon-home-dbg
+Section: devel
+Architecture: any
+Depends: hildon-home (= ${Source-Version})
+Description: Debug symbols for Home application
+

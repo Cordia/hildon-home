@@ -1,0 +1,4 @@
+[X-PluginManager]
+X-Plugin-Dir=@hildonnotificationdesktopentrydir@
+X-Load-New-Plugins=true
+X-Load-All-Plugins=true

@@ -1,0 +1,12 @@
+General Information
+===================
+
+The Hildon Home application. For the notification plugins and home aplplets APIs see libhildondesktop.
+
+Requirements
+============
+
+* libhildondesktop
+* gnome-vfs
+* dbus
+* sqlite
