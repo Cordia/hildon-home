@@ -1,3 +1,11 @@
+2008-09-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac: Require libhildondesktop >= 2.1.4.
+
+	* src/hildon-home.c (signal_handler): Use hd_stamp_file_finalize
+	function.
+	(main): Use hd_stamp_file_init function.
+
 2008-09-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* autogen.sh:

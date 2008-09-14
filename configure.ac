@@ -73,7 +73,7 @@ AC_SUBST(HILDON_LIBS)
 AC_SUBST(HILDON_CFLAGS)
 
 PKG_CHECK_MODULES(LIBHILDONDESKTOP,
-                  [libhildondesktop-1 >= 2.1.1],
+                  [libhildondesktop-1 >= 2.1.4],
                   [AC_DEFINE(HAVE_LIBHILDONDESKTOP, [], [Whether libhildondesktop-1 is present on the system])], 
                   [])
 

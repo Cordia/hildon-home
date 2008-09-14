@@ -38,7 +38,7 @@
 #include "hd-notification-manager.h"
 
 #define HD_STAMP_DIR   "/tmp/osso-appl-states/hildon-desktop/"
-#define HD_NOTIFICATION_STAMP_FILE HD_STAMP_DIR "hildon-home-notification.stamp"
+#define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
 
 /* signal handler, hildon-desktop sends SIGTERM to all tracked applications
  * when it receives SIGTEM itselgf */
@@ -47,16 +47,7 @@ signal_handler (int signal)
 {
   if (signal == SIGTERM)
   {
-    /* 
-     * Clean up stamp file created by hd_plugin_manager_run
-     * On next startup the stamp file is created again and hildon-desktop remains
-     * in normal operation mode without entering into safe mode where some plugins
-     * are disabled.
-     */
-    if (g_file_test (HD_NOTIFICATION_STAMP_FILE, G_FILE_TEST_EXISTS))
-      {
-        g_unlink (HD_NOTIFICATION_STAMP_FILE);
-      }
+    hd_stamp_file_finalize (HD_HOME_STAMP_FILE);
 
     exit (0);
   }
@@ -241,6 +232,8 @@ main (int argc, char **argv)
 
   signal (SIGTERM, signal_handler);
 
+  hd_stamp_file_init (HD_HOME_STAMP_FILE);
+
   /* User configuration directory (~/) */
   user_config_dir = g_build_filename (g_get_user_config_dir (),
                                       "hildon-desktop",
@@ -251,7 +244,7 @@ main (int argc, char **argv)
   config_file = hd_config_file_new (HD_DESKTOP_CONFIG_PATH,
                                     user_config_dir,
                                     "notification.conf");
-  plugin_manager = hd_plugin_manager_new (config_file, HD_NOTIFICATION_STAMP_FILE);
+  plugin_manager = hd_plugin_manager_new (config_file);
   g_object_unref (config_file);
   g_free (user_config_dir);
 
