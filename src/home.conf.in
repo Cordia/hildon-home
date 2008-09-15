@@ -1,0 +1,5 @@
+[X-PluginManager]
+X-Plugin-Dir=@hildonhomedesktopentrydir@
+X-Load-New-Plugins=true
+X-Load-All-Plugins=false
+X-Plugin-Configuration=home.plugins

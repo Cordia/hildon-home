@@ -53,6 +53,7 @@ signal_handler (int signal)
   }
 }
 
+/*
 static guint
 load_priority_func (const gchar *plugin_id,
                     GKeyFile    *keyfile,
@@ -60,6 +61,7 @@ load_priority_func (const gchar *plugin_id,
 {
   return G_MAXUINT;
 }
+*/
 
 static gboolean
 load_plugins_idle (gpointer data)
@@ -216,11 +218,30 @@ clean:
 }
 #endif
 
+static void
+home_plugin_added (HDPluginManager *pm,
+                   GObject         *plugin,
+                   gpointer         data)
+{
+  if (HD_IS_HOME_PLUGIN_ITEM (plugin))
+    gtk_widget_show (GTK_WIDGET (plugin));
+}
+
+static void
+home_plugin_removed (HDPluginManager *pm,
+                     GObject         *plugin,
+                     gpointer         data)
+{
+  if (HD_IS_HOME_PLUGIN_ITEM (plugin))
+    gtk_widget_destroy (GTK_WIDGET (plugin));
+}
+
+
 int
 main (int argc, char **argv)
 {
   HDConfigFile *config_file;
-  HDPluginManager *plugin_manager;
+  HDPluginManager *notification_pm, *home_pm;
   gchar *user_config_dir;
 
   g_thread_init (NULL);
@@ -240,22 +261,28 @@ main (int argc, char **argv)
                                       NULL);
   g_debug ("User config dir: %s", user_config_dir);
 
-  /* Create a config file object for the plugin manager */
   config_file = hd_config_file_new (HD_DESKTOP_CONFIG_PATH,
                                     user_config_dir,
                                     "notification.conf");
-  plugin_manager = hd_plugin_manager_new (config_file);
+  notification_pm = hd_plugin_manager_new (config_file);
   g_object_unref (config_file);
+
+  config_file = hd_config_file_new (HD_DESKTOP_CONFIG_PATH,
+                                    user_config_dir,
+                                    "home.conf");
+  home_pm = hd_plugin_manager_new (config_file);
+  g_object_unref (config_file);
+
   g_free (user_config_dir);
 
-  /* Set the load priority function */
-  hd_plugin_manager_set_load_priority_func (plugin_manager,
-                                            load_priority_func,
-                                            NULL,
-                                            NULL);
+  g_signal_connect (home_pm, "plugin-added",
+                    G_CALLBACK (home_plugin_added), NULL);
+  g_signal_connect (home_pm, "plugin-removed",
+                    G_CALLBACK (home_plugin_removed), NULL);
 
   /* Load Plugins when idle */
-  gdk_threads_add_idle (load_plugins_idle, plugin_manager);
+  gdk_threads_add_idle (load_plugins_idle, home_pm);
+  gdk_threads_add_idle (load_plugins_idle, notification_pm);
 
 #if 0
   nm = gtk_tree_model_filter_new (GTK_TREE_MODEL (hd_notification_manager_get_singleton ()), NULL);

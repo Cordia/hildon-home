@@ -96,6 +96,8 @@ AC_SUBST(SQLITE_LIBS)
 hildondesktopconfdir=${sysconfdir}/hildon-desktop
 AC_SUBST(hildondesktopconfdir)
 
+hildonhomedesktopentrydir=`pkg-config libhildondesktop-1 --variable=hildonhomedesktopentrydir`
+AC_SUBST(hildonhomedesktopentrydir)
 hildonnotificationdesktopentrydir=`pkg-config libhildondesktop-1 --variable=hildonnotificationdesktopentrydir`
 AC_SUBST(hildonnotificationdesktopentrydir)
 
@@ -105,5 +107,7 @@ AC_SUBST(hildondesktoplibdir)
 AC_OUTPUT([
 Makefile
 src/Makefile
+src/home.conf
+src/home.plugins
 src/notification.conf
 ])

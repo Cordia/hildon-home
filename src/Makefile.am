@@ -1,4 +1,6 @@
 hildondesktopconf_DATA = \
+	home.conf		\
+	home.plugins		\
 	notification.conf
 
 bin_PROGRAMS = hildon-home

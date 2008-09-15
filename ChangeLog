@@ -1,5 +1,18 @@
 2008-09-15  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* configure.ac:
+	* src/Makefile.am:
+	* src/home.conf.in:
+	* src/home.plugins.in: Add configuration files for the the home applet
+	plugin manager.
+
+	* debian/hildon-home.install: Install the new configuration files.
+
+	* src/hildon-home.c (home_plugin_added, home_plugin_removed, main):
+	Add support for the home applet plugins.
+
+2008-09-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* configure.ac: Require libhildondesktop >= 2.1.4.
 
 	* src/hildon-home.c (signal_handler): Use hd_stamp_file_finalize

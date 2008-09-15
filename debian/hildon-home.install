@@ -1,2 +1,3 @@
-etc/hildon-desktop/notification.conf
+etc/hildon-desktop/*.conf
+etc/hildon-desktop/*.plugins
 usr/bin/hildon-home
