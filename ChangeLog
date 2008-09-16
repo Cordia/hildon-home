@@ -1,3 +1,13 @@
+2008-09-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/Makefile.am:
+	* src/hd-notification-manager.c (hd_notification_manager_init):
+	* src/hd-notification-manager.xml (added):
+	* src/notification-manager.xml (deleted): Rename
+	notification-manager.xml to hd-notification-manager.xml. Use
+	hd_notification_manager as prefix for the generated file. Use
+	hd-notification-manager-glue.h as the generated file name.
+
 2008-09-15  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* configure.ac:

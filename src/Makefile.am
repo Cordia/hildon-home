@@ -13,10 +13,12 @@ hildon_home_CFLAGS = \
 	-DHD_DESKTOP_CONFIG_PATH=\"$(hildondesktopconfdir)\"
 
 BUILT_SOURCES = \
-	hd-notification-service.h 
+	hd-notification-manager-glue.h 
 
-hd-notification-service.h: notification-manager.xml
-	dbus-binding-tool --prefix=hd_notification_service --mode=glib-server --output=hd-notification-service.h $<
+hd-notification-manager-glue.h: hd-notification-manager.xml
+	dbus-binding-tool --prefix=hd_notification_manager --mode=glib-server $< > xgen-$(@F)	\
+	&& ( cmp -s xgen-$(@F) $@ || cp xgen-$(@F) $@ )						\
+	&& rm -f xgen-$(@F)
 
 hildon_home_SOURCES = \
 	$(BUILT_SOURCES)		\
@@ -30,3 +32,9 @@ hildon_home_LDFLAGS = \
 	$(LIBHILDONDESKTOP_LIBS)						\
 	$(SQLITE_LIBS)							\
 	$(GNOME_VFS_LIBS)
+
+EXTRA_DIST = \
+	hd-notification-manager.xml
+
+CLEANFILES = \
+	$(BUILT_SOURCES)

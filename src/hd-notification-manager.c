@@ -28,7 +28,7 @@
 #endif
 
 #include "hd-notification-manager.h"
-#include "hd-notification-service.h"
+#include "hd-notification-manager-glue.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -726,7 +726,7 @@ hd_notification_manager_init (HDNotificationManager *nm)
   if (result == DBUS_REQUEST_NAME_REPLY_EXISTS) return;
 
   dbus_g_object_type_install_info (HD_TYPE_NOTIFICATION_MANAGER,
-                                   &dbus_glib_hd_notification_service_object_info);
+                                   &dbus_glib_hd_notification_manager_object_info);
 
   dbus_g_connection_register_g_object (nm->priv->connection,
                                        HD_NOTIFICATION_MANAGER_DBUS_PATH,
