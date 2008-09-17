@@ -57,13 +57,31 @@ struct _HDNotificationManagerClass
 {
   GObjectClass parent_class;
 
-  void     *(*notification_closed)    (HDNotificationManager *nm,
-                                       gint id);
+  void (*notification_sent)    (HDNotificationManager *nm,
+                                const gchar           *app_name,
+                                guint                  id,
+                                const gchar           *icon,
+                                const gchar           *summary,
+                                const gchar           *body,
+                                gchar                **actions,
+                                GHashTable            *hints,
+                                gint                   timeout);
+  void (*notification_updated) (HDNotificationManager *nm,
+                                const gchar           *app_name,
+                                guint                  id,
+                                const gchar           *icon,
+                                const gchar           *summary,
+                                const gchar           *body,
+                                gchar                **actions,
+                                GHashTable            *hints,
+                                gint                   timeout);
+  void (*notification_closed)  (HDNotificationManager *nm,
+                                guint                  id);
 };
 
 GType                  hd_notification_manager_get_type              (void);
 
-HDNotificationManager *hd_notification_manager_new                   (HDPluginManager       *pm);
+HDNotificationManager *hd_notification_manager_get                   (void);
 
 gboolean               hd_notification_manager_notify                (HDNotificationManager *nm,
                                                                       const gchar           *app_name,

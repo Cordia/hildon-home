@@ -1,3 +1,28 @@
+2008-09-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac: Add check for dbus-binding-tool
+
+	* src/Makefile.am: Add rules for hd-marshal.[ch] generation.
+
+	* src/hd-marshal.list: Add marshal definition for notification-sent
+	and notification-updated signals.
+
+	* src/hd-notification-manager.c (hd_notification_manager_next_id):
+	  Don't crash if database could not be opened.
+	  (hd_notification_manager_class_init): Add notification-sent and
+	  notification-updated signals.
+	  (hd_notification_manager_notify): Emit notification-sent and
+	  notification-updated signals.
+	* src/hd-notification-manager.h: Add notification-sent and
+	  notification-updated signals.
+
+	* src/hd-system-notifications.c:
+	* src/hd-system-notifications.h: Add handling of system.note.infoprint
+	and system.note.dialog notifications (from Diablo).
+
+	* src/hildon-home.c (main): Create HDNotificationManager and
+	HDSystemNotifications objects.
+
 2008-09-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/Makefile.am:

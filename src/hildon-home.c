@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "hd-notification-manager.h"
+#include "hd-system-notifications.h"
 
 #define HD_STAMP_DIR   "/tmp/osso-appl-states/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
@@ -73,151 +74,6 @@ load_plugins_idle (gpointer data)
   return FALSE;
 }
 
-#if 0
-static gboolean
-hd_desktop_system_notifications_filter (GtkTreeModel *model,
-				        GtkTreeIter *iter,
-				        gpointer user_data)
-{
-  GHashTable *hints;
-  GValue *category;
-
-  gtk_tree_model_get (model,
-		      iter,
-		      HD_NM_COL_HINTS, &hints,
-		      -1);
-
-  if (hints == NULL) 
-    return FALSE;
-  
-  category = g_hash_table_lookup (hints, "category");
-
-  if (category == NULL)
-  {
-    return FALSE;
-  }
-  else if (g_str_has_prefix (g_value_get_string (category), "system"))
-  {
-    return TRUE;
-  } 
-  else
-  {
-    return FALSE;
-  }
-}
-
-static void
-hd_desktop_system_notification_closed (HDNotificationManager *nm,
-				       gint id,
-				       HDDesktop *desktop)
-{
-  gpointer widget;
-
-  widget = g_hash_table_lookup (desktop->priv->notifications, GINT_TO_POINTER (id));
-
-  g_hash_table_remove (desktop->priv->notifications, GINT_TO_POINTER (id));
-
-  if (GTK_IS_WIDGET (widget))
-  {
-    gtk_widget_destroy (GTK_WIDGET (widget));
-  }
-}
-
-static void
-hd_desktop_system_notification_received (GtkTreeModel *model,
-                                         GtkTreePath *path,
-                                         GtkTreeIter *iter,
-                                         gpointer user_data)  
-
-{
-  HDDesktop *desktop;
-  GtkWidget *notification = NULL;
-  GHashTable *hints;
-  GValue *hint;
-  gchar **actions;
-  const gchar *hint_s;
-  gchar *summary;
-  gchar *body;
-  gchar *icon_name;
-  gint id;
-
-  g_return_if_fail (HD_IS_DESKTOP (user_data));
-  
-  desktop = HD_DESKTOP (user_data);
-
-  gtk_tree_model_get (model,
-		      iter,
-		      HD_NM_COL_ID, &id,
-		      HD_NM_COL_SUMMARY, &summary,
-		      HD_NM_COL_BODY, &body,
-		      HD_NM_COL_ICON_NAME, &icon_name,
-		      HD_NM_COL_ACTIONS, &actions,
-		      HD_NM_COL_HINTS, &hints,
-		      -1);
-
-  hint = g_hash_table_lookup (hints, "category");
-  hint_s = g_value_get_string (hint);
-
-  if (g_str_equal (hint_s, "system.note.infoprint")) 
-  {
-    notification = hd_desktop_create_note_infoprint (summary, 
-		    				     body, 
-						     icon_name);
-
-    gtk_widget_show_all (notification);
-  }
-  else if (g_str_equal (hint_s, "system.note.dialog")) 
-  {
-    HDDesktopNotificationInfo *ninfo;
-    gint dialog_type = 0;
-    
-    hint = g_hash_table_lookup (hints, "dialog-type");
-    dialog_type = g_value_get_int (hint);
-    
-    notification = hd_desktop_create_note_dialog (summary, 
-		    				  body, 
-						  icon_name,
-						  dialog_type,
-						  actions);
-
-    ninfo = g_new0 (HDDesktopNotificationInfo, 1); 
-
-    ninfo->id = id;
-    ninfo->desktop = desktop;
-  
-    g_signal_connect (G_OBJECT (notification),
-  		      "response",
-  		      G_CALLBACK (hd_desktop_system_notification_dialog_response),
-  		      ninfo);
-
-    g_signal_connect (G_OBJECT (notification),
-  		      "destroy",
-  		      G_CALLBACK (hd_desktop_system_notification_dialog_destroy),
-  		      desktop);
-
-    if (g_queue_is_empty (desktop->priv->dialog_queue))
-    {
-      gtk_widget_show_all (notification);
-    }
-
-    g_queue_push_tail (desktop->priv->dialog_queue, notification);
-  } 
-  else
-  {
-    goto clean;
-  }
-
-  g_hash_table_insert (desktop->priv->notifications, 
-		       GINT_TO_POINTER (id), 
-		       notification);
-
-clean:
-  g_free (summary);
-  g_free (body);
-  g_free (icon_name);
-}
-#endif
-
 static void
 home_plugin_added (HDPluginManager *pm,
                    GObject         *plugin,
@@ -240,9 +96,11 @@ home_plugin_removed (HDPluginManager *pm,
 int
 main (int argc, char **argv)
 {
+  gchar *user_config_dir;
   HDConfigFile *config_file;
   HDPluginManager *notification_pm, *home_pm;
-  gchar *user_config_dir;
+  HDNotificationManager *nm;
+  HDSystemNotifications *sn;
 
   g_thread_init (NULL);
   setlocale (LC_ALL, "");
@@ -279,6 +137,9 @@ main (int argc, char **argv)
                     G_CALLBACK (home_plugin_added), NULL);
   g_signal_connect (home_pm, "plugin-removed",
                     G_CALLBACK (home_plugin_removed), NULL);
+
+  nm = hd_notification_manager_get ();
+  sn = hd_system_notifications_get ();
 
   /* Load Plugins when idle */
   gdk_threads_add_idle (load_plugins_idle, home_pm);

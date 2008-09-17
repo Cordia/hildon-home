@@ -29,6 +29,7 @@
 
 #include "hd-notification-manager.h"
 #include "hd-notification-manager-glue.h"
+#include "hd-marshal.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -42,7 +43,9 @@
 G_DEFINE_TYPE (HDNotificationManager, hd_notification_manager, G_TYPE_OBJECT);
 
 enum {
-    SIGNAL_NOTIFICATION_CLOSED,
+    NOTIFICATION_SENT,
+    NOTIFICATION_UPDATED,
+    NOTIFICATION_CLOSED,
     N_SIGNALS
 };
 
@@ -60,8 +63,6 @@ struct _HDNotificationManagerPrivate
   guint            current_id;
   sqlite3         *db;
   GHashTable      *notifications;
-  HDPluginManager *pm;
-  GList           *plugins;
 };
 
 typedef struct 
@@ -107,7 +108,7 @@ hd_notification_manager_next_id (HDNotificationManager *nm)
 {
   guint next_id;
   gchar *sql;
-  gint nrow, ncol;
+  gint nrow = 0, ncol;
   gchar **results;
   gchar *error;
 
@@ -117,14 +118,17 @@ hd_notification_manager_next_id (HDNotificationManager *nm)
     {
       next_id = ++nm->priv->current_id;
 
-      sql = sqlite3_mprintf ("SELECT id FROM notifications WHERE id=%d", next_id);
+      if (nm->priv->db)
+        {
+          sql = sqlite3_mprintf ("SELECT id FROM notifications WHERE id=%d", next_id);
 
-      sqlite3_get_table (nm->priv->db, sql,
-                         &results, &nrow, &ncol, &error);
+          sqlite3_get_table (nm->priv->db, sql,
+                             &results, &nrow, &ncol, &error);
 
-      sqlite3_free_table (results);
-      sqlite3_free (sql); 
-      g_free (error);
+          sqlite3_free_table (results);
+          sqlite3_free (sql); 
+          g_free (error);
+        }
     }
   while (nrow > 0);
 
@@ -732,6 +736,8 @@ hd_notification_manager_init (HDNotificationManager *nm)
                                        HD_NOTIFICATION_MANAGER_DBUS_PATH,
                                        G_OBJECT (nm));
 
+  g_debug ("%s registered to session bus at %s", HD_NOTIFICATION_MANAGER_DBUS_NAME, HD_NOTIFICATION_MANAGER_DBUS_PATH);
+
   nm->priv->db = NULL;
 
   notifications_db = g_build_filename (g_get_home_dir (), 
@@ -747,6 +753,7 @@ hd_notification_manager_init (HDNotificationManager *nm)
     {
       g_warning ("Can't open database: %s", sqlite3_errmsg (nm->priv->db));
       sqlite3_close (nm->priv->db);
+      nm->priv->db = NULL;
     } else {
         result = hd_notification_manager_db_create (nm);
 
@@ -786,14 +793,48 @@ hd_notification_manager_class_init (HDNotificationManagerClass *class)
 
   g_object_class->finalize = hd_notification_manager_finalize;
 
-  signals[SIGNAL_NOTIFICATION_CLOSED] =
+  signals[NOTIFICATION_SENT] =
+    g_signal_new ("notification-sent",
+                  G_OBJECT_CLASS_TYPE (g_object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (HDNotificationManagerClass, notification_sent),
+                  NULL, NULL,
+                  hd_cclosure_marshal_VOID__STRING_UINT_STRING_STRING_STRING_BOXED_POINTER_INT,
+                  G_TYPE_NONE, 8,
+                  G_TYPE_STRING,
+                  G_TYPE_UINT,
+                  G_TYPE_STRING,
+                  G_TYPE_STRING,
+                  G_TYPE_STRING,
+                  G_TYPE_STRV,
+                  G_TYPE_POINTER,
+                  G_TYPE_INT);
+
+  signals[NOTIFICATION_UPDATED] =
+    g_signal_new ("notification-updated",
+                  G_OBJECT_CLASS_TYPE (g_object_class),
+                  G_SIGNAL_RUN_FIRST,
+                  G_STRUCT_OFFSET (HDNotificationManagerClass, notification_updated),
+                  NULL, NULL,
+                  hd_cclosure_marshal_VOID__STRING_UINT_STRING_STRING_STRING_BOXED_POINTER_INT,
+                  G_TYPE_NONE, 8,
+                  G_TYPE_STRING,
+                  G_TYPE_UINT,
+                  G_TYPE_STRING,
+                  G_TYPE_STRING,
+                  G_TYPE_STRING,
+                  G_TYPE_STRV,
+                  G_TYPE_POINTER,
+                  G_TYPE_INT);
+
+  signals[NOTIFICATION_CLOSED] =
     g_signal_new ("notification-closed",
                   G_OBJECT_CLASS_TYPE (g_object_class),
                   G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (HDNotificationManagerClass, notification_closed),
                   NULL, NULL,
-                  g_cclosure_marshal_VOID__INT,
-                  G_TYPE_NONE, 1, G_TYPE_INT);
+                  g_cclosure_marshal_VOID__UINT,
+                  G_TYPE_NONE, 1, G_TYPE_UINT);
 
   g_type_class_add_private (class, sizeof (HDNotificationManagerPrivate));
 }
@@ -847,13 +888,13 @@ hd_notification_manager_notification_closed (HDNotificationManager *nm,
       hd_notification_manager_db_delete (nm, id);
     }
 
-  g_signal_emit (nm, signals[SIGNAL_NOTIFICATION_CLOSED], 0, id);
+  g_signal_emit (nm, signals[NOTIFICATION_CLOSED], 0, id);
 }
 
 static gboolean 
 hd_notification_manager_timeout (guint id)
 {
-  HDNotificationManager *nm = hd_notification_manager_new (NULL);
+  HDNotificationManager *nm = hd_notification_manager_get ();
   NotificationData *nd;
   GValue *hint;
   gboolean persistent = FALSE;
@@ -882,35 +923,14 @@ hd_notification_manager_timeout (guint id)
   return FALSE;
 }
 
-static void
-notification_plugin_added (HDPluginManager       *pm,
-                           GObject               *plugin,
-                           HDNotificationManager *nm)
-{
-  nm->priv->plugins = g_list_append (nm->priv->plugins, plugin);
-}
-
-static void
-notification_plugin_removed (HDPluginManager       *pm,
-                             GObject               *plugin,
-                             HDNotificationManager *nm)
-{
-  nm->priv->plugins = g_list_remove (nm->priv->plugins, plugin);
-}
-
 HDNotificationManager *
-hd_notification_manager_new (HDPluginManager *pm)
+hd_notification_manager_get (void)
 {
   static HDNotificationManager *nm = NULL;
 
-  if (nm == NULL)
+  if (G_UNLIKELY (nm == NULL))
     {
       nm = g_object_new (HD_TYPE_NOTIFICATION_MANAGER, NULL);
-      nm->priv->pm = g_object_ref (pm);
-      g_signal_connect (pm, "plugin-added",
-                        G_CALLBACK (notification_plugin_added), nm);
-      g_signal_connect (pm, "plugin-removed",
-                        G_CALLBACK (notification_plugin_removed), nm);
     }
 
   return nm;
@@ -948,7 +968,8 @@ hd_notification_manager_notify (HDNotificationManager *nm,
   gboolean persistent = FALSE;
   gint i;
   NotificationData *nd;
-  GList *p;
+  gboolean replace = FALSE;
+  const gchar *category;
 
   g_return_val_if_fail (*icon != '\0', FALSE);
   g_return_val_if_fail (summary != '\0', FALSE);
@@ -962,13 +983,24 @@ hd_notification_manager_notify (HDNotificationManager *nm,
       return FALSE;
     }
 
+  /* Get "persisitent" hint */
   hint = g_hash_table_lookup (hints, "persistent");
-
   persistent = hint != NULL && g_value_get_uchar (hint);
 
-  nd = g_hash_table_lookup (nm->priv->notifications, GUINT_TO_POINTER (id));
+  /* Get "category" hint */
+  hint = g_hash_table_lookup (hints, "category");
+  category = hint != NULL ? g_value_get_string (hint) : NULL;
 
-  if (!nd)
+  /* Try to find an existing notification */
+  if (id)
+    {
+      nd = g_hash_table_lookup (nm->priv->notifications, GUINT_TO_POINTER (id));
+      replace = nd != NULL;
+      if (!replace)
+        g_warning ("Cannot replace notification: notification with id %u not found", id);
+    }
+
+  if (!replace)
     {
       gchar *sender;
 
@@ -1069,20 +1101,30 @@ hd_notification_manager_notify (HDNotificationManager *nm,
         }
     }
 
-  for (p = nm->priv->plugins; p; p = p->next)
-    {
-      HDNotificationPlugin *plugin = p->data;
-
-      hd_notification_plugin_notify (plugin,
-                                     app_name,
-                                     id,
-                                     icon,
-                                     summary,
-                                     body,
-                                     actions,
-                                     hints,
-                                     timeout);
-    }
+  if (replace)
+    g_signal_emit (nm,
+                   signals[NOTIFICATION_UPDATED],
+                   0,
+                   app_name,
+                   id,
+                   icon,
+                   summary,
+                   body,
+                   actions,
+                   hints,
+                   timeout);
+  else
+    g_signal_emit (nm,
+                   signals[NOTIFICATION_SENT],
+                   0,
+                   app_name,
+                   id,
+                   icon,
+                   summary,
+                   body,
+                   actions,
+                   hints,
+                   timeout);
 
   if (!persistent && timeout > 0)
     {

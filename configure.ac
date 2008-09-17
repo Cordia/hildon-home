@@ -23,7 +23,7 @@ AC_SUBST(X_CFLAGS)
 #+++++++++++++++
 
 AC_PATH_PROG(GLIB_GENMARSHAL, glib-genmarshal)
-
+AC_PATH_PROG(DBUS_BINDING_TOOL, dbus-binding-tool)
 
 #++++++++++++++++++
 # Misc build flags
