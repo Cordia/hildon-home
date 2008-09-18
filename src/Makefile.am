@@ -34,17 +34,19 @@ hd-marshal.h: hd-marshal.list
 
 hildon_home_SOURCES = \
 	$(BUILT_SOURCES)		\
+	hd-incoming-event-window.c	\
+	hd-incoming-event-window.h	\
 	hd-notification-manager.c	\
 	hd-notification-manager.h	\
 	hd-system-notifications.c	\
 	hd-system-notifications.h	\
-	hildon-home.c								
+	hildon-home.c
 
 hildon_home_LDFLAGS = \
-	-rdynamic           							\
-	$(HILDON_LIBS)	    							\
-	$(LIBHILDONDESKTOP_LIBS)						\
-	$(SQLITE_LIBS)							\
+	-rdynamic			\
+	$(HILDON_LIBS)	    		\
+	$(LIBHILDONDESKTOP_LIBS)	\
+	$(SQLITE_LIBS)			\
 	$(GNOME_VFS_LIBS)
 
 EXTRA_DIST = \

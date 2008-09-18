@@ -38,6 +38,8 @@
 #include "hd-notification-manager.h"
 #include "hd-system-notifications.h"
 
+#include "hd-incoming-event-window.h"
+
 #define HD_STAMP_DIR   "/tmp/osso-appl-states/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
 
@@ -145,25 +147,15 @@ main (int argc, char **argv)
   gdk_threads_add_idle (load_plugins_idle, home_pm);
   gdk_threads_add_idle (load_plugins_idle, notification_pm);
 
-#if 0
-  nm = gtk_tree_model_filter_new (GTK_TREE_MODEL (hd_notification_manager_get_singleton ()), NULL);
 
-  gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (nm),
-		                          hd_desktop_system_notifications_filter,
-					  NULL,
-					  NULL);
-
-
-  g_signal_connect (hd_notification_manager_get_singleton (),
-		  "notification-closed",
-		  G_CALLBACK (hd_desktop_system_notification_closed),
-		  desktop);
-
-  g_signal_connect (nm,
-		  "row-inserted",
-		  G_CALLBACK (hd_desktop_system_notification_received),
-		  desktop);
-#endif
+  /* Demo notification window */
+  gtk_widget_show (g_object_new (HD_TYPE_INCOMING_EVENT_WINDOW,
+                                 "preview", FALSE,
+                                 "icon", NULL,
+                                 "title", "[first line of text]",
+                                 "time", "[time]",
+                                 "message", "[second line of text]",
+                                 NULL));
 
   /* Start the main loop */
   gtk_main ();

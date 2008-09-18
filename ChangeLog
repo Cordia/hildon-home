@@ -1,5 +1,16 @@
 2008-09-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/Makefile.am: Add hd-incoming-event-window.[ch] to SOURCES.
+
+	* src/hd-incoming-event-window.c:
+	* src/hd-incoming-event-window.h: Add HDIncomingEventWindow class for
+	incoming event display.
+
+	* src/hildon-home.c (main): Create and display an example
+	HDIncomingEventWindow.
+
+2008-09-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* configure.ac: Add check for dbus-binding-tool
 
 	* src/Makefile.am: Add rules for hd-marshal.[ch] generation.
