@@ -1,11 +1,14 @@
 /*
- * This file is part of hildon-desktop
+ * This file is part of hildon-home
  *
- * Copyright (C) 2007, 2008 Nokia Corporation.
+ * Copyright (C) 2008 Nokia Corporation.
  *
- * Author:  Lucas Rocha <lucas.rocha@nokia.com>
- * 	    Moises Martinez <moises.martinez@nokia.com>
- * Contact: Karoliina Salminen <karoliina.t.salminen@nokia.com>
+ * Based on hildon-desktop-notification-manager.c (hildon-desktop)
+ *   Copyright (C) 2007 Nokia Corporation.
+ *
+ *   Author:  Lucas Rocha <lucas.rocha@nokia.com>
+ *            Moises Martinez <moises.martinez@nokia.com>
+ *   Contact: Karoliina Salminen <karoliina.t.salminen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -49,7 +52,7 @@ enum {
     N_SIGNALS
 };
 
-static gint signals[N_SIGNALS];  
+static guint signals[N_SIGNALS];  
 
 #define HD_NOTIFICATION_MANAGER_DBUS_NAME  "org.freedesktop.Notifications" 
 #define HD_NOTIFICATION_MANAGER_DBUS_PATH  "/org/freedesktop/Notifications"

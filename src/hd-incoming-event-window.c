@@ -1,5 +1,5 @@
 /*
- * This file is part of libhildondesktop
+ * This file is part of hildon-home
  *
  * Copyright (C) 2008 Nokia Corporation.
  *
@@ -33,6 +33,7 @@
 
 #include "hd-incoming-event-window.h"
 
+/* Pixel sizes */
 #define INCOMING_EVENT_WINDOW_WIDTH 342
 #define INCOMING_EVENT_WINDOW_HEIGHT 80
 
@@ -41,6 +42,9 @@
 
 #define MARGIN_DEFAULT 8
 #define MARGIN_HALF 4
+
+/* Timeout in seconds */
+#define INCOMING_EVENT_WINDOW_PREVIEW_TIMEOUT 4
 
 #define HD_INCOMING_EVENT_WINDOW_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_INCOMING_EVENT_WINDOW, HDIncomingEventWindowPrivate))
@@ -55,6 +59,13 @@ enum
   PROP_MESSAGE
 };
 
+enum {
+    RESPONSE,
+    N_SIGNALS
+};
+
+static guint signals[N_SIGNALS];  
+
 struct _HDIncomingEventWindowPrivate
 {
   gboolean preview;
@@ -64,9 +75,83 @@ struct _HDIncomingEventWindowPrivate
   GtkWidget *time;
   GtkWidget *cbox;
   GtkWidget *message;
+
+  guint timeout_id;
 };
 
 G_DEFINE_TYPE (HDIncomingEventWindow, hd_incoming_event_window, GTK_TYPE_WINDOW);
+
+static gboolean
+hd_incoming_event_window_timeout (HDIncomingEventWindow *window)
+{
+  HDIncomingEventWindowPrivate *priv = window->priv;
+
+  GDK_THREADS_ENTER ();
+
+  priv->timeout_id = 0;
+
+  g_signal_emit (window, signals[RESPONSE], 0, GTK_RESPONSE_DELETE_EVENT);
+
+  GDK_THREADS_LEAVE ();
+
+  return FALSE;
+}
+
+static gboolean
+hd_incoming_event_window_map_event (GtkWidget   *widget,
+                                    GdkEventAny *event)
+{
+  HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (widget)->priv;
+  gboolean result = FALSE;
+
+  if (GTK_WIDGET_CLASS (hd_incoming_event_window_parent_class)->map_event)
+    result = GTK_WIDGET_CLASS (hd_incoming_event_window_parent_class)->map_event (widget,
+                                                                                  event);
+
+  if (priv->preview)
+    {
+      priv->timeout_id = g_timeout_add_seconds (INCOMING_EVENT_WINDOW_PREVIEW_TIMEOUT,
+                                                (GSourceFunc) hd_incoming_event_window_timeout,
+                                                widget);
+    }
+
+  return result;
+}
+
+static gboolean
+hd_incoming_event_window_delete_event (GtkWidget   *widget,
+                                       GdkEventAny *event)
+{
+  HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (widget)->priv;
+
+  if (priv->timeout_id)
+    {
+      g_source_remove (priv->timeout_id);
+      priv->timeout_id = 0;
+    }
+
+  g_signal_emit (widget, signals[RESPONSE], 0, GTK_RESPONSE_DELETE_EVENT);
+
+  return TRUE;
+}
+
+static gboolean
+hd_incoming_event_window_button_press_event (GtkWidget      *widget,
+                                             GdkEventButton *event)
+{
+  HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (widget)->priv;
+
+  if (priv->timeout_id)
+    {
+      g_source_remove (priv->timeout_id);
+      priv->timeout_id = 0;
+    }
+
+  /* Emit the ::response signal */
+  g_signal_emit (widget, signals[RESPONSE], 0, GTK_RESPONSE_OK);
+
+  return TRUE;
+}
 
 static void
 hd_incoming_event_window_realize (GtkWidget *widget)
@@ -111,7 +196,13 @@ hd_incoming_event_window_size_request (GtkWidget      *widget,
 static void
 hd_incoming_event_window_dispose (GObject *object)
 {
-  /* HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (object)->priv; */
+  HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (object)->priv;
+
+  if (priv->timeout_id)
+    {
+      g_source_remove (priv->timeout_id);
+      priv->timeout_id = 0;
+    }
 
   G_OBJECT_CLASS (hd_incoming_event_window_parent_class)->dispose (object);
 }
@@ -139,7 +230,13 @@ hd_incoming_event_window_get_property (GObject      *object,
       break;
 
     case PROP_ICON:
-      g_value_set_object (value, gtk_image_get_pixbuf (GTK_IMAGE (priv->icon)));
+        {
+          const gchar *icon_name;
+          
+          gtk_image_get_icon_name (GTK_IMAGE (priv->icon), &icon_name, NULL);
+
+          g_value_set_string (value, icon_name);
+        }
       break;
 
     case PROP_TITLE:
@@ -179,19 +276,21 @@ hd_incoming_event_window_set_property (GObject      *object,
       break;
 
     case PROP_ICON:
-      gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon), g_value_get_object (value));
+      gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
+                                    g_value_get_string (value),
+                                    0);
       break;
 
     case PROP_TITLE:
-      gtk_label_set_label (GTK_LABEL (priv->title), g_value_get_string (value));
+      gtk_label_set_text (GTK_LABEL (priv->title), g_value_get_string (value));
       break;
 
     case PROP_TIME:
-      gtk_label_set_label (GTK_LABEL (priv->time), g_value_get_string (value));
+      gtk_label_set_text (GTK_LABEL (priv->time), g_value_get_string (value));
       break;
 
     case PROP_MESSAGE:
-      gtk_label_set_label (GTK_LABEL (priv->message), g_value_get_string (value));
+      gtk_label_set_text (GTK_LABEL (priv->message), g_value_get_string (value));
       break;
 
     default:
@@ -205,6 +304,9 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
   GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  widget_class->button_press_event = hd_incoming_event_window_button_press_event;
+  widget_class->delete_event = hd_incoming_event_window_delete_event;
+  widget_class->map_event = hd_incoming_event_window_map_event;
   widget_class->realize = hd_incoming_event_window_realize;
   widget_class->size_request = hd_incoming_event_window_size_request;
 
@@ -212,6 +314,15 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
   object_class->finalize = hd_incoming_event_window_finalize;
   object_class->get_property = hd_incoming_event_window_get_property;
   object_class->set_property = hd_incoming_event_window_set_property;
+
+  signals[RESPONSE] = g_signal_new ("response",
+                                    G_OBJECT_CLASS_TYPE (klass),
+                                    G_SIGNAL_RUN_LAST,
+                                    G_STRUCT_OFFSET (HDIncomingEventWindowClass, response),
+                                    NULL, NULL,
+                                    g_cclosure_marshal_VOID__INT,
+                                    G_TYPE_NONE, 1,
+                                    G_TYPE_INT);
 
   g_object_class_install_property (object_class,
                                    PROP_PREVIEW,
@@ -222,10 +333,10 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
                                                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
   g_object_class_install_property (object_class,
                                    PROP_ICON,
-                                   g_param_spec_object ("icon",
+                                   g_param_spec_string ("icon",
                                                         "Icon",
-                                                        "The icon of the incoming event",
-                                                        GDK_TYPE_PIXBUF,
+                                                        "The icon-name of the incoming event",
+                                                        NULL,
                                                         G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
                                    PROP_TITLE,
@@ -278,6 +389,7 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
 
   priv->icon = gtk_image_new ();
   gtk_widget_show (priv->icon);
+  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), INCOMING_EVENT_WINDOW_ICON);
   gtk_widget_set_size_request (priv->icon, INCOMING_EVENT_WINDOW_ICON, INCOMING_EVENT_WINDOW_ICON);
   gtk_size_group_add_widget (icon_size_group, priv->icon);
 
@@ -305,6 +417,7 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   hsep = gtk_hseparator_new ();
   gtk_widget_show (hsep);
 
+  /* Pack containers */
   gtk_container_add (GTK_CONTAINER (window), vbox);
   gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (vbox), hsep, FALSE, FALSE, 0);
@@ -316,4 +429,28 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   gtk_box_pack_start (GTK_BOX (title_box), priv->cbox, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (message_box), fbox, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (message_box), priv->message, TRUE, TRUE, 0);
+
+  /* Enable handling of button press events */
+  gtk_widget_add_events (GTK_WIDGET (window), GDK_BUTTON_PRESS_MASK);
 }
+
+GtkWidget *
+hd_incoming_event_window_new (gboolean     preview,
+                              const gchar *summary,
+                              const gchar *body,
+                              const gchar *time,
+                              const gchar *icon)
+{
+  GtkWidget *window;
+
+  window = g_object_new (HD_TYPE_INCOMING_EVENT_WINDOW,
+                         "preview", preview,
+                         "title", summary,
+                         "message", body,
+                         "time", time,
+                         "icon", icon,
+                         NULL);
+
+  return window;
+}
+

@@ -36,6 +36,8 @@ hildon_home_SOURCES = \
 	$(BUILT_SOURCES)		\
 	hd-incoming-event-window.c	\
 	hd-incoming-event-window.h	\
+	hd-incoming-events.c		\
+	hd-incoming-events.h		\
 	hd-notification-manager.c	\
 	hd-notification-manager.h	\
 	hd-system-notifications.c	\
@@ -48,6 +50,20 @@ hildon_home_LDFLAGS = \
 	$(LIBHILDONDESKTOP_LIBS)	\
 	$(SQLITE_LIBS)			\
 	$(GNOME_VFS_LIBS)
+
+noinst_PROGRAMS = test-incoming-event
+
+test_incoming_event_CFLAGS = \
+	$(HILDON_CFLAGS)
+
+test_incoming_event_LDFLAGS = \
+	-rdynamic			\
+	$(HILDON_LIBS)
+
+test_incoming_event_SOURCES = \
+	hd-incoming-event-window.c	\
+	hd-incoming-event-window.h	\
+	test-incoming-event.c
 
 EXTRA_DIST = \
 	hd-notification-manager.xml

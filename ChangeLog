@@ -1,3 +1,27 @@
+2008-09-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/Makefile.am: Add test-incoming-event program.
+
+	* src/hd-incoming-event-window.c: Add response signal. Add support for
+	preview timeouts. Use 
+
+	* src/hd-incoming-event-window.h: Add response signal.
+
+	* src/hd-incoming-events.c:
+	* src/hd-incoming-events.h: Add initial support for incoming events.
+
+	* src/hd-notification-manager.c:
+	* src/hd-notification-manager.h:
+	* src/hd-system-notifications.c:
+	* src/hd-system-notifications.h: Update Copyright text
+
+	* src/hildon-home.c (main): Remove the test notification window.
+
+	* src/test-incoming-event.c: Add test for a notification window in the
+	task switcher
+
+	* src/test-notifications.py: Add a test for notifications.
+
 2008-09-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/Makefile.am: Add hd-incoming-event-window.[ch] to SOURCES.

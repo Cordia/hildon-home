@@ -1,5 +1,5 @@
 /*
- * This file is part of libhildondesktop
+ * This file is part of hildon-home
  *
  * Copyright (C) 2008 Nokia Corporation.
  *
@@ -24,8 +24,6 @@
 #define __HD_INCOMING_EVENT_WINDOW_H__
 
 #include <gtk/gtk.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
 
 G_BEGIN_DECLS
 
@@ -54,9 +52,18 @@ struct _HDIncomingEventWindow
 struct _HDIncomingEventWindowClass
 {
   GtkWindowClass parent;
+
+  void (*response) (HDIncomingEventWindow *window,
+                    gint                   response_id);
 };
 
-GType            hd_incoming_event_window_get_type               (void);
+GType      hd_incoming_event_window_get_type (void);
+
+GtkWidget *hd_incoming_event_window_new      (gboolean     preview,
+                                              const gchar *summary,
+                                              const gchar *body,
+                                              const gchar *time,
+                                              const gchar *icon);
 
 G_END_DECLS
 

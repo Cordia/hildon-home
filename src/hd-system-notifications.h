@@ -1,5 +1,5 @@
 /*
- * This file is part of libhildondesktop
+ * This file is part of hildon-home
  *
  * Copyright (C) 2008 Nokia Corporation.
  *

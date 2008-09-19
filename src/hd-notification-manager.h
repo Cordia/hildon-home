@@ -1,11 +1,14 @@
 /*
- * This file is part of hildon-desktop
+ * This file is part of hildon-home
  *
- * Copyright (C) 2007, 2008 Nokia Corporation.
+ * Copyright (C) 2008 Nokia Corporation.
  *
- * Author:  Lucas Rocha <lucas.rocha@nokia.com>
- *          Moises Martinez <moises.martinez@nokia.com>
- * Contact: Karoliina Salminen <karoliina.t.salminen@nokia.com>
+ * Based on hildon-desktop-notification-manager.h (hildon-desktop)
+ *   Copyright (C) 2007 Nokia Corporation.
+ *
+ *   Author:  Lucas Rocha <lucas.rocha@nokia.com>
+ *            Moises Martinez <moises.martinez@nokia.com>
+ *   Contact: Karoliina Salminen <karoliina.t.salminen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License

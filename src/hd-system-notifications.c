@@ -1,7 +1,13 @@
 /*
- * This file is part of libhildondesktop
+ * This file is part of hildon-home
  *
  * Copyright (C) 2008 Nokia Corporation.
+ *
+ * Based on hd-desktop.c (hildon-desktop)
+ *   Copyright (C) 2006 Nokia Corporation.
+ *
+ *   Author:  Lucas Rocha <lucas.rocha@nokia.com>
+ *   Contact: Karoliina Salminen <karoliina.t.salminen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License

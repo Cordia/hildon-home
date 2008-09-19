@@ -38,7 +38,7 @@
 #include "hd-notification-manager.h"
 #include "hd-system-notifications.h"
 
-#include "hd-incoming-event-window.h"
+#include "hd-incoming-events.h"
 
 #define HD_STAMP_DIR   "/tmp/osso-appl-states/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
@@ -142,20 +142,11 @@ main (int argc, char **argv)
 
   nm = hd_notification_manager_get ();
   sn = hd_system_notifications_get ();
+  hd_incoming_events_get ();
 
   /* Load Plugins when idle */
   gdk_threads_add_idle (load_plugins_idle, home_pm);
   gdk_threads_add_idle (load_plugins_idle, notification_pm);
-
-
-  /* Demo notification window */
-  gtk_widget_show (g_object_new (HD_TYPE_INCOMING_EVENT_WINDOW,
-                                 "preview", FALSE,
-                                 "icon", NULL,
-                                 "title", "[first line of text]",
-                                 "time", "[time]",
-                                 "message", "[second line of text]",
-                                 NULL));
 
   /* Start the main loop */
   gtk_main ();
