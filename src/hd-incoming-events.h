@@ -23,6 +23,8 @@
 #ifndef __HD_INCOMING_EVENTS_H__
 #define __HD_INCOMING_EVENTS_H__
 
+#include <glib-object.h>
+#include <libhildondesktop/libhildondesktop.h>
 
 G_BEGIN_DECLS
 
@@ -51,7 +53,7 @@ struct _HDIncomingEventsClass
 
 GType             hd_incoming_events_get_type (void);
 
-HDIncomingEvents *hd_incoming_events_get      (void);
+HDIncomingEvents *hd_incoming_events_new      (HDPluginManager *pm);
 
 G_END_DECLS
 

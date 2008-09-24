@@ -23,6 +23,7 @@
 #ifndef __HD_SYSTEM_NOTIFICATIONS_H__
 #define __HD_SYSTEM_NOTIFICATIONS_H__
 
+#include <glib-object.h>
 
 G_BEGIN_DECLS
 

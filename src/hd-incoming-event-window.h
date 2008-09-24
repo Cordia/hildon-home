@@ -62,7 +62,7 @@ GType      hd_incoming_event_window_get_type (void);
 GtkWidget *hd_incoming_event_window_new      (gboolean     preview,
                                               const gchar *summary,
                                               const gchar *body,
-                                              const gchar *time,
+                                              time_t       time,
                                               const gchar *icon);
 
 G_END_DECLS

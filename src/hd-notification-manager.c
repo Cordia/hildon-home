@@ -46,9 +46,7 @@
 G_DEFINE_TYPE (HDNotificationManager, hd_notification_manager, G_TYPE_OBJECT);
 
 enum {
-    NOTIFICATION_SENT,
-    NOTIFICATION_UPDATED,
-    NOTIFICATION_CLOSED,
+    NOTIFIED,
     N_SIGNALS
 };
 
@@ -74,21 +72,6 @@ typedef struct
   gint                    id;
   gint                    result;
 } HildonNotificationHintInfo;
-
-typedef struct
-{
-  gchar       *app_name;
-  gchar       *icon_name;
-  GdkPixbuf   *icon;
-  gchar       *summary;
-  gchar       *body;
-  gchar      **actions;
-  GHashTable  *hints;
-  gint         timeout;
-  gboolean     removable;
-  gboolean     ack;
-  gchar       *sender;
-} NotificationData;
 
 enum
 {
@@ -267,7 +250,7 @@ hd_notification_manager_load_row (void *data,
   gchar *sql;
   gchar *error;
   guint id;
-  NotificationData *nd;
+  HDNotification *notification;
 
   nm = HD_NOTIFICATION_MANAGER (data);
 
@@ -314,22 +297,18 @@ hd_notification_manager_load_row (void *data,
 
   sqlite3_free (sql);
 
-  nd = g_slice_new0 (NotificationData);
-  nd->app_name = g_strdup (argv[1]);
-  nd->icon_name = g_strdup (argv[2]);
-  nd->icon = hd_notification_manager_get_icon (argv[2]);
-  nd->summary = g_strdup (argv[3]);
-  nd->body = g_strdup (argv[4]);
-  nd->actions = (gchar **) g_array_free (actions, FALSE);
-  nd->hints = hints;
-  nd->timeout = (gint) g_ascii_strtod (argv[5], NULL);
-  nd->removable = TRUE;
-  nd->ack = FALSE;
-  nd->sender = g_strdup (argv[6]);
+  notification = hd_notification_new (id,
+                                      argv[2],
+                                      argv[3],
+                                      argv[4],
+                                      (gchar **) g_array_free (actions, FALSE),
+                                      hints,
+                                      (gint) g_ascii_strtod (argv[5], NULL),
+                                      argv[6]);
 
   g_hash_table_insert (nm->priv->notifications,
                        GUINT_TO_POINTER (id),
-                       nd);
+                       notification);
 
   return 0;
 }
@@ -695,8 +674,10 @@ hd_notification_manager_init (HDNotificationManager *nm)
 
   nm->priv->current_id = 0;
 
-  nm->priv->notifications = g_hash_table_new (g_direct_hash,
-                                              g_direct_equal);
+  nm->priv->notifications = g_hash_table_new_full (g_direct_hash,
+                                                   g_direct_equal,
+                                                   NULL,
+                                                   (GDestroyNotify) g_object_unref);
 
   nm->priv->connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 
@@ -796,48 +777,15 @@ hd_notification_manager_class_init (HDNotificationManagerClass *class)
 
   g_object_class->finalize = hd_notification_manager_finalize;
 
-  signals[NOTIFICATION_SENT] =
-    g_signal_new ("notification-sent",
+  signals[NOTIFIED] =
+    g_signal_new ("notified",
                   G_OBJECT_CLASS_TYPE (g_object_class),
                   G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (HDNotificationManagerClass, notification_sent),
+                  G_STRUCT_OFFSET (HDNotificationManagerClass, notified),
                   NULL, NULL,
-                  hd_cclosure_marshal_VOID__STRING_UINT_STRING_STRING_STRING_BOXED_POINTER_INT,
-                  G_TYPE_NONE, 8,
-                  G_TYPE_STRING,
-                  G_TYPE_UINT,
-                  G_TYPE_STRING,
-                  G_TYPE_STRING,
-                  G_TYPE_STRING,
-                  G_TYPE_STRV,
-                  G_TYPE_POINTER,
-                  G_TYPE_INT);
-
-  signals[NOTIFICATION_UPDATED] =
-    g_signal_new ("notification-updated",
-                  G_OBJECT_CLASS_TYPE (g_object_class),
-                  G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (HDNotificationManagerClass, notification_updated),
-                  NULL, NULL,
-                  hd_cclosure_marshal_VOID__STRING_UINT_STRING_STRING_STRING_BOXED_POINTER_INT,
-                  G_TYPE_NONE, 8,
-                  G_TYPE_STRING,
-                  G_TYPE_UINT,
-                  G_TYPE_STRING,
-                  G_TYPE_STRING,
-                  G_TYPE_STRING,
-                  G_TYPE_STRV,
-                  G_TYPE_POINTER,
-                  G_TYPE_INT);
-
-  signals[NOTIFICATION_CLOSED] =
-    g_signal_new ("notification-closed",
-                  G_OBJECT_CLASS_TYPE (g_object_class),
-                  G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (HDNotificationManagerClass, notification_closed),
-                  NULL, NULL,
-                  g_cclosure_marshal_VOID__UINT,
-                  G_TYPE_NONE, 1, G_TYPE_UINT);
+                  g_cclosure_marshal_VOID__OBJECT,
+                  G_TYPE_NONE, 1,
+                  HD_TYPE_NOTIFICATION);
 
   g_type_class_add_private (class, sizeof (HDNotificationManagerPrivate));
 }
@@ -867,15 +815,13 @@ hd_notification_manager_create_signal (HDNotificationManager *nm,
 
 static void
 hd_notification_manager_notification_closed (HDNotificationManager *nm,
-                                             guint id,
-                                             const gchar *dest,
-                                             gboolean persistent)
+                                             HDNotification        *notification)
 {
   DBusMessage *message;
 
-  message = hd_notification_manager_create_signal (nm, 
-                                                   id, 
-                                                   dest, 
+  message = hd_notification_manager_create_signal (nm,
+                                                   hd_notification_get_id (notification),
+                                                   hd_notification_get_sender (notification),
                                                    "NotificationClosed");
 
   if (message == NULL) return;
@@ -886,39 +832,26 @@ hd_notification_manager_notification_closed (HDNotificationManager *nm,
 
   dbus_message_unref (message);
 
-  if (persistent)
-    {
-      hd_notification_manager_db_delete (nm, id);
-    }
-
-  g_signal_emit (nm, signals[NOTIFICATION_CLOSED], 0, id);
+  if (hd_notification_get_persistent (notification))
+    hd_notification_manager_db_delete (nm, hd_notification_get_id (notification));
 }
 
 static gboolean 
 hd_notification_manager_timeout (guint id)
 {
   HDNotificationManager *nm = hd_notification_manager_get ();
-  NotificationData *nd;
-  GValue *hint;
-  gboolean persistent = FALSE;
+  HDNotification *notification;
 
-  nd = g_hash_table_lookup (nm->priv->notifications,
-                            GUINT_TO_POINTER (id));
+  notification = g_hash_table_lookup (nm->priv->notifications,
+                                      GUINT_TO_POINTER (id));
 
-  if (!nd)
+  if (!notification)
     return FALSE;
-
-  hint = g_hash_table_lookup (nd->hints, "persistent");
-
-  persistent = hint != NULL && g_value_get_uchar (hint);
 
   /* Notify the client */
   hd_notification_manager_notification_closed (HD_NOTIFICATION_MANAGER (nm), 
-                                               id,
-                                               nd->sender,
-                                               persistent);
-
-  /* FIXME free nd*/
+                                               notification);
+  hd_notification_closed (notification);
 
   g_hash_table_remove (nm->priv->notifications,
                        GUINT_TO_POINTER (id));
@@ -970,7 +903,7 @@ hd_notification_manager_notify (HDNotificationManager *nm,
   gboolean valid_actions = TRUE;
   gboolean persistent = FALSE;
   gint i;
-  NotificationData *nd;
+  HDNotification *notification;
   gboolean replace = FALSE;
   const gchar *category;
 
@@ -997,8 +930,8 @@ hd_notification_manager_notify (HDNotificationManager *nm,
   /* Try to find an existing notification */
   if (id)
     {
-      nd = g_hash_table_lookup (nm->priv->notifications, GUINT_TO_POINTER (id));
-      replace = nd != NULL;
+      notification = g_hash_table_lookup (nm->priv->notifications, GUINT_TO_POINTER (id));
+      replace = notification != NULL;
       if (!replace)
         g_warning ("Cannot replace notification: notification with id %u not found", id);
     }
@@ -1040,24 +973,25 @@ hd_notification_manager_notify (HDNotificationManager *nm,
 
       sender = dbus_g_method_get_sender (context);
 
-      nd = g_slice_new0 (NotificationData);
-      nd->app_name = g_strdup (app_name);
-      nd->icon_name = g_strdup (icon);
-      nd->icon = pixbuf;
-      nd->summary = g_strdup (summary);
-      nd->body = g_strdup (body);
-      nd->actions = actions_copy;
-      nd->hints = hints_copy;
-      nd->timeout = timeout;
-      nd->removable = TRUE;
-      nd->ack = FALSE;
-      nd->sender = sender;
-
       id = hd_notification_manager_next_id (nm);
+
+      notification = hd_notification_new (id,
+                                          icon,
+                                          summary,
+                                          body,
+                                          actions,
+                                          hints_copy,
+                                          timeout,
+                                          sender);
+/*      nd->removable = TRUE;
+      nd->ack = FALSE;
+      nd->sender = sender;*/
 
       g_hash_table_insert (nm->priv->notifications,
                            GUINT_TO_POINTER (id),
-                           nd);
+                           notification);
+
+      g_signal_emit (nm, signals[NOTIFIED], 0, notification);
 
       if (persistent)
         {
@@ -1075,20 +1009,14 @@ hd_notification_manager_notify (HDNotificationManager *nm,
     }
   else 
     {
-      /* Free old data */
-      g_free (nd->icon_name);
-      if (nd->icon)
-        g_object_unref (nd->icon);
-      g_free (nd->summary);
-      g_free (nd->body);
-
       /* Update new data */
-      nd->icon_name = g_strdup (icon);
-      nd->icon = pixbuf;
-      nd->summary = g_strdup (summary);
-      nd->body = g_strdup (body);
-      nd->removable = FALSE;
-      nd->ack = FALSE;
+      g_object_set (notification,
+                    "icon", icon,
+                    "summary", summary,
+                    "body", body,
+                    NULL);
+/*      nd->removable = FALSE;
+      nd->ack = FALSE;*/
 
       if (persistent)
         {
@@ -1103,31 +1031,6 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                                              timeout);
         }
     }
-
-  if (replace)
-    g_signal_emit (nm,
-                   signals[NOTIFICATION_UPDATED],
-                   0,
-                   app_name,
-                   id,
-                   icon,
-                   summary,
-                   body,
-                   actions,
-                   hints,
-                   timeout);
-  else
-    g_signal_emit (nm,
-                   signals[NOTIFICATION_SENT],
-                   0,
-                   app_name,
-                   id,
-                   icon,
-                   summary,
-                   body,
-                   actions,
-                   hints,
-                   timeout);
 
   if (!persistent && timeout > 0)
     {
@@ -1209,8 +1112,8 @@ hd_notification_manager_system_note_dialog (HDNotificationManager *nm,
   g_hash_table_insert (hints, "category", hint);
 
   hint = g_new0 (GValue, 1);
-  hint = g_value_init (hint, G_TYPE_INT);
-  g_value_set_int (hint, type);
+  hint = g_value_init (hint, G_TYPE_UINT);
+  g_value_set_uint (hint, type);
 
   g_hash_table_insert (hints, "dialog-type", hint);
 
@@ -1284,14 +1187,12 @@ hd_notification_manager_close_notification (HDNotificationManager *nm,
                                             guint                  id, 
                                             GError               **error)
 {
-  NotificationData *nd;
-  GValue *hint;
-  gboolean persistent = FALSE;
+  HDNotification *notification;
 
-  nd = g_hash_table_lookup (nm->priv->notifications,
-                            GUINT_TO_POINTER (id));
+  notification = g_hash_table_lookup (nm->priv->notifications,
+                                      GUINT_TO_POINTER (id));
 
-  if (nd)
+  if (notification)
     {
       /* libnotify call close_notification_handler when updating a row 
          that we happend to not want removed */
@@ -1305,14 +1206,10 @@ hd_notification_manager_close_notification (HDNotificationManager *nm,
          }
          else
          {*/
-      hint = g_hash_table_lookup (nd->hints, "persistent");
-
-      persistent = hint != NULL && g_value_get_uchar (hint);
-
       /* Notify the client */
-      hd_notification_manager_notification_closed (nm, id, nd->sender, persistent);
-
-      /* FIXME free nd */
+      hd_notification_manager_notification_closed (nm,
+                                                   notification);
+      hd_notification_closed (notification);
 
       g_hash_table_remove (nm->priv->notifications,
                            GUINT_TO_POINTER (id));
@@ -1453,49 +1350,35 @@ hd_notification_manager_message_from_desc (HDNotificationManager *nm,
 
 void
 hd_notification_manager_call_action (HDNotificationManager *nm,
-                                     guint                  id,
+                                     HDNotification        *notification,
                                      const gchar           *action_id)
 {
-  NotificationData *nd;
   DBusMessage *message = NULL;
-  GValue *dbus_cb;
-  gchar *hint;
+  const gchar *dbus_cb;
 
   g_return_if_fail (nm != NULL);
   g_return_if_fail (HD_IS_NOTIFICATION_MANAGER (nm));
 
-  nd = g_hash_table_lookup (nm->priv->notifications,
-                            GUINT_TO_POINTER (id));
-  if (!nd)
-    return;
+  dbus_cb = hd_notification_get_dbus_cb (notification, action_id);
 
-  if (nd->hints != NULL)
-    {  
-      hint = g_strconcat ("dbus-callback-", action_id, NULL);
-
-      dbus_cb = (GValue *) g_hash_table_lookup (nd->hints, hint);
-
-      if (dbus_cb != NULL)
-        {
-          message = hd_notification_manager_message_from_desc (nm, 
-                                                               (const gchar *) g_value_get_string (dbus_cb));
-        }
-
-      if (message != NULL)
-        {
-          dbus_connection_send (dbus_g_connection_get_connection (nm->priv->connection), 
-                                message, 
-                                NULL);
-        }
-
-      g_free (hint);
+  if (dbus_cb != NULL)
+    {
+      message = hd_notification_manager_message_from_desc (nm, 
+                                                           dbus_cb);
     }
 
-  if (nd->sender != NULL)
+  if (message != NULL)
+    {
+      dbus_connection_send (dbus_g_connection_get_connection (nm->priv->connection), 
+                            message, 
+                            NULL);
+    }
+
+  if (hd_notification_get_sender (notification) != NULL)
     {
       message = hd_notification_manager_create_signal (nm, 
-                                                       id, 
-                                                       nd->sender, 
+                                                       hd_notification_get_id (notification),
+                                                       hd_notification_get_sender (notification),
                                                        "ActionInvoked");
 
       g_assert (message != NULL);
@@ -1522,21 +1405,11 @@ hd_notification_manager_close_all (HDNotificationManager *nm)
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      guint id = GPOINTER_TO_UINT (key);
-      NotificationData *nd = value;
-      GValue *hint;
-      gboolean persistent;
-
-      hint = g_hash_table_lookup (nd->hints, "persistent");
-
-      persistent = hint != NULL && g_value_get_uchar (hint);
+      HDNotification *notification = value;
 
       hd_notification_manager_notification_closed (nm, 
-                                                   id,
-                                                   nd->sender,
-                                                   persistent);
-
-      /* FIXME free nd */
+                                                   notification);
+      hd_notification_closed (notification);
 
       g_hash_table_iter_remove (&iter);
     }	  

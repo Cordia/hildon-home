@@ -72,9 +72,11 @@ struct _HDIncomingEventWindowPrivate
 
   GtkWidget *icon;
   GtkWidget *title;
-  GtkWidget *time;
+  GtkWidget *time_label;
   GtkWidget *cbox;
   GtkWidget *message;
+
+  time_t time;
 
   guint timeout_id;
 };
@@ -244,7 +246,7 @@ hd_incoming_event_window_get_property (GObject      *object,
       break;
 
     case PROP_TIME:
-      g_value_set_string (value, gtk_label_get_label (GTK_LABEL (priv->time)));
+      g_value_set_int64 (value, priv->time);
       break;
 
     case PROP_MESSAGE:
@@ -286,7 +288,14 @@ hd_incoming_event_window_set_property (GObject      *object,
       break;
 
     case PROP_TIME:
-      gtk_label_set_text (GTK_LABEL (priv->time), g_value_get_string (value));
+        {
+          gchar buf[20] = "";
+
+          priv->time = g_value_get_int64 (value);
+          if (priv->time >= 0)
+            strftime (buf, 20, "%H:%M", localtime (&(priv->time)));
+          gtk_label_set_text (GTK_LABEL (priv->time_label), buf);
+        }
       break;
 
     case PROP_MESSAGE:
@@ -347,11 +356,13 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
                                                         G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
                                    PROP_TIME,
-                                   g_param_spec_string ("time",
-                                                        "Time",
-                                                        "The time of the incoming event",
-                                                        NULL,
-                                                        G_PARAM_READWRITE));
+                                   g_param_spec_int64 ("time",
+                                                       "Time",
+                                                       "The time of the incoming event (time_t)",
+                                                       G_MININT64,
+                                                       G_MAXINT64,
+                                                       -1,
+                                                       G_PARAM_READWRITE));
 
   g_object_class_install_property (object_class,
                                    PROP_MESSAGE,
@@ -402,8 +413,8 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   gtk_widget_show (priv->title);
   gtk_misc_set_alignment (GTK_MISC (priv->title), 0.0, 0.5);
 
-  priv->time = gtk_label_new (NULL);
-  gtk_widget_show (priv->time);
+  priv->time_label = gtk_label_new (NULL);
+  gtk_widget_show (priv->time_label);
 
   /* fill box for the close button in the title row */
   priv->cbox = gtk_hbox_new (FALSE, 0);
@@ -425,7 +436,7 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   gtk_box_pack_start (GTK_BOX (hbox), priv->icon, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (hbox), title_box, TRUE, TRUE, 0);
   gtk_box_pack_start (GTK_BOX (title_box), priv->title, TRUE, TRUE, 0);
-  gtk_box_pack_start (GTK_BOX (title_box), priv->time, FALSE, FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (title_box), priv->time_label, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (title_box), priv->cbox, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (message_box), fbox, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (message_box), priv->message, TRUE, TRUE, 0);
@@ -438,7 +449,7 @@ GtkWidget *
 hd_incoming_event_window_new (gboolean     preview,
                               const gchar *summary,
                               const gchar *body,
-                              const gchar *time,
+                              time_t       time,
                               const gchar *icon)
 {
   GtkWidget *window;
@@ -447,7 +458,7 @@ hd_incoming_event_window_new (gboolean     preview,
                          "preview", preview,
                          "title", summary,
                          "message", body,
-                         "time", time,
+                         "time", (gint64) time,
                          "icon", icon,
                          NULL);
 

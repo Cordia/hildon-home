@@ -1,3 +1,53 @@
+2008-09-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac: Add gettext support.
+
+	* src/notification-groups.conf: Add configuration file for
+	notification groups.
+
+	* src/Makefile.am: Add notification-groups.conf.
+
+	* src/hd-incoming-event-window.c:
+	* src/hd-incoming-event-window.h: Change type of time property from
+	gchar* to gint64.
+
+	* src/hd-notification-manager.c:
+	* src/hd-notification-manager.h: Use the new HDNotification class from
+	libhildondesktop.
+
+	* src/hd-incoming-events.c:
+	* src/hd-incoming-events.h: Use HDNotifications instead of
+	notification ids. Add support for notification groups. Add support for
+	notification windows for the switcher window. Add support for
+	notification plugins.
+
+	* src/hd-system-notifications.c:
+	* src/hd-system-notifications.h: Use HDNotifications instead of
+	notification ids.
+
+	* src/hildon-home.c (main): Add locale support. Add support for
+	notification plugins.
+
+	* src/test-incoming-event.c (main): Update to new API.
+
+	* src/test-notifications.py: Add test for notification groups.
+
+2008-09-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/Makefile.am: Install notification-groups.conf.
+
+	* src/hd-incoming-events.c (update_group): Add initial support to
+	  group switcher windows.
+	  (preview_window_response): Show a switcher window if the preview
+	  was not clicked.
+	  (load_notification_groups): Load the notification groups
+	  configuration file.
+
+	* src/notification-groups.conf: Add sample notification groups file.
+
+	* src/test-notifications.py: Update category to match notification
+	group.
+
 2008-09-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/Makefile.am: Add test-incoming-event program.

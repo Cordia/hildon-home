@@ -37,7 +37,7 @@ main (int argc, char **argv)
 			  FALSE,
 			  "Email Sender",
 			  "Email Subject",
-			  "12:43",
+			  12220784,
 			  "qgn_list_messagin"));
 
   /* Start the main loop */

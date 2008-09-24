@@ -59,10 +59,10 @@ AC_SUBST(CFLAGS)
 # i18n setup 
 #++++++++++++
 
-# ALL_LINGUAS="en_GB"
-# AC_SUBST(ALL_LINGUAS)
-# AM_GLIB_GNU_GETTEXT
-# AC_DEFINE(GETTEXT_PACKAGE, ["maemo-af-desktop"], [Package name for gettext])
+ALL_LINGUAS="en_GB"
+AC_SUBST(ALL_LINGUAS)
+AM_GLIB_GNU_GETTEXT
+AC_DEFINE(GETTEXT_PACKAGE, ["maemo-af-desktop"], [Localisation domain])
 
 PKG_CHECK_MODULES(HILDON,
                   [hildon-1], 

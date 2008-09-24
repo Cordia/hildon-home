@@ -60,26 +60,8 @@ struct _HDNotificationManagerClass
 {
   GObjectClass parent_class;
 
-  void (*notification_sent)    (HDNotificationManager *nm,
-                                const gchar           *app_name,
-                                guint                  id,
-                                const gchar           *icon,
-                                const gchar           *summary,
-                                const gchar           *body,
-                                gchar                **actions,
-                                GHashTable            *hints,
-                                gint                   timeout);
-  void (*notification_updated) (HDNotificationManager *nm,
-                                const gchar           *app_name,
-                                guint                  id,
-                                const gchar           *icon,
-                                const gchar           *summary,
-                                const gchar           *body,
-                                gchar                **actions,
-                                GHashTable            *hints,
-                                gint                   timeout);
-  void (*notification_closed)  (HDNotificationManager *nm,
-                                guint                  id);
+  void (*notified)    (HDNotificationManager *nm,
+                       HDNotification        *notification);
 };
 
 GType                  hd_notification_manager_get_type              (void);
@@ -122,7 +104,7 @@ gboolean               hd_notification_manager_close_notification    (HDNotifica
 void                   hd_notification_manager_close_all             (HDNotificationManager *nm);
 
 void                   hd_notification_manager_call_action           (HDNotificationManager *nm,
-                                                                      guint                  id,
+                                                                      HDNotification        *notification,
                                                                       const gchar           *action_id);
 
 void                   hd_notification_manager_call_dbus_callback    (HDNotificationManager *nm,

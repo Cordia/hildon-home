@@ -37,10 +37,9 @@
 
 #include "hd-notification-manager.h"
 #include "hd-system-notifications.h"
-
 #include "hd-incoming-events.h"
 
-#define HD_STAMP_DIR   "/tmp/osso-appl-states/hildon-desktop/"
+#define HD_STAMP_DIR   "/tmp/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
 
 /* signal handler, hildon-desktop sends SIGTERM to all tracked applications
@@ -104,9 +103,11 @@ main (int argc, char **argv)
   HDNotificationManager *nm;
   HDSystemNotifications *sn;
 
-  g_thread_init (NULL);
   setlocale (LC_ALL, "");
+  bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
+  textdomain (GETTEXT_PACKAGE);
 
+  g_thread_init (NULL);
   gtk_init (&argc, &argv);
 
   gnome_vfs_init ();
@@ -142,7 +143,7 @@ main (int argc, char **argv)
 
   nm = hd_notification_manager_get ();
   sn = hd_system_notifications_get ();
-  hd_incoming_events_get ();
+  hd_incoming_events_new (notification_pm);
 
   /* Load Plugins when idle */
   gdk_threads_add_idle (load_plugins_idle, home_pm);

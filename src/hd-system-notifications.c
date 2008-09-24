@@ -41,17 +41,10 @@
 #define HD_SYSTEM_NOTIFICATIONS_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_SYSTEM_NOTIFICATIONS, HDSystemNotificationsPrivate))
 
-typedef struct
-{
-  guint                  id;
-  HDSystemNotifications *sn;
-} HDSystemNotificationsDialogInfo;
-
 struct _HDSystemNotificationsPrivate
 {
   HDNotificationManager *nm;
   GQueue                *dialog_queue;
-  GHashTable            *notifications;
 };
 
 G_DEFINE_TYPE (HDSystemNotifications, hd_system_notifications, G_TYPE_OBJECT);
@@ -97,23 +90,14 @@ show_next_system_dialog (HDSystemNotifications *sn)
 }
 
 static void
-system_notification_dialog_destroy (GtkWidget             *widget,
-                                    HDSystemNotifications *sn)
+system_notification_dialog_response (GtkWidget      *widget,
+                                     gint            response,	
+                                     HDNotification *notification)
 {
-  show_next_system_dialog (sn);
-}
+  HDNotificationManager *nm = hd_notification_manager_get ();
 
-static void
-system_notification_dialog_response (GtkWidget                       *widget,
-                                     gint                             response,	
-                                     HDSystemNotificationsDialogInfo *ninfo)
-{
-  HDSystemNotifications *sn = ninfo->sn;
-
-  hd_notification_manager_call_action (sn->priv->nm, ninfo->id, "default");
-  hd_notification_manager_close_notification (sn->priv->nm, ninfo->id, NULL);
-
-  g_free (ninfo);
+  hd_notification_manager_call_action (nm, notification, "default");
+  hd_notification_manager_close_notification (nm, hd_notification_get_id (notification), NULL);
 
   gtk_widget_destroy (widget);
 }
@@ -181,92 +165,55 @@ create_note_dialog (const gchar  *summary,
 }
 
 static void
-notification_closed (HDNotificationManager *nm,
-                     guint id,
-                     HDSystemNotifications *sn)
+system_notifications_notified (HDNotificationManager *nm,
+                               HDNotification        *notification,
+                               HDSystemNotifications *sn)
 {
-  gpointer widget;
-
-  widget = g_hash_table_lookup (sn->priv->notifications, GINT_TO_POINTER (id));
-
-  g_hash_table_remove (sn->priv->notifications, GINT_TO_POINTER (id));
-
-  if (GTK_IS_WIDGET (widget))
-    {
-      gtk_widget_destroy (GTK_WIDGET (widget));
-    }
-}
-
-
-static void
-notification_sent (HDNotificationManager  *nm,
-                   const gchar            *app_name,
-                   guint                   id,
-                   const gchar            *icon,
-                   const gchar            *summary,
-                   const gchar            *body,
-                   gchar                 **actions,
-                   GHashTable             *hints,
-                   gint                    timeout,
-                   HDSystemNotifications  *sn)
-{
-  GtkWidget *notification = NULL;
+  GtkWidget *dialog = NULL;
   const gchar *category;
 
   g_return_if_fail (HD_IS_SYSTEM_NOTIFICATIONS (sn));
 
   /* Get category string */
-  category = g_value_get_string (g_hash_table_lookup (hints, "category"));
+  category = hd_notification_get_category (notification);
 
-  if (g_str_equal (category, "system.note.infoprint")) 
+  if (category && g_str_equal (category, "system.note.infoprint"))
     {
-      notification = create_note_infoprint (summary, 
-                                            body, 
-                                            icon);
+      dialog = create_note_infoprint (hd_notification_get_summary (notification),
+                                      hd_notification_get_body (notification), 
+                                      hd_notification_get_icon (notification));
 
-      gtk_widget_show_all (notification);
+      gtk_widget_show_all (dialog);
     }
-  else if (g_str_equal (category, "system.note.dialog")) 
+  else if (category && g_str_equal (category, "system.note.dialog")) 
     {
-      HDSystemNotificationsDialogInfo *ninfo;
-      gint dialog_type = 0;
+      dialog = create_note_dialog (hd_notification_get_summary (notification),
+                                   hd_notification_get_body (notification), 
+                                   hd_notification_get_icon (notification), 
+                                   hd_notification_get_dialog_type (notification),
+                                   hd_notification_get_actions (notification));
 
-      dialog_type = g_value_get_int (g_hash_table_lookup (hints, "dialog-type"));
-
-      notification = create_note_dialog (summary, 
-                                         body, 
-                                         icon,
-                                         dialog_type,
-                                         actions);
-
-      ninfo = g_new0 (HDSystemNotificationsDialogInfo, 1); 
-
-      ninfo->id = id;
-      ninfo->sn = sn;
-
-      g_signal_connect (G_OBJECT (notification),
+      g_signal_connect (G_OBJECT (dialog),
                         "response",
                         G_CALLBACK (system_notification_dialog_response),
-                        ninfo);
+                        notification);
 
-      g_signal_connect (G_OBJECT (notification),
-                        "destroy",
-                        G_CALLBACK (system_notification_dialog_destroy),
-                        sn);
+      g_signal_connect_swapped (G_OBJECT (dialog),
+                                "destroy",
+                                G_CALLBACK (show_next_system_dialog),
+                                sn);
 
       if (g_queue_is_empty (sn->priv->dialog_queue))
-        {
-          gtk_widget_show_all (notification);
-        }
+        gtk_widget_show_all (dialog);
 
-      g_queue_push_tail (sn->priv->dialog_queue, notification);
+      g_queue_push_tail (sn->priv->dialog_queue, dialog);
     } 
   else
-    return
+    return;
 
-  g_hash_table_insert (sn->priv->notifications, 
-                       GINT_TO_POINTER (id), 
-                       notification);
+  g_signal_connect_object (notification, "closed",
+                           G_CALLBACK (gtk_widget_destroy), dialog,
+                           G_CONNECT_SWAPPED);
 }
 
 static void
@@ -280,10 +227,6 @@ hd_system_notifications_init (HDSystemNotifications *sn)
 {
   sn->priv = HD_SYSTEM_NOTIFICATIONS_GET_PRIVATE (sn);
 
-  sn->priv->notifications = g_hash_table_new_full (g_direct_hash, 
-                                                   g_direct_equal,
-                                                   NULL,
-                                                   NULL);
   sn->priv->dialog_queue = g_queue_new ();
 }
 
@@ -293,10 +236,8 @@ hd_system_notifications_get ()
   HDSystemNotifications *sn = g_object_new (HD_TYPE_SYSTEM_NOTIFICATIONS, NULL);
 
   sn->priv->nm = hd_notification_manager_get ();
-  g_signal_connect (sn->priv->nm, "notification-sent",
-                    G_CALLBACK (notification_sent), sn);
-  g_signal_connect (sn->priv->nm, "notification-closed",
-                    G_CALLBACK (notification_closed), sn);
+  g_signal_connect (sn->priv->nm, "notified",
+                    G_CALLBACK (system_notifications_notified), sn);
 
   return sn;
 }
