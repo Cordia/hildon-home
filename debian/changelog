@@ -1,5 +1,7 @@
-hildon-home (0.1.0~unreleased) unstable; urgency=low
+hildon-home (0.1.0) unstable; urgency=low
 
-  * Unreleased ...
+  * Initial release.
+  * Support to display home applets.
+  * Support to manage and display notifications.
 
- -- Jan Arne Petersen <jpetersen@openismus.com>  Fri, 12 Sep 2008 15:13:35 +0200
+ -- Jan Arne Petersen <jpetersen@openismus.com>  Wed, 24 Sep 2008 17:04:11 +0200

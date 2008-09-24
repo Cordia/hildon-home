@@ -1,5 +1,9 @@
 2008-09-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Release 0.1.0
+
+2008-09-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* debian/control: Update require libhildondesktop1-dev version.
 
 2008-09-24  Jan Arne Petersen  <jpetersen@openismus.com>
