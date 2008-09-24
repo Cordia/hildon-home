@@ -1,5 +1,10 @@
 2008-09-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/hildon-home.init:
+	* debian/rules: Added hildon-home startup script.
+
+2008-09-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* configure.ac: Add gettext support.
 
 	* src/notification-groups.conf: Add configuration file for

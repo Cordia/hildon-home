@@ -1,0 +1,28 @@
+#! /bin/sh
+
+if [ -r /etc/osso-af-init/af-defines.sh ]; then
+  source /etc/osso-af-init/af-defines.sh
+fi
+
+case "$1" in
+start)
+        su - user $LAUNCHWRAPPER_TRYRESTART start \
+	  hildon-home /usr/bin/hildon-home
+        ;;
+stop)
+        su - user $LAUNCHWRAPPER_TRYRESTART stop \
+	  hildon-home /usr/bin/hildon-home
+        ;;
+restart)
+        echo "$0: not implemented"
+        exit 1
+        ;;
+force-reload)
+        echo "$0: not implemented"
+        exit 1
+        ;;
+*)      echo "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+
