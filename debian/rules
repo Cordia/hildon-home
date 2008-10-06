@@ -73,6 +73,8 @@ install: build
 
 # Add here commands to install the package into debian/build
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/build
+	install -m644 -d $(CURDIR)/debian/build/etc/init.d/
+	install -m644 $(CURDIR)/debian/hildon-home.init $(CURDIR)/debian/build/etc/init.d/	
 
 ifeq "$(strip $(LAUNCHER))" "yes"
 	mv debian/build/usr/bin/hildon-home debian/build/usr/bin/hildon-home.launch
@@ -96,14 +98,14 @@ binary-arch: build install
 	dh_installchangelogs 
 #	dh_installexamples
 	dh_installdocs
-	dh_install --sourcedir=debian/build -v
+	dh_install --sourcedir=debian/build  -v
 #	dh_installmenu
 #	dh_installdebconf	
 #	dh_installlogrotate
 #	dh_installemacsen
 #	dh_installpam
 #	dh_installmime
-#	dh_installinit
+	dh_installinit 
 #	dh_installcron
 #	dh_installinfo
 #	dh_installman
@@ -111,7 +113,7 @@ binary-arch: build install
 	dh_strip --dbg-package="hildon-home"
 	dh_compress
 	dh_fixperms
-	dh_installinit --no-start -- start 51 2 3 4 . stop 20 0 1 5 6 .
+	dh_installinit -r -- start 51 2 3 4 . stop 20 0 1 5 6 .
 #	dh_perl
 #	dh_python
 	dh_makeshlibs -V
