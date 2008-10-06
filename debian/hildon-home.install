@@ -1,3 +1,4 @@
 etc/hildon-desktop/*.conf
 etc/hildon-desktop/*.plugins
 usr/bin/hildon-home
+etc/init.d/hildon-home.init
