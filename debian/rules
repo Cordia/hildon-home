@@ -105,7 +105,6 @@ binary-arch: build install
 #	dh_installemacsen
 #	dh_installpam
 #	dh_installmime
-	dh_installinit 
 #	dh_installcron
 #	dh_installinfo
 #	dh_installman
@@ -113,7 +112,8 @@ binary-arch: build install
 	dh_strip --dbg-package="hildon-home"
 	dh_compress
 	dh_fixperms
-	dh_installinit -r -- start 51 2 3 4 . stop 20 0 1 5 6 .
+	dh_installinit 
+#	dh_installinit -r -- start 51 2 3 4 . stop 20 0 1 5 6 .
 #	dh_perl
 #	dh_python
 	dh_makeshlibs -V
