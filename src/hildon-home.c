@@ -38,6 +38,7 @@
 #include "hd-notification-manager.h"
 #include "hd-system-notifications.h"
 #include "hd-incoming-events.h"
+#include "hd-shortcuts.h"
 
 #define HD_STAMP_DIR   "/tmp/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
@@ -102,6 +103,7 @@ main (int argc, char **argv)
   HDPluginManager *notification_pm, *home_pm;
   HDNotificationManager *nm;
   HDSystemNotifications *sn;
+  HDShortcuts *shortcuts;
 
   setlocale (LC_ALL, "");
   bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
@@ -148,6 +150,9 @@ main (int argc, char **argv)
   /* Load Plugins when idle */
   gdk_threads_add_idle (load_plugins_idle, home_pm);
   gdk_threads_add_idle (load_plugins_idle, notification_pm);
+
+  /* Task Shortcuts */
+  shortcuts = hd_shortcuts_get ();
 
   /* Start the main loop */
   gtk_main ();

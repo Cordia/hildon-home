@@ -41,8 +41,12 @@ hildon_home_SOURCES = \
 	hd-incoming-events.h		\
 	hd-notification-manager.c	\
 	hd-notification-manager.h	\
+	hd-shortcuts.c			\
+	hd-shortcuts.h			\
 	hd-system-notifications.c	\
 	hd-system-notifications.h	\
+	hd-task-shortcut.c		\
+	hd-task-shortcut.h		\
 	hildon-home.c
 
 hildon_home_LDFLAGS = \

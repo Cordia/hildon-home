@@ -1,3 +1,16 @@
+2008-10-07  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/Makefile.am: Add hd-shortcuts.[ch] and hd-task-shortcut.[ch].
+
+	* src/hd-shortcuts.c:
+	* src/hd-shortcuts.h: Add support for Task Shortcut configuration via
+	GConf.
+
+	* src/hd-task-shortcut.c:
+	* src/hd-task-shortcut.h: Add support for Task Shortcut applets.
+
+	* src/hildon-home.c: Add support for Task Shortcut applets.
+
 2008-09-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Release 0.1.0
