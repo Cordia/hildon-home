@@ -1,3 +1,10 @@
+2008-10-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac:
+	* debian/changelog: Release 0.1.2
+
+	* debian/conffiles: Remove empty line.
+
 2008-10-07  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/Makefile.am: Add hd-shortcuts.[ch] and hd-task-shortcut.[ch].

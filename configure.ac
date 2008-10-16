@@ -1,4 +1,4 @@
-AC_INIT([hildon-home], [0.1.0])
+AC_INIT([hildon-home], [0.1.2])
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(config.h)
