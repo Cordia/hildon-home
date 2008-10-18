@@ -29,6 +29,7 @@
 
 #include <string.h>
 
+#include "hd-bookmark-shortcut.h"
 #include "hd-task-shortcut.h"
 
 #include "hd-shortcuts.h"
@@ -42,7 +43,8 @@
 
 struct _HDShortcutsPrivate
 {
-  GHashTable *applets;
+  GHashTable *bookmark_applets;
+  GHashTable *task_applets;
 
   GConfClient *gconf_client;
 };
@@ -111,18 +113,20 @@ create_sync_lists (GSList         *old,
   *to_remove = g_slist_concat (old, remove);
 }
 
+typedef GtkWidget *(*NewShortcutFunc) (gpointer data);
+
 static void
-task_shortcuts_sync (HDShortcuts *shortcuts,
-                     GSList      *new)
+shortcuts_sync (GHashTable      *applets,
+                GSList          *new,
+                NewShortcutFunc  new_shortcut)
 {
-  HDShortcutsPrivate *priv = shortcuts->priv;
   GHashTableIter iter;
   gpointer key;
   GSList *old = NULL;
   GSList *to_add, *to_remove;
   GSList *s;
 
-  g_hash_table_iter_init (&iter, priv->applets);
+  g_hash_table_iter_init (&iter, applets);
   while (g_hash_table_iter_next (&iter, &key, NULL)) 
     {
       old = g_slist_append (old, g_strdup (key));
@@ -135,18 +139,18 @@ task_shortcuts_sync (HDShortcuts *shortcuts,
 
   for (s = to_remove; s; s = s->next)
     {
-      g_hash_table_remove (priv->applets,
+      g_hash_table_remove (applets,
                            s->data);
       g_free (s->data);
     }
 
   for (s = to_add; s; s = s->next)
     {
-      HDTaskShortcut *shortcut;
+      GtkWidget *shortcut;
 
-      shortcut = hd_task_shortcut_new (s->data);
+      shortcut = new_shortcut (s->data);
 
-      g_hash_table_insert (priv->applets,
+      g_hash_table_insert (applets,
                            s->data,
                            shortcut);
 
@@ -155,6 +159,33 @@ task_shortcuts_sync (HDShortcuts *shortcuts,
 
   g_slist_free (to_remove);
   g_slist_free (to_add);
+}
+
+static void
+bookmark_shortcuts_notify (GConfClient *client,
+                           guint        cnxn_id,
+                           GConfEntry  *entry,
+                           HDShortcuts *shortcuts)
+{
+  HDShortcutsPrivate *priv = shortcuts->priv;
+  GSList *list;
+  GError *error = NULL;
+
+  /* Get the list of strings of task shortcuts */
+  list = gconf_client_get_list (priv->gconf_client,
+                                HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
+                                GCONF_VALUE_STRING,
+                                &error);
+
+  /* Check if there was an error */
+  if (!error)
+    shortcuts_sync (priv->bookmark_applets, list,
+                    (NewShortcutFunc) hd_bookmark_shortcut_new);
+  else
+    {
+      g_warning ("Could not get list of task shortcuts from GConf: %s", error->message);
+      g_error_free (error);
+    }
 }
 
 static void
@@ -175,7 +206,8 @@ task_shortcuts_notify (GConfClient *client,
 
   /* Check if there was an error */
   if (!error)
-    task_shortcuts_sync (shortcuts, list);
+    shortcuts_sync (priv->task_applets, list,
+                    (NewShortcutFunc) hd_task_shortcut_new);
   else
     {
       g_warning ("Could not get list of task shortcuts from GConf: %s", error->message);
@@ -202,10 +234,16 @@ hd_shortcuts_finalize (GObject *object)
 {
   HDShortcutsPrivate *priv = HD_SHORTCUTS (object)->priv;
 
-  if (priv->applets)
+  if (priv->bookmark_applets)
     {
-      g_hash_table_destroy (priv->applets);
-      priv->applets = NULL;
+      g_hash_table_destroy (priv->bookmark_applets);
+      priv->bookmark_applets = NULL;
+    }
+
+   if (priv->task_applets)
+    {
+      g_hash_table_destroy (priv->task_applets);
+      priv->task_applets = NULL;
     }
 
   G_OBJECT_CLASS (hd_shortcuts_parent_class)->finalize (object);
@@ -232,11 +270,17 @@ hd_shortcuts_init (HDShortcuts *shortcuts)
   shortcuts->priv = HD_SHORTCUTS_GET_PRIVATE (shortcuts);
   priv = shortcuts->priv;
 
+  /* Create Hashtable for bookmark applets */
+  priv->bookmark_applets = g_hash_table_new_full (g_str_hash,
+                                                  g_str_equal,
+                                                  (GDestroyNotify) g_free,
+                                                  (GDestroyNotify) gtk_widget_destroy);
+
   /* Create Hashtable for task shortcut applets */
-  priv->applets = g_hash_table_new_full (g_str_hash,
-                                         g_str_equal,
-                                         (GDestroyNotify) g_free,
-                                         (GDestroyNotify) gtk_widget_destroy);
+  priv->task_applets = g_hash_table_new_full (g_str_hash,
+                                              g_str_equal,
+                                              (GDestroyNotify) g_free,
+                                              (GDestroyNotify) gtk_widget_destroy);
 
   /* GConf configuration in /apps/osso/hildon-home */
   priv->gconf_client = gconf_client_get_default ();
@@ -252,13 +296,37 @@ hd_shortcuts_init (HDShortcuts *shortcuts)
       error = NULL;
     }
 
-  /* Add notification of the task-shortcuts key */
+  /* Add notification of the bookmark shortcuts key */
+  gconf_client_notify_add (priv->gconf_client,
+                           HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
+                           (GConfClientNotifyFunc) bookmark_shortcuts_notify,
+                           shortcuts,
+                           NULL,
+                           NULL);
+
+  /* Add notification of the task shortcuts key */
   gconf_client_notify_add (priv->gconf_client,
                            HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,
                            (GConfClientNotifyFunc) task_shortcuts_notify,
                            shortcuts,
                            NULL,
                            NULL);
+
+  /* Get the list of strings of bookmark shortcuts */
+  list = gconf_client_get_list (priv->gconf_client,
+                                HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
+                                GCONF_VALUE_STRING,
+                                &error);
+
+  /* Check if there was an error */
+  if (!error)
+    shortcuts_sync (priv->bookmark_applets, list,
+                    (NewShortcutFunc) hd_bookmark_shortcut_new);
+  else
+    {
+      g_warning ("Could not get list of task shortcuts from GConf: %s", error->message);
+      g_error_free (error);
+    }
 
   /* Get the list of strings of task shortcuts */
   list = gconf_client_get_list (priv->gconf_client,
@@ -268,7 +336,8 @@ hd_shortcuts_init (HDShortcuts *shortcuts)
 
   /* Check if there was an error */
   if (!error)
-    task_shortcuts_sync (shortcuts, list);
+    shortcuts_sync (priv->task_applets, list,
+                    (NewShortcutFunc) hd_task_shortcut_new);
   else
     {
       g_warning ("Could not get list of task shortcuts from GConf: %s", error->message);

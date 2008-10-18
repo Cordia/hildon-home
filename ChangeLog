@@ -1,3 +1,15 @@
+2008-10-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-incoming-events.c (group_free): Free translation domain.
+	  (group_update): Use dgettext() and translation domain instead of
+	  gettext().
+	  (load_notification_groups): Load the optional translation domain
+	  value (Translation-Domain).
+
+	* src/hd-task-shortcut.c (hd_task_shortcut_load_from_file): Load the
+	optional translation domain value and use dgettext() instead of
+	gettext().
+
 2008-10-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* configure.ac:

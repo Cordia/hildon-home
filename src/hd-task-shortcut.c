@@ -41,6 +41,7 @@
 
 /* Task .desktop file keys */
 #define HD_KEY_FILE_DESKTOP_KEY_SERVICE "X-Osso-Service"
+#define HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN "X-Osso-Translation-Domain"
 
 #define HD_TASK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
                                                                         HD_TYPE_TASK_SHORTCUT,\
@@ -54,6 +55,8 @@ struct _HDTaskShortcutPrivate
 
   gchar *exec;
   gchar *service;
+
+  gchar *translation_domain;
 
   GtkWidget *label;
   GtkWidget *icon;
@@ -121,14 +124,17 @@ hd_task_shortcut_load_from_file (HDTaskShortcut *shortcut,
                                  &error))
     {
       gchar *icon_name;
+      gchar *domain = GETTEXT_PACKAGE;
 
       priv->name = g_key_file_get_locale_string (key_file,
                                                  G_KEY_FILE_DESKTOP_GROUP,
                                                  G_KEY_FILE_DESKTOP_KEY_NAME,
                                                  NULL,
                                                  NULL);
+      if (priv->translation_domain)
+        domain = priv->translation_domain;
       gtk_label_set_text (GTK_LABEL (shortcut->priv->label),
-                          gettext (priv->name));
+                          dgettext (domain, priv->name));
 
       icon_name = g_key_file_get_string (key_file,
                                          G_KEY_FILE_DESKTOP_GROUP,
@@ -154,6 +160,10 @@ hd_task_shortcut_load_from_file (HDTaskShortcut *shortcut,
                                              G_KEY_FILE_DESKTOP_GROUP,
                                              HD_KEY_FILE_DESKTOP_KEY_SERVICE,
                                              NULL);
+      priv->translation_domain = g_key_file_get_string (key_file,
+                                                        G_KEY_FILE_DESKTOP_GROUP,
+                                                        HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN,
+                                                        NULL);
     }
   else
     {

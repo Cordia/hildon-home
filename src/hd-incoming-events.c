@@ -45,6 +45,7 @@ typedef struct
   gchar *body;
   gchar *icon;
   gchar *dbus_callback;
+  gchar *translation_domain;
   GtkWidget *switcher_window;
   GPtrArray *notifications;
 } HDIncomingEventGroup;
@@ -66,6 +67,7 @@ group_free (HDIncomingEventGroup *group)
   g_free (group->body);
   g_free (group->icon);
   g_free (group->dbus_callback);
+  g_free (group->translation_domain);
   if (GTK_IS_WIDGET (group->switcher_window))
     gtk_widget_destroy (group->switcher_window);
   g_ptr_array_free (group->notifications, TRUE);
@@ -162,8 +164,12 @@ group_update (HDIncomingEventGroup *group)
                 }
             }
 
-          summary = g_strdup_printf (gettext (group->summary), group->notifications->len);
-          body = g_strdup_printf (gettext (group->body), latest_summary);
+          summary = g_strdup_printf (dgettext (group->translation_domain,
+                                               group->summary),
+                                     group->notifications->len);
+          body = g_strdup_printf (dgettext (group->translation_domain,
+                                            group->body),
+                                  latest_summary);
 
           g_object_set (group->switcher_window,
                         "title", summary,
@@ -433,6 +439,13 @@ load_notification_groups (HDIncomingEvents *ie)
                                                     &error);
       if (error)
         goto load_key_error;
+
+      group->translation_domain = g_key_file_get_string (key_file,
+                                                         groups[i],
+                                                         "translation-domain",
+                                                         NULL);
+      if (!group->translation_domain)
+        group->translation_domain = g_strdup (GETTEXT_PACKAGE);
 
       g_debug ("Add group %s", groups[i]);
       g_hash_table_insert (ie->priv->groups,

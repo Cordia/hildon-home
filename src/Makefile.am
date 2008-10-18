@@ -35,6 +35,8 @@ hd-marshal.h: hd-marshal.list
 
 hildon_home_SOURCES = \
 	$(BUILT_SOURCES)		\
+	hd-bookmark-shortcut.c		\
+	hd-bookmark-shortcut.h		\
 	hd-incoming-event-window.c	\
 	hd-incoming-event-window.h	\
 	hd-incoming-events.c		\
