@@ -1,3 +1,8 @@
+2008-10-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_new): Replace
+	dashes with slashes in the ID.
+
 2008-10-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-bookmark-shortcut.c:

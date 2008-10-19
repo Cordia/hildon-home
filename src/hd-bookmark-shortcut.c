@@ -299,14 +299,20 @@ GtkWidget *
 hd_bookmark_shortcut_new (const gchar *uri)
 {
   GtkWidget *shortcut;
-  gchar *id;
+  gchar *escaped_uri, *id;
 
-  id = g_strdup_printf (PLUGIN_ID_FORMAT, uri);
+  /* Escape dashes in uri */
+  escaped_uri = g_strdup (uri);
+  g_strdelimit (escaped_uri, "/", '_'); /* FIXME is this unique? */
+
+  id = g_strdup_printf (PLUGIN_ID_FORMAT, escaped_uri);
 
   shortcut = g_object_new (HD_TYPE_BOOKMARK_SHORTCUT,
                            "plugin-id", id,
                            "uri", uri,
                            NULL);
+
+  g_free (escaped_uri);
   g_free (id);
 
   return shortcut;
