@@ -2,7 +2,7 @@ Source: hildon-home
 Section: x11
 Priority: optional
 Maintainer: Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
-Build-Depends: debhelper (>= 4.0.0), pkg-config, libhildon1-dev (>= 2.1.4), libosso-gnomevfs2-dev, libdbus-1-dev (>= 1.0.2), libhildondesktop1-dev (>= 2.1.4), libsqlite3-dev
+Build-Depends: debhelper (>= 4.0.0), pkg-config, libhildon1-dev (>= 2.1.4), libosso-gnomevfs2-dev, libdbus-1-dev (>= 1.0.2), libhildondesktop1-dev (>= 2.1.6~unreleased), libsqlite3-dev
 Standards-Version: 3.6.0
 
 Package: hildon-home

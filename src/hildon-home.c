@@ -98,8 +98,6 @@ home_plugin_removed (HDPluginManager *pm,
 int
 main (int argc, char **argv)
 {
-  gchar *user_config_dir;
-  HDConfigFile *config_file;
   HDPluginManager *notification_pm, *home_pm;
   HDNotificationManager *nm;
   HDSystemNotifications *sn;
@@ -118,23 +116,11 @@ main (int argc, char **argv)
 
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
 
-  /* User configuration directory (~/) */
-  user_config_dir = g_build_filename (g_get_user_config_dir (),
-                                      "hildon-desktop",
-                                      NULL);
-  g_debug ("User config dir: %s", user_config_dir);
+  notification_pm = hd_plugin_manager_new (
+                        hd_config_file_new_with_defaults ("notification.conf"));
 
-  config_file = hd_config_file_new (HD_DESKTOP_CONFIG_PATH,
-                                    user_config_dir,
-                                    "notification.conf");
-  notification_pm = hd_plugin_manager_new (config_file);
-
-  config_file = hd_config_file_new (HD_DESKTOP_CONFIG_PATH,
-                                    user_config_dir,
-                                    "home.conf");
-  home_pm = hd_plugin_manager_new (config_file);
-
-  g_free (user_config_dir);
+  home_pm = hd_plugin_manager_new (
+                hd_config_file_new_with_defaults ("home.conf"));
 
   g_signal_connect (home_pm, "plugin-added",
                     G_CALLBACK (home_plugin_added), NULL);
