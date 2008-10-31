@@ -55,6 +55,7 @@ clean:
 
 # Add here commands to clean up after the build process.
 	-$(MAKE) distclean
+	[ ! -f Makefile ] || $(MAKE) distclean
 ifneq "$(wildcard /usr/share/misc/config.sub)" ""
 	cp -f /usr/share/misc/config.sub config.sub
 endif
@@ -112,8 +113,7 @@ binary-arch: build install
 	dh_strip --dbg-package="hildon-home"
 	dh_compress
 	dh_fixperms
-	dh_installinit 
-#	dh_installinit -r -- start 51 2 3 4 . stop 20 0 1 5 6 .
+	dh_installinit --no-start -- start 51 2 3 4 . stop 20 0 1 5 6 .
 #	dh_perl
 #	dh_python
 	dh_makeshlibs -V

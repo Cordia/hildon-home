@@ -1,5 +1,12 @@
 2008-10-31  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/compat:
+	* debian/conffiles:
+	* debian/control:
+	* debian/rules: Fix lintian warnings.
+
+2008-10-31  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* debian/changelog: Update changelog for 0.1.3 release.
 
 2008-10-31  Jan Arne Petersen  <jpetersen@openismus.com>
