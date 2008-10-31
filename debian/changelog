@@ -1,8 +1,8 @@
-hildon-home (0.1.3~unreleased) unstable; urgency=low
+hildon-home (0.1.3) unstable; urgency=low
 
   * Update for libhildondesktop1 API chnages.
 
- -- Jan Arne Petersen <jpetersen@openismus.com>  Thu, 30 Oct 2008 00:51:48 +0100
+ -- Jan Arne Petersen <jpetersen@openismus.com>  Fri, 31 Oct 2008 12:04:10 +0100
 
 hildon-home (0.1.2) unstable; urgency=low
 
