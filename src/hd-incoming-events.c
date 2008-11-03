@@ -39,13 +39,19 @@
 #define HD_INCOMING_EVENTS_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_INCOMING_EVENTS, HDIncomingEventsPrivate))
 
+#define NOTIFICATION_GROUP_KEY_SUMMARY "Summary"
+#define NOTIFICATION_GROUP_KEY_BODY "Body"
+#define NOTIFICATION_GROUP_KEY_ICON "Icon"
+#define NOTIFICATION_GROUP_KEY_DBUS_CALL "D-Bus-Call"
+#define NOTIFICATION_GROUP_KEY_TEXT_DOMAIN "Text-Domain"
+
 typedef struct
 {
   gchar *summary;
   gchar *body;
   gchar *icon;
   gchar *dbus_callback;
-  gchar *translation_domain;
+  gchar *text_domain;
   GtkWidget *switcher_window;
   GPtrArray *notifications;
 } HDIncomingEventGroup;
@@ -67,7 +73,7 @@ group_free (HDIncomingEventGroup *group)
   g_free (group->body);
   g_free (group->icon);
   g_free (group->dbus_callback);
-  g_free (group->translation_domain);
+  g_free (group->text_domain);
   if (GTK_IS_WIDGET (group->switcher_window))
     gtk_widget_destroy (group->switcher_window);
   g_ptr_array_free (group->notifications, TRUE);
@@ -145,6 +151,7 @@ group_update (HDIncomingEventGroup *group)
           guint i;
           time_t max_time = -2;
           const gchar *latest_summary = "";
+          gchar *text_domain;
           gchar *summary;
           gchar *body;
 
@@ -152,7 +159,7 @@ group_update (HDIncomingEventGroup *group)
             {
               HDNotification *notification;
               time_t time;
-              
+
               notification = g_ptr_array_index (group->notifications,
                                                 i);
 
@@ -164,10 +171,14 @@ group_update (HDIncomingEventGroup *group)
                 }
             }
 
-          summary = g_strdup_printf (dgettext (group->translation_domain,
+          /* Use default domain if no text domain is set */
+          text_domain = group->text_domain ? group->text_domain : GETTEXT_PACKAGE;
+
+          /* Create translated summary and body texts */
+          summary = g_strdup_printf (dgettext (text_domain,
                                                group->summary),
                                      group->notifications->len);
-          body = g_strdup_printf (dgettext (group->translation_domain,
+          body = g_strdup_printf (dgettext (text_domain,
                                             group->body),
                                   latest_summary);
 
@@ -414,38 +425,36 @@ load_notification_groups (HDIncomingEvents *ie)
 
       group->summary = g_key_file_get_string (key_file,
                                               groups[i],
-                                              "summary",
+                                              NOTIFICATION_GROUP_KEY_SUMMARY,
                                               &error);
       if (error)
         goto load_key_error;
 
       group->body = g_key_file_get_string (key_file,
                                            groups[i],
-                                           "body",
+                                           NOTIFICATION_GROUP_KEY_BODY,
                                            &error);
       if (error)
         goto load_key_error;
 
       group->icon = g_key_file_get_string (key_file,
                                            groups[i],
-                                           "icon",
+                                           NOTIFICATION_GROUP_KEY_ICON,
                                            &error);
       if (error)
         goto load_key_error;
 
       group->dbus_callback = g_key_file_get_string (key_file,
                                                     groups[i],
-                                                    "dbus-call",
+                                                    NOTIFICATION_GROUP_KEY_DBUS_CALL,
                                                     &error);
       if (error)
         goto load_key_error;
 
-      group->translation_domain = g_key_file_get_string (key_file,
-                                                         groups[i],
-                                                         "translation-domain",
-                                                         NULL);
-      if (!group->translation_domain)
-        group->translation_domain = g_strdup (GETTEXT_PACKAGE);
+      group->text_domain = g_key_file_get_string (key_file,
+                                                  groups[i],
+                                                  NOTIFICATION_GROUP_KEY_TEXT_DOMAIN,
+                                                  NULL);
 
       g_debug ("Add group %s", groups[i]);
       g_hash_table_insert (ie->priv->groups,
@@ -458,7 +467,7 @@ load_key_error:
       /* FIXME      hd_switcher_menu_free_notification_group (ngroup); */
       g_error_free (error);
       g_free (groups[i]);
-     }
+    }
   g_free (groups);
 
   g_key_file_free (key_file);
