@@ -4,13 +4,16 @@ if [ -r /etc/osso-af-init/af-defines.sh ]; then
   source /etc/osso-af-init/af-defines.sh
 fi
 
+START_AS_USER=""
+[ -f /bin/su ] && START_AS_USER="su - user"
+
 case "$1" in
 start)
-        su - user $LAUNCHWRAPPER_TRYRESTART start \
+        $START_AS_USER $LAUNCHWRAPPER_TRYRESTART start \
 	  hildon-home /usr/bin/hildon-home
         ;;
 stop)
-        su - user $LAUNCHWRAPPER_TRYRESTART stop \
+        $START_AS_USER $LAUNCHWRAPPER_TRYRESTART stop \
 	  hildon-home /usr/bin/hildon-home
         ;;
 restart)

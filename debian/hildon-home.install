@@ -1,4 +1,3 @@
-etc/hildon-desktop/*.conf
-etc/hildon-desktop/*.plugins
-usr/bin/hildon-home
-etc/init.d/hildon-home.init
+debian/tmp/etc/hildon-desktop/*.conf
+debian/tmp/etc/hildon-desktop/*.plugins
+debian/tmp/usr/bin/hildon-home
