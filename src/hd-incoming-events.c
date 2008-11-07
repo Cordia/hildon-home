@@ -39,6 +39,7 @@
 #define HD_INCOMING_EVENTS_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_INCOMING_EVENTS, HDIncomingEventsPrivate))
 
+#define NOTIFICATION_GROUP_KEY_DESTINATION "Destination"
 #define NOTIFICATION_GROUP_KEY_SUMMARY "Summary"
 #define NOTIFICATION_GROUP_KEY_BODY "Body"
 #define NOTIFICATION_GROUP_KEY_ICON "Icon"
@@ -47,6 +48,7 @@
 
 typedef struct
 {
+  gchar *destination;
   gchar *summary;
   gchar *body;
   gchar *icon;
@@ -69,6 +71,7 @@ G_DEFINE_TYPE (HDIncomingEvents, hd_incoming_events, G_TYPE_OBJECT);
 static void
 group_free (HDIncomingEventGroup *group)
 {
+  g_free (group->destination);
   g_free (group->summary);
   g_free (group->body);
   g_free (group->icon);
@@ -140,7 +143,9 @@ group_update (HDIncomingEventGroup *group)
     {
       if (!GTK_IS_WIDGET (group->switcher_window))
         {
-          group->switcher_window = hd_incoming_event_window_new (FALSE, NULL, NULL, -1, NULL);
+          group->switcher_window = hd_incoming_event_window_new (FALSE,
+                                                                 group->destination,
+                                                                 NULL, NULL, -1, NULL);
           g_signal_connect (group->switcher_window, "response",
                             G_CALLBACK (group_window_response),
                             group);
@@ -201,6 +206,7 @@ group_update (HDIncomingEventGroup *group)
                         "title", hd_notification_get_summary (notification),
                         "message", hd_notification_get_body (notification),
                         "icon", hd_notification_get_icon (notification),
+                        "time", hd_notification_get_time (notification),
                         NULL);
         }
 
@@ -278,6 +284,7 @@ preview_window_response (HDIncomingEventWindow     *window,
           GtkWidget *switcher_window;
 
           switcher_window = hd_incoming_event_window_new (FALSE,
+                                                          NULL,
                                                           hd_notification_get_summary (notification),
                                                           hd_notification_get_body (notification),
                                                           hd_notification_get_time (notification),
@@ -351,6 +358,7 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
 
   /* Create the notification preview window */
   preview_window = hd_incoming_event_window_new (TRUE,
+                                                 NULL,
                                                  hd_notification_get_summary (notification),
                                                  hd_notification_get_body (notification),
                                                  hd_notification_get_time (notification),
@@ -423,6 +431,13 @@ load_notification_groups (HDIncomingEvents *ie)
 
       group->notifications = g_ptr_array_new ();
 
+      group->destination = g_key_file_get_string (key_file,
+                                                  groups[i],
+                                                  NOTIFICATION_GROUP_KEY_DESTINATION,
+                                                  &error);
+      if (error)
+        goto load_key_error;
+
       group->summary = g_key_file_get_string (key_file,
                                               groups[i],
                                               NOTIFICATION_GROUP_KEY_SUMMARY,
@@ -464,7 +479,7 @@ load_notification_groups (HDIncomingEvents *ie)
 
 load_key_error:
       g_warning ("Error loading notification groups file: %s", error->message);
-      /* FIXME      hd_switcher_menu_free_notification_group (ngroup); */
+      group_free (group);
       g_error_free (error);
       g_free (groups[i]);
     }

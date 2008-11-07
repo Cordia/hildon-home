@@ -27,18 +27,35 @@
 
 #include "hd-incoming-event-window.h"
 
+static void
+response (GtkWidget *win, int code)
+{
+  if (code == GTK_RESPONSE_OK)
+    g_warning ("GTK_RESPONSE_OK");
+  else if (code == GTK_RESPONSE_DELETE_EVENT)
+    g_warning ("GTK_RESPONSE_DELETE_EVENT");
+  else
+    g_warning ("response is unknown (%d)", code);
+
+  gtk_main_quit ();
+}
+
 int
 main (int argc, char **argv)
 {
+  GtkWidget *window;
+
   gtk_init (&argc, &argv);
 
   /* Demo notification window */
-  gtk_widget_show (hd_incoming_event_window_new (
-			  FALSE,
-			  "Email Sender",
-			  "Email Subject",
-			  12220784,
-			  "qgn_list_messagin"));
+  window = hd_incoming_event_window_new (FALSE,
+                                         "Osso_calculator",
+                                         "Email Sender",
+                                         "Email Subject",
+                                         12220784,
+                                         "qgn_list_messagin");
+  g_signal_connect (window, "response", G_CALLBACK (response), NULL);
+  gtk_widget_show (window);
 
   /* Start the main loop */
   gtk_main ();

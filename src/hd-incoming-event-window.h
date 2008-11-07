@@ -60,6 +60,7 @@ struct _HDIncomingEventWindowClass
 GType      hd_incoming_event_window_get_type (void);
 
 GtkWidget *hd_incoming_event_window_new      (gboolean     preview,
+                                              const gchar *destination,
                                               const gchar *summary,
                                               const gchar *body,
                                               time_t       time,

@@ -993,7 +993,7 @@ hd_notification_manager_notify (HDNotificationManager *nm,
 
       g_signal_emit (nm, signals[NOTIFIED], 0, notification);
 
-      if (persistent)
+      if (persistent && nm->priv->db)
         {
           hd_notification_manager_db_insert (nm, 
                                              app_name,

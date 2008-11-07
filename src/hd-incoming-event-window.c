@@ -53,6 +53,7 @@ enum
 {
   PROP_0,
   PROP_PREVIEW,
+  PROP_DESTINATION,
   PROP_ICON,
   PROP_TITLE,
   PROP_TIME,
@@ -69,6 +70,7 @@ static guint signals[N_SIGNALS];
 struct _HDIncomingEventWindowPrivate
 {
   gboolean preview;
+  gchar *destination;
 
   GtkWidget *icon;
   GtkWidget *title;
@@ -156,12 +158,44 @@ hd_incoming_event_window_button_press_event (GtkWidget      *widget,
 }
 
 static void
+hd_incoming_event_window_set_string_xwindow_property (GtkWidget *widget,
+                                                      const gchar *prop,
+                                                      const gchar *value)
+{
+  Atom atom;
+  GdkWindow *window;
+  GdkDisplay *dpy;
+
+  /* Check if widget is realized. */
+  if (!GTK_WIDGET_REALIZED (widget))
+    return;
+
+  window = widget->window;
+
+  dpy = gdk_drawable_get_display (window);
+  atom = gdk_x11_get_xatom_by_name_for_display (dpy, prop);
+
+  if (value)
+    {
+      /* Set property to given value */
+      XChangeProperty (GDK_WINDOW_XDISPLAY (window), GDK_WINDOW_XID (window),
+                       atom, XA_STRING, 8, PropModeReplace,
+                       (const guchar *)value, strlen (value));
+    }
+  else
+    {
+      /* Delete property if no value is given */
+      XDeleteProperty (GDK_WINDOW_XDISPLAY (window), GDK_WINDOW_XID (window),
+                       atom);
+    }
+}
+
+static void
 hd_incoming_event_window_realize (GtkWidget *widget)
 {
   HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (widget)->priv;
-  GdkDisplay *display;
-  Atom atom;
-  const gchar *notification_type;
+  const gchar *notification_type, *icon;
+  GtkIconSize icon_size;
 
   GTK_WIDGET_CLASS (hd_incoming_event_window_parent_class)->realize (widget);
 
@@ -169,20 +203,26 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   gdk_window_set_type_hint (widget->window, GDK_WINDOW_TYPE_HINT_NOTIFICATION);
 
   /* Set the _NET_WM_WINDOW_TYPE property to _HILDON_WM_WINDOW_TYPE_HOME_APPLET */
-  display = gdk_drawable_get_display (widget->window);
-  atom = gdk_x11_get_xatom_by_name_for_display (display,
-                                                "_HILDON_NOTIFICATION_TYPE");
-
   if (priv->preview)
     notification_type = "_HILDON_NOTIFICATION_TYPE_PREVIEW";
   else
     notification_type = "_HILDON_NOTIFICATION_TYPE_INCOMING_EVENT";
+  hd_incoming_event_window_set_string_xwindow_property (widget,
+                                            "_HILDON_NOTIFICATION_TYPE",
+                                            notification_type);
 
-  XChangeProperty (GDK_WINDOW_XDISPLAY (widget->window),
-                   GDK_WINDOW_XID (widget->window),
-                   atom, XA_STRING, 8, PropModeReplace,
-                   (guchar *) notification_type,
-                   strlen (notification_type));
+  /* Assume the properties have already been set.  Earlier these X window
+   * properties couldn't be set because we weren't realized. */
+  gtk_image_get_icon_name (GTK_IMAGE (priv->icon), &icon, &icon_size);
+  hd_incoming_event_window_set_string_xwindow_property (widget,
+                             "_HILDON_INCOMING_EVENT_NOTIFICATION_ICON",
+                             icon);
+  hd_incoming_event_window_set_string_xwindow_property (widget,
+                          "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
+                          gtk_label_get_text (GTK_LABEL (priv->title)));
+  hd_incoming_event_window_set_string_xwindow_property (widget,
+                          "_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION",
+                          priv->destination);
 }
 
 static void
@@ -231,6 +271,10 @@ hd_incoming_event_window_get_property (GObject      *object,
       g_value_set_boolean (value, priv->preview);
       break;
 
+    case PROP_DESTINATION:
+      g_value_set_string (value, priv->destination);
+      break;
+
     case PROP_ICON:
         {
           const gchar *icon_name;
@@ -269,6 +313,8 @@ hd_incoming_event_window_set_property (GObject      *object,
   switch (prop_id)
     {
     case PROP_PREVIEW:
+      /* NOTE Neither we nor the wm supports changing the preview
+       * property of an incoming event window. */
       priv->preview = g_value_get_boolean (value);
       /* Close button is not shown in preview windows */
       if (priv->preview)
@@ -277,14 +323,31 @@ hd_incoming_event_window_set_property (GObject      *object,
         gtk_widget_show (priv->cbox);
       break;
 
+    case PROP_DESTINATION:
+      g_free (priv->destination);
+      priv->destination = g_value_dup_string (value);
+      hd_incoming_event_window_set_string_xwindow_property (
+                         GTK_WIDGET (object),
+                         "_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION",
+                         priv->destination);
+      break;
+
     case PROP_ICON:
       gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
                                     g_value_get_string (value),
                                     0);
+      hd_incoming_event_window_set_string_xwindow_property (
+                             GTK_WIDGET (object),
+                             "_HILDON_INCOMING_EVENT_NOTIFICATION_ICON",
+                             g_value_get_string (value));
       break;
 
     case PROP_TITLE:
       gtk_label_set_text (GTK_LABEL (priv->title), g_value_get_string (value));
+      hd_incoming_event_window_set_string_xwindow_property (
+                          GTK_WIDGET (object),
+                          "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
+                          g_value_get_string (value));
       break;
 
     case PROP_TIME:
@@ -340,6 +403,13 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
                                                          "If the window is a preview window",
                                                          FALSE,
                                                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+  g_object_class_install_property (object_class,
+                                   PROP_DESTINATION,
+                                   g_param_spec_string ("destination",
+                                                        "Destination",
+                                                        "The application we can associate this notification with",
+                                                        NULL,
+                                                        G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
                                    PROP_ICON,
                                    g_param_spec_string ("icon",
@@ -410,10 +480,12 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   gtk_size_group_add_widget (icon_size_group, fbox);
 
   priv->title = gtk_label_new (NULL);
+  gtk_widget_set_name (GTK_WIDGET (priv->title), "summary");
   gtk_widget_show (priv->title);
   gtk_misc_set_alignment (GTK_MISC (priv->title), 0.0, 0.5);
 
   priv->time_label = gtk_label_new (NULL);
+  gtk_widget_set_name (GTK_WIDGET (priv->time_label), "time");
   gtk_widget_show (priv->time_label);
 
   /* fill box for the close button in the title row */
@@ -422,6 +494,7 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   gtk_widget_set_size_request (priv->cbox, INCOMING_EVENT_WINDOW_CLOSE, -1);
 
   priv->message = gtk_label_new (NULL);
+  gtk_widget_set_name (GTK_WIDGET (priv->message), "message");
   gtk_widget_show (priv->message);
   gtk_misc_set_alignment (GTK_MISC (priv->message), 0.0, 0.5);
 
@@ -447,6 +520,7 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
 
 GtkWidget *
 hd_incoming_event_window_new (gboolean     preview,
+                              const gchar *destination,
                               const gchar *summary,
                               const gchar *body,
                               time_t       time,
@@ -456,6 +530,7 @@ hd_incoming_event_window_new (gboolean     preview,
 
   window = g_object_new (HD_TYPE_INCOMING_EVENT_WINDOW,
                          "preview", preview,
+                         "destination", destination,
                          "title", summary,
                          "message", body,
                          "time", (gint64) time,

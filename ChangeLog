@@ -1,3 +1,33 @@
+2008-11-07  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Incoming events enhancements. This patch makes HDIncomingEventWindow:s
+	more informative for the window manager.
+
+	patch by: adam.endrodi@blumsoft.eu
+
+	* src/hd-incoming-event-window.c
+	  (hd_incoming_event_window_set_string_xwindow_property): Add a
+	  convenience function to set a string type window property.
+	  (hd_incoming_event_window_realize): Set additional window
+	  properties.
+	  (hd_incoming_event_window_get_property,
+	  hd_incoming_event_window_set_property,
+	  hd_incoming_event_window_class_init): Add destination property.
+	  (hd_incoming_event_window_init): Add widget names (for theming).
+	  (hd_incoming_event_window_new): Add destination argument.
+	* src/hd-incoming-event-window.h: Add destination argument to _new
+	  fucntion.
+	* src/hd-incoming-events.c (group_free, group_update,
+	  preview_window_response, hd_incoming_events_notified,
+	  load_notification_groups): Add destination key.
+	* src/notification-groups.conf: Add Destination key.
+	* src/test-incoming-event.c (response, main): Add response handler
+
+2008-11-07  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-notification-manager.c (hd_notification_manager_notify):
+	Check for opened database.
+
 2008-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/hildon-home.init: Fix su usage in scratchbox.
