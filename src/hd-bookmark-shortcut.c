@@ -42,18 +42,10 @@
 
 struct _HDBookmarkShortcutPrivate
 {
-  gchar *uri;
-
   GtkWidget *label;
   GtkWidget *icon;
 
   gboolean button_pressed;
-};
-
-enum
-{
-  PROP_0,
-  PROP_URI,
 };
 
 G_DEFINE_TYPE (HDBookmarkShortcut, hd_bookmark_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
@@ -64,59 +56,35 @@ hd_bookmark_shortcut_set_uri (HDBookmarkShortcut *shortcut,
 {
   HDBookmarkShortcutPrivate *priv = shortcut->priv;
 
-  priv->uri = g_strdup (uri);
-
   gtk_label_set_text (GTK_LABEL (priv->label), uri);
 
   /* FIXME Set label and icon from bookmark manager/file */
 }
 
+static GObject*
+hd_bookmark_shortcut_constructor (GType                  type,
+                                  guint                  n_construct_properties,
+                                  GObjectConstructParam *construct_properties)
+{
+  GObject *object;
+  gchar *uri;
+
+  object = G_OBJECT_CLASS (hd_bookmark_shortcut_parent_class)->constructor (type,
+                                                                            n_construct_properties,
+                                                                            construct_properties);
+
+  uri = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (object));
+
+  hd_bookmark_shortcut_set_uri (HD_BOOKMARK_SHORTCUT (object),
+                                uri);  
+
+  return object;
+}
+
 static void
 hd_bookmark_shortcut_finalize (GObject *object)
 {
-  HDBookmarkShortcutPrivate *priv = HD_BOOKMARK_SHORTCUT (object)->priv;
-
-  g_free (priv->uri);
-  priv->uri = NULL;
-
   G_OBJECT_CLASS (hd_bookmark_shortcut_parent_class)->finalize (object);
-}
-
-static void
-hd_bookmark_shortcut_get_property (GObject      *object,
-                                   guint         prop_id,
-                                   GValue       *value,
-                                   GParamSpec   *pspec)
-{
-  HDBookmarkShortcutPrivate *priv = HD_BOOKMARK_SHORTCUT (object)->priv;
-
-  switch (prop_id)
-    {
-    case PROP_URI:
-      g_value_set_string (value, priv->uri);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
-hd_bookmark_shortcut_set_property (GObject      *object,
-                                   guint         prop_id,
-                                   const GValue *value,
-                                   GParamSpec   *pspec)
-{
-  switch (prop_id)
-    {
-    case PROP_URI:
-      hd_bookmark_shortcut_set_uri (HD_BOOKMARK_SHORTCUT (object),
-                                    g_value_get_string (value));
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
 }
 
 #define BROWSER_INTERFACE   "com.nokia.osso_browser"
@@ -172,9 +140,13 @@ static gboolean
 hd_bookmark_shortcut_activate (HDBookmarkShortcut  *shortcut,
                                GError         **error)
 {
-  HDBookmarkShortcutPrivate *priv = shortcut->priv;
+  gchar *uri;
 
-  hd_bookmark_shortcut_activate_service (priv->uri);
+  uri = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
+
+  hd_bookmark_shortcut_activate_service (uri);
+
+  g_free (uri);
 
   return TRUE;
 }
@@ -185,17 +157,8 @@ hd_bookmark_shortcut_class_init (HDBookmarkShortcutClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  object_class->constructor = hd_bookmark_shortcut_constructor;
   object_class->finalize = hd_bookmark_shortcut_finalize;
-  object_class->get_property = hd_bookmark_shortcut_get_property;
-  object_class->set_property = hd_bookmark_shortcut_set_property;
-
-  g_object_class_install_property (object_class,
-                                   PROP_URI,
-                                   g_param_spec_string ("uri",
-                                                        "URI",
-                                                        "URI of the bookmark",
-                                                        NULL,
-                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   g_type_class_add_private (klass, sizeof (HDBookmarkShortcutPrivate));
 }
@@ -293,27 +256,4 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   gtk_box_pack_start (GTK_BOX (vbox), priv->label, FALSE, FALSE, 0);
 
   /*  gtk_window_set_opacity (GTK_WINDOW (applet), 0); */
-}
-
-GtkWidget *
-hd_bookmark_shortcut_new (const gchar *uri)
-{
-  GtkWidget *shortcut;
-  gchar *escaped_uri, *id;
-
-  /* Escape dashes in uri */
-  escaped_uri = g_strdup (uri);
-  g_strdelimit (escaped_uri, "/", '_'); /* FIXME is this unique? */
-
-  id = g_strdup_printf (PLUGIN_ID_FORMAT, escaped_uri);
-
-  shortcut = g_object_new (HD_TYPE_BOOKMARK_SHORTCUT,
-                           "plugin-id", id,
-                           "uri", uri,
-                           NULL);
-
-  g_free (escaped_uri);
-  g_free (id);
-
-  return shortcut;
 }

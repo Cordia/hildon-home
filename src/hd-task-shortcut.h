@@ -39,19 +39,17 @@ typedef struct _HDTaskShortcutPrivate HDTaskShortcutPrivate;
 
 struct _HDTaskShortcut
 {
-  HDHomePluginItem              parent;
+  HDHomePluginItem parent;
 
   HDTaskShortcutPrivate *priv;
 };
 
 struct _HDTaskShortcutClass
 {
-  HDHomePluginItemClass         parent;
+  HDHomePluginItemClass parent;
 };
 
-GType           hd_task_shortcut_get_type (void);
-
-HDTaskShortcut *hd_task_shortcut_new      (const gchar *desktop_file); 
+GType hd_task_shortcut_get_type (void);
 
 G_END_DECLS
 

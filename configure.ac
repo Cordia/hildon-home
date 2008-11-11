@@ -1,4 +1,4 @@
-AC_INIT([hildon-home], [0.1.3])
+AC_INIT([hildon-home], [0.2.0])
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(config.h)
@@ -73,7 +73,7 @@ AC_SUBST(HILDON_LIBS)
 AC_SUBST(HILDON_CFLAGS)
 
 PKG_CHECK_MODULES(LIBHILDONDESKTOP,
-                  [libhildondesktop-1 >= 2.1.6],
+                  [libhildondesktop-1 >= 2.1.7],
                   [AC_DEFINE(HAVE_LIBHILDONDESKTOP, [], [Whether libhildondesktop-1 is present on the system])], 
                   [])
 

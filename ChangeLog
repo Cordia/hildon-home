@@ -1,3 +1,32 @@
+2008-11-11  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac: Increase version to 0.2.0. Require libhildondesktop-1
+	2.1.7.
+
+	* debian/changelog: Add entry for 0.2.0~unreleased.
+
+	* debian/control: Depend on newer libhildondesktop1-dev.
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_set_uri,
+	  hd_bookmark_shortcut_constructor, hd_bookmark_shortcut_finalize,
+	  hd_bookmark_shortcut_activate,
+	  hd_bookmark_shortcut_class_init):
+	* src/hd-bookmark-shortcut.h: Remove uri property and use plugin-id
+	instead.
+
+	* src/hd-task-shortcut.c (hd_task_shortcut_set_desktop_id,
+	  hd_task_shortcut_constructor, hd_task_shortcut_finalize,
+	  hd_task_shortcut_class_init):
+	* src/hd-task-shortcut.h: Remove desktop-id property and use plugin-id
+	instead.
+
+	* src/hildon-home.c (main): Use new generic shortcuts API.
+
+	* src/hd-shortcuts.c (deleted):
+	* src/hd-shortcuts.h (deleted): Moved to libhildondesktop1.
+
+	* src/Makefile.am: Remove hd-shortcuts.[ch].
+
 2008-11-07  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Incoming events enhancements. This patch makes HDIncomingEventWindow:s

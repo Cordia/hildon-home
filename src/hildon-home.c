@@ -38,10 +38,15 @@
 #include "hd-notification-manager.h"
 #include "hd-system-notifications.h"
 #include "hd-incoming-events.h"
-#include "hd-shortcuts.h"
+#include "hd-bookmark-shortcut.h"
+#include "hd-task-shortcut.h"
 
 #define HD_STAMP_DIR   "/tmp/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
+
+#define HD_GCONF_DIR_HILDON_HOME "/apps/osso/hildon-home"
+#define HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS HD_GCONF_DIR_HILDON_HOME "/task-shortcuts"
+#define HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS HD_GCONF_DIR_HILDON_HOME "/bookmark-shortcuts"
 
 /* signal handler, hildon-desktop sends SIGTERM to all tracked applications
  * when it receives SIGTEM itselgf */
@@ -101,7 +106,6 @@ main (int argc, char **argv)
   HDPluginManager *notification_pm, *home_pm;
   HDNotificationManager *nm;
   HDSystemNotifications *sn;
-  HDShortcuts *shortcuts;
 
   setlocale (LC_ALL, "");
   bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
@@ -136,7 +140,12 @@ main (int argc, char **argv)
   gdk_threads_add_idle (load_plugins_idle, notification_pm);
 
   /* Task Shortcuts */
-  shortcuts = hd_shortcuts_get ();
+  hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,
+                    HD_TYPE_TASK_SHORTCUT);
+
+  /* Bookmark Shortcuts */
+  hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
+                    HD_TYPE_BOOKMARK_SHORTCUT);
 
   /* Start the main loop */
   gtk_main ();

@@ -51,8 +51,6 @@ struct _HDBookmarkShortcutClass
 
 GType      hd_bookmark_shortcut_get_type (void);
 
-GtkWidget *hd_bookmark_shortcut_new      (const gchar *url); 
-
 G_END_DECLS
 
 #endif

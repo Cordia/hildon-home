@@ -49,8 +49,6 @@
 
 struct _HDTaskShortcutPrivate
 {
-  gchar *desktop_id;
-
   gchar *name;
 
   gchar *exec;
@@ -62,12 +60,6 @@ struct _HDTaskShortcutPrivate
   GtkWidget *icon;
 
   gboolean button_pressed;
-};
-
-enum
-{
-  PROP_0,
-  PROP_DESKTOP_ID,
 };
 
 G_DEFINE_TYPE (HDTaskShortcut, hd_task_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
@@ -182,12 +174,8 @@ static void
 hd_task_shortcut_set_desktop_id (HDTaskShortcut *shortcut,
                                  const gchar    *desktop_id)
 {
-  HDTaskShortcutPrivate *priv = shortcut->priv;
   const gchar * const * applications_dirs;
   guint i;
-
-  g_free (priv->desktop_id);
-  priv->desktop_id = g_strdup (desktop_id);
 
   applications_dirs = get_applications_dirs ();
   for (i = 0; applications_dirs[i]; i++)
@@ -207,52 +195,30 @@ hd_task_shortcut_set_desktop_id (HDTaskShortcut *shortcut,
     }
 }
 
+static GObject*
+hd_task_shortcut_constructor (GType                  type,
+                              guint                  n_construct_properties,
+                              GObjectConstructParam *construct_properties)
+{
+  GObject *object;
+  gchar *desktop_id;
+
+  object = G_OBJECT_CLASS (hd_task_shortcut_parent_class)->constructor (type,
+                                                                        n_construct_properties,
+                                                                        construct_properties);
+
+  desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (object));
+
+  hd_task_shortcut_set_desktop_id (HD_TASK_SHORTCUT (object),
+                                   desktop_id);  
+
+  return object;
+}
+
 static void
 hd_task_shortcut_finalize (GObject *object)
 {
-  HDTaskShortcutPrivate *priv = HD_TASK_SHORTCUT (object)->priv;
-
-  g_free (priv->desktop_id);
-  priv->desktop_id = NULL;
-
   G_OBJECT_CLASS (hd_task_shortcut_parent_class)->finalize (object);
-}
-
-static void
-hd_task_shortcut_get_property (GObject      *object,
-                               guint         prop_id,
-                               GValue       *value,
-                               GParamSpec   *pspec)
-{
-  HDTaskShortcutPrivate *priv = HD_TASK_SHORTCUT (object)->priv;
-
-  switch (prop_id)
-    {
-    case PROP_DESKTOP_ID:
-      g_value_set_string (value, priv->desktop_id);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
-hd_task_shortcut_set_property (GObject      *object,
-                                    guint         prop_id,
-                                    const GValue *value,
-                                    GParamSpec   *pspec)
-{
-  switch (prop_id)
-    {
-    case PROP_DESKTOP_ID:
-      hd_task_shortcut_set_desktop_id (HD_TASK_SHORTCUT (object),
-                                       g_value_get_string (value));
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
 }
 
 #define SERVICE_NAME_LEN        255
@@ -409,17 +375,8 @@ hd_task_shortcut_class_init (HDTaskShortcutClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  object_class->constructor = hd_task_shortcut_constructor;
   object_class->finalize = hd_task_shortcut_finalize;
-  object_class->get_property = hd_task_shortcut_get_property;
-  object_class->set_property = hd_task_shortcut_set_property;
-
-  g_object_class_install_property (object_class,
-                                   PROP_DESKTOP_ID,
-                                   g_param_spec_string ("desktop-id",
-                                                        "Desktop ID",
-                                                        "name of the desktop file",
-                                                        NULL,
-                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   g_type_class_add_private (klass, sizeof (HDTaskShortcutPrivate));
 }
@@ -518,21 +475,4 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_box_pack_start (GTK_BOX (vbox), priv->label, FALSE, FALSE, 0);
 
 /*  gtk_window_set_opacity (GTK_WINDOW (applet), 0); */
-}
-
-HDTaskShortcut *
-hd_task_shortcut_new (const gchar *desktop_id)
-{
-  gchar *id;
-  HDTaskShortcut *shortcut;
-
-  id = g_strdup_printf (PLUGIN_ID_FORMAT, desktop_id);
-
-  shortcut = g_object_new (HD_TYPE_TASK_SHORTCUT,
-                           "plugin-id", id,
-                           "desktop-id", desktop_id,
-                           NULL);
-  g_free (id);
-
-  return shortcut;
 }
