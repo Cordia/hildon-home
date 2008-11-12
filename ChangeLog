@@ -1,5 +1,19 @@
 2008-11-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* Makefile.am: Install hildon-home.schemas.
+
+	* configure.ac: Add GConf related variables.
+
+	* debian/hildon-home.install: Install hildon-home.schemas into
+	package.
+
+	* debian/rules: Use gnome rules to get dh_gconf run.
+
+	* hildon-home.schemas: Add some schemas for bookmark-shortcuts and
+	task-shortcuts keys.
+
+2008-11-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hildon-home.c (main): Add gconf dir watch, so hildon-home gets
 	notified about changes.
 

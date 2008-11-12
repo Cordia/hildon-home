@@ -18,6 +18,9 @@ AC_PATH_X
 AC_PATH_XTRA
 AC_SUBST(X_CFLAGS)
 
+AM_GCONF_SOURCE_2
+AC_PATH_PROG(GCONFTOOL, gconftool-2)
+
 #+++++++++++++++
 # Misc programs 
 #+++++++++++++++
