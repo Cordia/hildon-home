@@ -29,6 +29,7 @@
 #include <libgnomevfs/gnome-vfs.h>
 #include <libhildondesktop/libhildondesktop.h>
 #include <hildon/hildon.h>
+#include <gconf/gconf-client.h>
 
 #include <libintl.h>
 #include <locale.h>
@@ -106,6 +107,8 @@ main (int argc, char **argv)
   HDPluginManager *notification_pm, *home_pm;
   HDNotificationManager *nm;
   HDSystemNotifications *sn;
+  GConfClient *client;
+  GError *error = NULL;
 
   setlocale (LC_ALL, "");
   bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
@@ -138,6 +141,19 @@ main (int argc, char **argv)
   /* Load Plugins when idle */
   gdk_threads_add_idle (load_plugins_idle, home_pm);
   gdk_threads_add_idle (load_plugins_idle, notification_pm);
+
+  /* Add shortcuts gconf dirs so hildon-home gets notifications about changes */
+  client = gconf_client_get_default ();
+  gconf_client_add_dir (client,
+                        HD_GCONF_DIR_HILDON_HOME,
+                        GCONF_CLIENT_PRELOAD_ONELEVEL,
+                        &error);
+  if (error)
+    {
+      g_warning ("Could not add gconf watch for dir " HD_GCONF_DIR_HILDON_HOME ". %s", error->message);
+      g_error_free (error);
+    }
+  g_object_unref (client);
 
   /* Task Shortcuts */
   hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,

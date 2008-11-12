@@ -1,3 +1,8 @@
+2008-11-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hildon-home.c (main): Add gconf dir watch, so hildon-home gets
+	notified about changes.
+
 2008-11-11  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* configure.ac: Increase version to 0.2.0. Require libhildondesktop-1
