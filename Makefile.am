@@ -1,6 +1,6 @@
 SUBDIRS = src
 
-schemadir = @GCONF_SCHEMA_FILE_DIR@
+schemadir = $(datadir)/gconf/schemas
 schema_DATA = hildon-home.schemas
 
 install-data-local:

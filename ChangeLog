@@ -2,7 +2,10 @@
 
 	Released 0.2.0
 	
-	Add autogen.sh run to debian/rules.
+	* Makefile.am, debian/hildon-home.install: change Gconf schema
+	install directory.
+
+	* debian/rules: run ./autogen.sh
 
 2008-11-12  Jan Arne Petersen  <jpetersen@openismus.com>
 

@@ -1,4 +1,4 @@
 debian/tmp/etc/hildon-desktop/*.conf
 debian/tmp/etc/hildon-desktop/*.plugins
-debian/tmp/etc/gconf/schemas/hildon-home.schemas
+debian/tmp/usr/share/gconf/schemas/hildon-home.schemas
 debian/tmp/usr/bin/hildon-home
