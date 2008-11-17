@@ -1,7 +1,8 @@
 hildon-home (0.2.0) unstable; urgency=low
 
-  * Use new generic API to load shortcuts from GConf.
-  * Incoming events enhancements.
+  * Jan Arne: Use new generic API to load shortcuts from GConf.
+  * Jan Arne: Incoming events enhancements.
+  * Fixes to make dpkg-buildpackage to work.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 17 Nov 2008 15:17:10 +0200
 
