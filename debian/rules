@@ -4,3 +4,8 @@ include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/class/gnome.mk
 
 DEB_DH_INSTALLINIT_ARGS := --no-start -- start 51 2 3 4 . stop 20 0 1 5 6 .
+
+makebuilddir/hildon-home::
+	aclocal
+	automake --add-missing
+	autoreconf
