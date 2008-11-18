@@ -1,3 +1,19 @@
+2008-11-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac:
+	* debian/changelog:
+	* debian/control: Increase version to 0.2.1. Depend on latest
+	libhildondesktop1.
+
+	* debian/rules: Do not call configure via autogen.sh
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_get_applet_id,
+	  hd_bookmark_shortcut_class_init): Implement virtual get_applet_id()
+	  function to add a prefix.
+	* src/hd-task-shortcut.c (hd_task_shortcut_get_applet_id,
+	  hd_task_shortcut_class_init): Implement virtual get_applet_id()
+	  function to add a prefix.
+
 2008-11-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.2.0

@@ -151,11 +151,27 @@ hd_bookmark_shortcut_activate (HDBookmarkShortcut  *shortcut,
   return TRUE;
 }
 
+static gchar *
+hd_bookmark_shortcut_get_applet_id (HDHomePluginItem *item)
+{
+  gchar *p, *applet_id;
+
+  p = HD_HOME_PLUGIN_ITEM_CLASS (hd_bookmark_shortcut_parent_class)->get_applet_id (item);
+
+  applet_id = g_strdup_printf ("BookmarkShortcut:%s", p);
+
+  g_free (p);
+
+  return applet_id;
+}
 
 static void
 hd_bookmark_shortcut_class_init (HDBookmarkShortcutClass *klass)
 {
+  HDHomePluginItemClass *home_plugin_class = HD_HOME_PLUGIN_ITEM_CLASS (klass);
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  home_plugin_class->get_applet_id = hd_bookmark_shortcut_get_applet_id;
 
   object_class->constructor = hd_bookmark_shortcut_constructor;
   object_class->finalize = hd_bookmark_shortcut_finalize;

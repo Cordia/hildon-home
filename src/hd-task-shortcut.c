@@ -369,11 +369,27 @@ hd_task_shortcut_activate (HDTaskShortcut  *shortcut,
   return FALSE;
 }
 
+static gchar *
+hd_task_shortcut_get_applet_id (HDHomePluginItem *item)
+{
+  gchar *p, *applet_id;
+
+  p = HD_HOME_PLUGIN_ITEM_CLASS (hd_task_shortcut_parent_class)->get_applet_id (item);
+
+  applet_id = g_strdup_printf ("TaskShortcut:%s", p);
+
+  g_free (p);
+
+  return applet_id;
+}
 
 static void
 hd_task_shortcut_class_init (HDTaskShortcutClass *klass)
 {
+  HDHomePluginItemClass *home_plugin_class = HD_HOME_PLUGIN_ITEM_CLASS (klass);
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  home_plugin_class->get_applet_id = hd_task_shortcut_get_applet_id;
 
   object_class->constructor = hd_task_shortcut_constructor;
   object_class->finalize = hd_task_shortcut_finalize;
