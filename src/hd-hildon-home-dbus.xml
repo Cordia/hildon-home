@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/com/nokia/HildonHome">
+
+  <interface name="com.nokia.HildonHome">
+                
+    <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="HDHildonHomeDBus"/>
+
+    <method name="ShowEditMenu">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_hildon_home_dbus_show_edit_menu"/>
+
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+
+      <arg type="u" name="current_view" direction="in" />
+    </method>
+
+  </interface>
+
+</node>

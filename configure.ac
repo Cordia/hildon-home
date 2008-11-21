@@ -67,30 +67,32 @@ AC_SUBST(ALL_LINGUAS)
 AM_GLIB_GNU_GETTEXT
 AC_DEFINE(GETTEXT_PACKAGE, ["maemo-af-desktop"], [Localisation domain])
 
-PKG_CHECK_MODULES(HILDON,
-                  [hildon-1], 
-                  [AC_DEFINE(HAVE_LIBHILDON, [], [Whether libhildon-1 is present on the system])], 
-                  [PKG_CHECK_MODULES(HILDON, hildon-1 >= 2.1.4)])
+PKG_CHECK_MODULES(HILDON_HOME,
+                  [hildon-1		>= 2.1.4	dnl
+                   libhildondesktop-1	>= 2.1.8	dnl
+		   gnome-vfs-2.0	>= 2.8.3	dnl
+		   sqlite3				dnl
+		   osso-bookmark-engine])
 
-AC_SUBST(HILDON_LIBS)
-AC_SUBST(HILDON_CFLAGS)
+AC_SUBST(HILDON_HOME_LIBS)
+AC_SUBST(HILDON_HOME_CFLAGS)
 
-PKG_CHECK_MODULES(LIBHILDONDESKTOP,
-                  [libhildondesktop-1 >= 2.1.8],
-                  [AC_DEFINE(HAVE_LIBHILDONDESKTOP, [], [Whether libhildondesktop-1 is present on the system])], 
-                  [])
+# Check for ftw
+AC_CHECK_HEADERS([ftw.h],
+                 AC_DEFINE([HAVE_FTW_H], 1,
+                           [Define to 1 if ftw.h is available]))
+AC_CHECK_FUNCS([nftw])
 
-AC_SUBST(LIBHILDONDESKTOP_LIBS)
-AC_SUBST(LIBHILDONDESKTOP_CFLAGS)
-
-PKG_CHECK_MODULES(GNOME_VFS, gnome-vfs-2.0 >= 2.8.3)
-AC_SUBST(GNOME_VFS_CFLAGS)
-AC_SUBST(GNOME_VFS_LIBS)
-
-PKG_CHECK_MODULES(SQLITE, sqlite3)
-AC_SUBST(SQLITE_CFLAGS)
-AC_SUBST(SQLITE_LIBS)
-
+AC_MSG_CHECKING([for GNU ftw extensions])
+AC_TRY_COMPILE([#define _XOPEN_SOURCE 500
+#define _GNU_SOURCE
+#include <ftw.h>], [int flags = FTW_ACTIONRETVAL;], gtk_ok=yes, gtk_ok=no)
+if test $gtk_ok = yes; then
+  AC_MSG_RESULT([yes])
+  AC_DEFINE(HAVE_GNU_FTW, 1, [Have GNU ftw])
+else
+  AC_MSG_RESULT([no])
+fi
 
 #+++++++++++++++++++
 # Directories setup

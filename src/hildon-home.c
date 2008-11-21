@@ -41,6 +41,7 @@
 #include "hd-incoming-events.h"
 #include "hd-bookmark-shortcut.h"
 #include "hd-task-shortcut.h"
+#include "hd-hildon-home-dbus.h"
 
 #define HD_STAMP_DIR   "/tmp/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
@@ -162,6 +163,9 @@ main (int argc, char **argv)
   /* Bookmark Shortcuts */
   hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
                     HD_TYPE_BOOKMARK_SHORTCUT);
+
+  /* D-Bus */
+  hd_hildon_home_dbus_get ();
 
   /* Start the main loop */
   gtk_main ();

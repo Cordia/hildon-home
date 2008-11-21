@@ -768,6 +768,8 @@ hd_notification_manager_finalize (GObject *object)
       sqlite3_close (nm->priv->db);
       nm->priv->db = NULL;
     }
+
+  G_OBJECT_CLASS (hd_notification_manager_parent_class)->finalize (object);
 }
 
 static void

@@ -4,7 +4,7 @@
 
   <interface name="org.freedesktop.Notifications">
                 
-    <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="HildonDesktopNotificationManager"/>
+    <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="HDNotificationManager"/>
 
     <method name="Notify">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_notification_manager_notify"/>

@@ -1,3 +1,38 @@
+2008-11-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac: Add osso-bookmark-engine dependency. Add check for
+	ftw.h
+
+	* src/Makefile.am: Add new files as SOURCES. Add D-Bus glib-server
+	glue generation.
+
+	* src/hd-notification-manager.c (hd_notification_manager_finalize):
+	Chainup.
+
+	* src/hd-notification-manager.xml: Update annotation.
+
+	* src/hildon-home.c (main): Add D-Bus interface.
+
+	* src/hd-add-applet-dialog.c (added):
+	* src/hd-background-dialog.c (added):
+	* src/hd-add-applet-dialog.h (added):
+	* src/hd-background-dialog.h (added):
+	* src/hd-applet-manager.c (added):
+	* src/hd-hildon-home-dbus.c (added):
+	* src/hd-applet-manager.h (added):
+	* src/hd-hildon-home-dbus.h (added):
+	* src/hd-task-manager.c (added):
+	* src/hd-hildon-home-dbus.xml (added):
+	* src/hd-task-manager.h (added):
+	* src/hd-add-task-dialog.c (added):
+	* src/hd-add-task-dialog.h (added): Move Edit menu from
+	hildon-desktop.
+
+	* src/hd-bookmark-manager.c (added):
+	* src/hd-bookmark-manager.h (added):
+	* src/hd-add-bookmark-dialog.c (added):
+	* src/hd-add-bookmark-dialog.h (added): Implement Add bookmark dialog.
+
 2008-11-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* configure.ac:

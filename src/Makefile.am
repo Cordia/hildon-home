@@ -7,16 +7,21 @@ hildondesktopconf_DATA = \
 bin_PROGRAMS = hildon-home
 
 hildon_home_CFLAGS = \
-	$(HILDON_CFLAGS)							\
-	$(LIBHILDONDESKTOP_CFLAGS)						\
-	$(GNOME_VFS_CFLAGS)							\
-	$(SQLITE_CFLAGS)							\
-	-DHD_DESKTOP_CONFIG_PATH=\"$(hildondesktopconfdir)\"
+	$(HILDON_HOME_CFLAGS)							\
+	-DHD_DESKTOP_CONFIG_PATH=\"$(hildondesktopconfdir)\"			\
+	-D_XOPEN_SOURCE=500							\
+	-DHD_APPLICATIONS_DIR=\"$(datadir)/applications/hildon\"
 
 BUILT_SOURCES =				\
+	hd-hildon-home-dbus-glue.h	\
 	hd-notification-manager-glue.h	\
 	hd-marshal.c			\
 	hd-marshal.h
+
+hd-hildon-home-dbus-glue.h: hd-hildon-home-dbus.xml
+	$(DBUS_BINDING_TOOL) --prefix=hd_hildon_home_dbus --mode=glib-server $< > xgen-$(@F)		\
+	&& ( cmp -s xgen-$(@F) $@ || cp xgen-$(@F) $@ )							\
+	&& rm -f xgen-$(@F)
 
 hd-notification-manager-glue.h: hd-notification-manager.xml
 	$(DBUS_BINDING_TOOL) --prefix=hd_notification_manager --mode=glib-server $< > xgen-$(@F)	\
@@ -35,8 +40,20 @@ hd-marshal.h: hd-marshal.list
 
 hildon_home_SOURCES = \
 	$(BUILT_SOURCES)		\
+	hd-add-applet-dialog.c		\
+	hd-add-applet-dialog.h		\
+	hd-add-bookmark-dialog.c	\
+	hd-add-bookmark-dialog.h	\
+	hd-add-task-dialog.c		\
+	hd-add-task-dialog.h		\
+	hd-applet-manager.c		\
+	hd-applet-manager.h		\
+	hd-background-dialog.c		\
+	hd-background-dialog.h		\
 	hd-bookmark-shortcut.c		\
 	hd-bookmark-shortcut.h		\
+	hd-hildon-home-dbus.c		\
+	hd-hildon-home-dbus.h		\
 	hd-incoming-event-window.c	\
 	hd-incoming-event-window.h	\
 	hd-incoming-events.c		\
@@ -47,23 +64,24 @@ hildon_home_SOURCES = \
 	hd-system-notifications.h	\
 	hd-task-shortcut.c		\
 	hd-task-shortcut.h		\
+	hd-task-manager.c		\
+	hd-task-manager.h		\
+	hd-bookmark-manager.c		\
+	hd-bookmark-manager.h		\
 	hildon-home.c
 
 hildon_home_LDFLAGS = \
 	-rdynamic			\
-	$(HILDON_LIBS)	    		\
-	$(LIBHILDONDESKTOP_LIBS)	\
-	$(SQLITE_LIBS)			\
-	$(GNOME_VFS_LIBS)
+	$(HILDON_HOME_LIBS)
 
 noinst_PROGRAMS = test-incoming-event
 
 test_incoming_event_CFLAGS = \
-	$(HILDON_CFLAGS)
+	$(HILDON_HOME_CFLAGS)
 
 test_incoming_event_LDFLAGS = \
 	-rdynamic			\
-	$(HILDON_LIBS)
+	$(HILDON_HOME_LIBS)
 
 test_incoming_event_SOURCES = \
 	hd-incoming-event-window.c	\
