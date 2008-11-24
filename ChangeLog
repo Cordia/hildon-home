@@ -1,3 +1,7 @@
+2008-11-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Update changelog.
+
 2008-11-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* configure.ac: Add osso-bookmark-engine dependency. Add check for
