@@ -57,7 +57,7 @@ enum
 
 struct _HDAddTaskDialogPrivate
 {
-  GtkListStore *store;
+  GtkTreeModel *model;
 
   GtkWidget *selector;
 };
@@ -69,10 +69,10 @@ hd_add_task_dialog_dispose (GObject *object)
 {
   HDAddTaskDialogPrivate *priv = HD_ADD_TASK_DIALOG (object)->priv;
 
-  if (priv->store)
+  if (priv->model)
     {
-      g_object_unref (priv->store);
-      priv->store = NULL;
+      g_object_unref (priv->model);
+      priv->model = NULL;
     }
 
   G_OBJECT_CLASS (hd_add_task_dialog_parent_class)->dispose (object);
@@ -120,7 +120,7 @@ response_cb (HDAddTaskDialog *dialog,
                                               &iter))
         {
           hd_task_manager_install_task (hd_task_manager_get (),
-                                            &iter);
+                                        &iter);
         }
     }
 }
@@ -133,16 +133,16 @@ hd_add_task_dialog_init (HDAddTaskDialog *dialog)
   dialog->priv = priv;
 
   /* Set dialog title */
-  gtk_window_set_title (GTK_WINDOW (dialog), gettext ("home_ti_select_shortcuts"));
+  gtk_window_set_title (GTK_WINDOW (dialog), gettext ("home_ti_select_shortcut"));
 
   /* */
   priv->selector = g_object_ref (hildon_touch_selector_new ());
 
-  priv->store = GTK_LIST_STORE (hd_task_manager_get_model (hd_task_manager_get ()));
+  priv->model = hd_task_manager_get_model (hd_task_manager_get ());
 
   /* Text column */
   hildon_touch_selector_append_text_column (HILDON_TOUCH_SELECTOR (priv->selector),
-                                            hd_task_manager_get_model (hd_task_manager_get ()),
+                                            priv->model,
                                             TRUE);
 
 /*  hildon_touch_selector_set_column_selection_mode (HILDON_TOUCH_SELECTOR (priv->selector),

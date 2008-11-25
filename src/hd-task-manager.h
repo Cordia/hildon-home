@@ -1,5 +1,5 @@
 /*
- * This file is part of hildon-desktop
+ * This file is part of hildon-home
  *
  * Copyright (C) 2008 Nokia Corporation.
  *
@@ -50,16 +50,25 @@ struct _HDTaskManager
 struct _HDTaskManagerClass 
 {
   GObjectClass parent_class;
+
+  void (*desktop_file_changed)              (HDTaskManager *manager);
 };
 
-GType            hd_task_manager_get_type     (void);
+GType          hd_task_manager_get_type     (void);
 
-HDTaskManager *hd_task_manager_get            (void);
+HDTaskManager *hd_task_manager_get          (void);
 
-GtkTreeModel    *hd_task_manager_get_model    (HDTaskManager *manager);
+GtkTreeModel  *hd_task_manager_get_model    (HDTaskManager *manager);
 
-void             hd_task_manager_install_task (HDTaskManager *manager,
-                                               GtkTreeIter     *iter);
+void           hd_task_manager_install_task (HDTaskManager *manager,
+                                             GtkTreeIter   *iter);
+
+const gchar   *hd_task_manager_get_label    (HDTaskManager *manager,
+                                             const gchar   *desktop_id);
+const gchar   *hd_task_manager_get_icon     (HDTaskManager *manager,
+                                             const gchar   *desktop_id);
+void           hd_task_manager_launch_task  (HDTaskManager *manager,
+                                             const gchar   *desktop_id);
 
 G_END_DECLS
 

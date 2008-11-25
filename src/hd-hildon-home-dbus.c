@@ -35,6 +35,7 @@
 #include "hd-add-applet-dialog.h"
 #include "hd-add-bookmark-dialog.h"
 #include "hd-add-task-dialog.h"
+#include "hd-task-manager.h"
 #include "hd-background-dialog.h"
 
 #include "hd-hildon-home-dbus.h"
@@ -245,6 +246,27 @@ manage_views_clicked_cb (GtkButton        *button,
                               G_TYPE_INVALID);
 }
 
+static void
+model_row_inserted_cb (GtkTreeModel *model,
+                       GtkTreePath  *path,
+                       GtkTreeIter  *iter,
+                       GtkWidget    *button)
+{
+  gtk_widget_show (button);
+}
+
+static void
+model_row_deleted_cb (GtkTreeModel *model,
+                       GtkTreePath  *path,
+                       GtkWidget    *button)
+{
+  GtkTreeIter iter;
+
+  /* Check if model is empty */
+  if (!gtk_tree_model_get_iter_first (model, &iter))
+    gtk_widget_hide (button);
+}
+
 void
 hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                                     guint             current_view)
@@ -252,6 +274,9 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
   GtkWidget *menu, *button;
   Display *display;
   Window root;
+  HDTaskManager *task_manager;
+  GtkTreeModel *model;
+  GtkTreeIter iter;
 
   g_debug ("hd_hildon_home_dbus_show_edit_menu (current_view: %u):", current_view);
 
@@ -268,6 +293,16 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                           G_CALLBACK (select_shortcuts_clicked_cb), dbus);
   hildon_app_menu_append (HILDON_APP_MENU (menu),
                           GTK_BUTTON (button));
+
+  task_manager = hd_task_manager_get ();
+  model = hd_task_manager_get_model (task_manager);
+  g_signal_connect (G_OBJECT (model), "row-inserted",
+                    G_CALLBACK (model_row_inserted_cb), button);
+  g_signal_connect (G_OBJECT (model), "row-deleted",
+                    G_CALLBACK (model_row_deleted_cb), button);
+  if (!gtk_tree_model_get_iter_first (model, &iter))
+    gtk_widget_hide (button);
+  g_object_unref (model);
 
   button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_bookmarks"));
   g_signal_connect_after (button, "clicked",

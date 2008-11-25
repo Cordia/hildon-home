@@ -31,17 +31,9 @@
 
 #include <glib/gi18n.h>
 
+#include "hd-task-manager.h"
+
 #include "hd-task-shortcut.h"
-
-/* Applications directory */
-#define APPLICATIONS_SUBDIR "applications", "hildon"
-
-/* Plugin ID task-shortcut prefix */
-#define PLUGIN_ID_FORMAT "-x-task-shortcut-%s"
-
-/* Task .desktop file keys */
-#define HD_KEY_FILE_DESKTOP_KEY_SERVICE "X-Osso-Service"
-#define HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN "X-Osso-Translation-Domain"
 
 #define HD_TASK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
                                                                         HD_TYPE_TASK_SHORTCUT,\
@@ -49,13 +41,6 @@
 
 struct _HDTaskShortcutPrivate
 {
-  gchar *name;
-
-  gchar *exec;
-  gchar *service;
-
-  gchar *translation_domain;
-
   GtkWidget *label;
   GtkWidget *icon;
 
@@ -64,309 +49,68 @@ struct _HDTaskShortcutPrivate
 
 G_DEFINE_TYPE (HDTaskShortcut, hd_task_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
 
-static gpointer
-get_applications_dirs_once (gpointer data)
-{
-  gchar **applications_dirs;
-  const gchar *user_data_dir;
-  const gchar * const *system_data_dirs;
-  guint length, i;
-
-  user_data_dir = g_get_user_data_dir ();
-  system_data_dirs = g_get_system_data_dirs ();
-  length = g_strv_length ((gchar **)system_data_dirs);
-
-  /* Create an array with the user data dir, the system data dirs
-   * and a NULL entry */
-  applications_dirs = g_new0 (gchar *, length + 2);
-
-  applications_dirs[0] = g_build_filename (user_data_dir,
-                                           APPLICATIONS_SUBDIR,
-                                           NULL);
-  for (i = 0; i < length; i++)
-    applications_dirs[i + 1] = g_build_filename (system_data_dirs[i],
-                                                 APPLICATIONS_SUBDIR,
-                                                 NULL);
-
-  return applications_dirs;
-}
-
-static const gchar * const *
-get_applications_dirs (void)
-{
-  static GOnce applications_dirs = G_ONCE_INIT;
-
-  g_once (&applications_dirs, get_applications_dirs_once, NULL);
-
-  return applications_dirs.retval;
-}
-
-static gboolean
-hd_task_shortcut_load_from_file (HDTaskShortcut *shortcut,
-                                 const gchar    *file_name)
+static void
+hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
+                                          HDTaskShortcut *shortcut)
 {
   HDTaskShortcutPrivate *priv = shortcut->priv;
-  GKeyFile *key_file;
-  GError *error = NULL;
+  gchar *desktop_id;
+  const gchar *icon_name;
 
-  key_file = g_key_file_new ();
-  if (g_key_file_load_from_file (key_file,
-                                 file_name,
-                                 0,
-                                 &error))
+  desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
+
+  gtk_label_set_text (GTK_LABEL (priv->label),
+                      hd_task_manager_get_label (manager,
+                                                 desktop_id));
+
+  icon_name = hd_task_manager_get_icon (manager, desktop_id);
+ 
+  if (icon_name)
     {
-      gchar *icon_name;
-      gchar *domain = GETTEXT_PACKAGE;
-
-      priv->name = g_key_file_get_locale_string (key_file,
-                                                 G_KEY_FILE_DESKTOP_GROUP,
-                                                 G_KEY_FILE_DESKTOP_KEY_NAME,
-                                                 NULL,
-                                                 NULL);
-      if (priv->translation_domain)
-        domain = priv->translation_domain;
-      gtk_label_set_text (GTK_LABEL (shortcut->priv->label),
-                          dgettext (domain, priv->name));
-
-      icon_name = g_key_file_get_string (key_file,
-                                         G_KEY_FILE_DESKTOP_GROUP,
-                                         G_KEY_FILE_DESKTOP_KEY_ICON,
-                                         NULL);
-      if (icon_name)
-        {
-          if (g_path_is_absolute (icon_name))
-            gtk_image_set_from_file (GTK_IMAGE (shortcut->priv->icon),
-                                     icon_name);
-          else
-            gtk_image_set_from_icon_name (GTK_IMAGE (shortcut->priv->icon),
-                                          icon_name,
-                                          GTK_ICON_SIZE_INVALID);
-          g_free (icon_name);
-        }
-
-      priv->exec = g_key_file_get_string (key_file,
-                                          G_KEY_FILE_DESKTOP_GROUP,
-                                          G_KEY_FILE_DESKTOP_KEY_EXEC,
-                                          NULL);
-      priv->service = g_key_file_get_string (key_file,
-                                             G_KEY_FILE_DESKTOP_GROUP,
-                                             HD_KEY_FILE_DESKTOP_KEY_SERVICE,
-                                             NULL);
-      priv->translation_domain = g_key_file_get_string (key_file,
-                                                        G_KEY_FILE_DESKTOP_GROUP,
-                                                        HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN,
-                                                        NULL);
-    }
-  else
-    {
-      g_debug ("Could not load shortcut .desktop file '%s'. %s", file_name, error->message);
-      g_error_free (error);
-      g_key_file_free (key_file);
-      return FALSE;
+      if (g_path_is_absolute (icon_name))
+        gtk_image_set_from_file (GTK_IMAGE (priv->icon),
+                                 icon_name);
+      else
+        gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
+                                      icon_name,
+                                      GTK_ICON_SIZE_INVALID);
     }
 
-  g_key_file_free (key_file);
-
-  return TRUE;
+  g_free (desktop_id);
 }
 
 static void
-hd_task_shortcut_set_desktop_id (HDTaskShortcut *shortcut,
-                                 const gchar    *desktop_id)
+hd_task_shortcut_constructed (GObject *object)
 {
-  const gchar * const * applications_dirs;
-  guint i;
+  HDTaskShortcut *shortcut = HD_TASK_SHORTCUT (object);
+  HDTaskManager *manager = hd_task_manager_get ();
+  gchar *desktop_id, *detailed_signal;
 
-  applications_dirs = get_applications_dirs ();
-  for (i = 0; applications_dirs[i]; i++)
-    {
-      gchar *file_name = g_build_filename (applications_dirs[i],
-                                           desktop_id,
-                                           NULL);
-
-      if (hd_task_shortcut_load_from_file (shortcut,
-                                           file_name))
-        {
-          g_free (file_name);
-          break;
-        }
-
-      g_free (file_name);
-    }
-}
-
-static GObject*
-hd_task_shortcut_constructor (GType                  type,
-                              guint                  n_construct_properties,
-                              GObjectConstructParam *construct_properties)
-{
-  GObject *object;
-  gchar *desktop_id;
-
-  object = G_OBJECT_CLASS (hd_task_shortcut_parent_class)->constructor (type,
-                                                                        n_construct_properties,
-                                                                        construct_properties);
+  /* Chain up */
+  G_OBJECT_CLASS (hd_task_shortcut_parent_class)->constructed (object);
 
   desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (object));
 
-  hd_task_shortcut_set_desktop_id (HD_TASK_SHORTCUT (object),
-                                   desktop_id);  
+  /* Connect to detailed desktop-file-changed signal */
+  detailed_signal = g_strdup_printf ("desktop-file-changed::%s", desktop_id);
+  g_signal_connect (manager,
+                    detailed_signal,
+                    G_CALLBACK (hd_task_shortcut_desktop_file_changed_cb),
+                    shortcut);
 
-  return object;
+  /* Update label and icon if already there */
+  hd_task_shortcut_desktop_file_changed_cb (manager,
+                                            shortcut);
+
+  /* Free memory */
+  g_free (desktop_id);
+  g_free (detailed_signal);
 }
 
 static void
 hd_task_shortcut_finalize (GObject *object)
 {
   G_OBJECT_CLASS (hd_task_shortcut_parent_class)->finalize (object);
-}
-
-#define SERVICE_NAME_LEN        255
-#define PATH_NAME_LEN           255
-#define INTERFACE_NAME_LEN      255
-#define TMP_NAME_LEN            255
-
-#define OSSO_BUS_ROOT          "com.nokia"
-#define OSSO_BUS_ROOT_PATH     "/com/nokia"
-#define OSSO_BUS_TOP           "top_application"
-
-static void
-hd_task_shortcut_activate_service (const gchar *app)
-{
-  gchar service[SERVICE_NAME_LEN], path[PATH_NAME_LEN],
-        interface[INTERFACE_NAME_LEN], tmp[TMP_NAME_LEN];
-  DBusMessage *msg = NULL;
-  DBusError error;
-  DBusConnection *conn;
-
-  g_debug ("%s: app=%s\n", __FUNCTION__, app);
-
-  /* If we have full service name we will use it */
-  if (g_strrstr(app, "."))
-  {
-    g_snprintf(service, SERVICE_NAME_LEN, "%s", app);
-    g_snprintf(interface, INTERFACE_NAME_LEN, "%s", service);
-    g_snprintf(tmp, TMP_NAME_LEN, "%s", app);
-    g_snprintf(path, PATH_NAME_LEN, "/%s", g_strdelimit(tmp, ".", '/'));
-  }
-  else /* use com.nokia prefix */
-  {
-    g_snprintf(service, SERVICE_NAME_LEN, "%s.%s", OSSO_BUS_ROOT, app);
-    g_snprintf(path, PATH_NAME_LEN, "%s/%s", OSSO_BUS_ROOT_PATH, app);
-    g_snprintf(interface, INTERFACE_NAME_LEN, "%s", service);
-  }
-
-  dbus_error_init (&error);
-  conn = dbus_bus_get (DBUS_BUS_SESSION, &error);
-  if (dbus_error_is_set (&error))
-  {
-    g_warning ("could not start: %s: %s", service, error.message);
-    dbus_error_free (&error);
-    return;
-  }
-
-  msg = dbus_message_new_method_call (service, path, interface, OSSO_BUS_TOP);
-  if (msg == NULL)
-  {
-    g_warning ("failed to create message");
-    return;
-  }
-
-  if (!dbus_connection_send (conn, msg, NULL))
-    g_warning ("dbus_connection_send failed");
-
-  dbus_message_unref (msg);
-}
-
-static gboolean
-hd_task_shortcut_activate (HDTaskShortcut  *shortcut,
-                           GError         **error)
-{
-  HDTaskShortcutPrivate *priv = shortcut->priv;
-  gboolean res = FALSE;
-
-  if (priv->service)
-    {
-      /* launch the application, or if it's already running
-       * move it to the top
-       */
-      hd_task_shortcut_activate_service (priv->service);
-      return TRUE;
-    }
-
-#if 0
-  if (hd_wm_is_lowmem_situation ())
-    {
-      if (!tn_close_application_dialog (CAD_ACTION_OPENING))
-        {
-          g_set_error (...);
-          return FALSE;
-        }
-    }
-#endif
-
-  if (priv->exec)
-    {
-      gchar *space = strchr (priv->exec, ' ');
-      gchar *exec;
-      gint argc;
-      gchar **argv = NULL;
-      GPid child_pid;
-      GError *internal_error = NULL;
-
-      g_debug ("Executing %s: `%s'", priv->name, priv->exec);
-
-      if (space)
-        {
-          gchar *cmd = g_strndup (priv->exec, space - priv->exec);
-          gchar *exc = g_find_program_in_path (cmd);
-
-          exec = g_strconcat (exc, space, NULL);
-
-          g_free (cmd);
-          g_free (exc);
-        }
-      else
-        exec = g_find_program_in_path (priv->exec);
-
-      if (!g_shell_parse_argv (exec, &argc, &argv, &internal_error))
-        {
-          g_propagate_error (error, internal_error);
-
-          g_free (exec);
-          if (argv)
-            g_strfreev (argv);
-
-          return FALSE;
-        }
-
-      res = g_spawn_async (NULL,
-                           argv, NULL,
-                           0,
-                           NULL, NULL,
-                           &child_pid,
-                           &internal_error);
-      if (internal_error)
-        g_propagate_error (error, internal_error);
-
-      g_free (exec);
-
-      if (argv)
-        g_strfreev (argv);
-
-      return res;
-    }
-  else
-    {
-#if 0
-      g_set_error (...);
-#endif
-      return FALSE;
-    }
-
-  g_assert_not_reached ();
-
-  return FALSE;
 }
 
 static gchar *
@@ -391,7 +135,7 @@ hd_task_shortcut_class_init (HDTaskShortcutClass *klass)
 
   home_plugin_class->get_applet_id = hd_task_shortcut_get_applet_id;
 
-  object_class->constructor = hd_task_shortcut_constructor;
+  object_class->constructed = hd_task_shortcut_constructed;
   object_class->finalize = hd_task_shortcut_finalize;
 
   g_type_class_add_private (klass, sizeof (HDTaskShortcutPrivate));
@@ -424,10 +168,17 @@ button_release_event_cb (GtkWidget      *widget,
   if (event->button == 1 &&
       priv->button_pressed)
     {
+      gchar *desktop_id;
+
       priv->button_pressed = FALSE;
 
-      hd_task_shortcut_activate (shortcut,
-                                 NULL);
+      desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
+
+      hd_task_manager_launch_task (hd_task_manager_get (),
+                                   desktop_id);
+
+      g_free (desktop_id);
+
       return TRUE;
     }
 
@@ -475,7 +226,7 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_widget_show (alignment);
   gtk_widget_set_size_request (alignment, 100, 100);
 
-  priv->label = gtk_label_new ("Skype");
+  priv->label = gtk_label_new (NULL);
   gtk_widget_show (priv->label);
   gtk_widget_set_size_request (priv->label, 140, -1);
 
@@ -489,6 +240,4 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_box_pack_start (GTK_BOX (vbox), alignment, FALSE, FALSE, 0);
   gtk_container_add (GTK_CONTAINER (alignment), priv->icon);
   gtk_box_pack_start (GTK_BOX (vbox), priv->label, FALSE, FALSE, 0);
-
-/*  gtk_window_set_opacity (GTK_WINDOW (applet), 0); */
 }

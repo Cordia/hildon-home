@@ -1,3 +1,24 @@
+2008-11-25  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-add-task-dialog.c (hd_add_task_dialog_dispose,
+	  hd_add_task_dialog_init): Fix dialog title. Use GtkTreeModel instead
+	  of GtkListStore.
+
+	* src/hd-hildon-home-dbus.c (manage_views_clicked_cb,
+	  model_row_inserted_cb, model_row_deleted_cb,
+	  hd_hildon_home_dbus_show_edit_menu): Show Add shortcut menu item
+	  only when the list of installable shortcuts is not empty.
+
+	* src/hd-task-manager.c: Add functions to activate a task from
+	HdTaskShortcut. Add functions to export label and icon of a task for
+	shortcuts. Add filtered tree model to only show tasks which are not
+	installed as shortcut yet. Fixes NB#93118.
+
+	* src/hd-task-manager.h: Add declarations for new functions.
+
+	* src/hd-task-shortcut.c: Do not parse .desktop files but use the
+	information avaiable by HDTaskManager.
+
 2008-11-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.2.1

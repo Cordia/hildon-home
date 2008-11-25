@@ -40,6 +40,7 @@
 #include "hd-system-notifications.h"
 #include "hd-incoming-events.h"
 #include "hd-bookmark-shortcut.h"
+#include "hd-task-manager.h"
 #include "hd-task-shortcut.h"
 #include "hd-hildon-home-dbus.h"
 
@@ -157,6 +158,7 @@ main (int argc, char **argv)
   g_object_unref (client);
 
   /* Task Shortcuts */
+  hd_task_manager_get ();
   hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,
                     HD_TYPE_TASK_SHORTCUT);
 
