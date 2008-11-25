@@ -1,4 +1,4 @@
-hildon-home (0.2.1~unreleased) unstable; urgency=low
+hildon-home (0.2.1) unstable; urgency=low
 
   * Simplify applet id for customizations.
   * Move Home layout edit menu from hildon-desktop. Fixes NB#93118
