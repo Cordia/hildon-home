@@ -1,5 +1,11 @@
 2008-11-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* configure.ac: Increase version.
+
+	* debian/changelog: Add new entry for next release.
+
+2008-11-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-bookmark-manager.c: Store label/icon/URL in GConf for
 	bookmark shortcuts.
 
@@ -25,7 +31,7 @@
 	* src/hd-task-manager.c: Add functions to activate a task from
 	HdTaskShortcut. Add functions to export label and icon of a task for
 	shortcuts. Add filtered tree model to only show tasks which are not
-	installed as shortcut yet. Fixes NB#93118.
+	installed as shortcut yet. Fixes NB#93164.
 
 	* src/hd-task-manager.h: Add declarations for new functions.
 
