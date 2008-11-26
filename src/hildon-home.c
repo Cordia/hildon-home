@@ -39,6 +39,7 @@
 #include "hd-notification-manager.h"
 #include "hd-system-notifications.h"
 #include "hd-incoming-events.h"
+#include "hd-bookmark-manager.h"
 #include "hd-bookmark-shortcut.h"
 #include "hd-task-manager.h"
 #include "hd-task-shortcut.h"
@@ -163,6 +164,7 @@ main (int argc, char **argv)
                     HD_TYPE_TASK_SHORTCUT);
 
   /* Bookmark Shortcuts */
+  hd_bookmark_manager_get ();
   hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
                     HD_TYPE_BOOKMARK_SHORTCUT);
 

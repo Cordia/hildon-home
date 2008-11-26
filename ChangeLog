@@ -1,3 +1,16 @@
+2008-11-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-bookmark-manager.c: Store label/icon/URL in GConf for
+	bookmark shortcuts.
+
+	* src/hd-bookmark-shortcut.c: Update layout according to new layout
+	spec. Load label/icon/URL from GConf.
+
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu): Only
+	show the "Add bookmark" menu item when a bookmark is available.
+
+	* src/hildon-home.c (main): Create a HDBookmarkManager instance here.
+
 2008-11-25  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-add-task-dialog.c (hd_add_task_dialog_dispose,
