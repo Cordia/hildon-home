@@ -35,6 +35,23 @@
 
 #include "hd-task-shortcut.h"
 
+/* Layout from Task navigation layout guide 1.2 */
+#define SHORTCUT_WIDTH 142
+#define SHORTCUT_HEIGHT 100
+
+#define ICON_WIDTH 64
+#define ICON_HEIGHT 64
+
+#define ICON_BORDER HILDON_MARGIN_HALF
+
+#define BORDER_WIDTH HILDON_MARGIN_DEFAULT
+
+#define LABEL_WIDTH SHORTCUT_WIDTH
+
+#define LABEL_FONT "SystemFont"
+#define LABEL_COLOR "DefaultTextColor"
+
+/* Private definitions */
 #define HD_TASK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
                                                                         HD_TYPE_TASK_SHORTCUT,\
                                                                         HDTaskShortcutPrivate))
@@ -224,20 +241,26 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
 
   alignment = gtk_alignment_new (0.5, 0.5, 0.0, 0.0);
   gtk_widget_show (alignment);
-  gtk_widget_set_size_request (alignment, 100, 100);
+  gtk_widget_set_size_request (alignment, ICON_WIDTH + (ICON_BORDER * 2), ICON_HEIGHT + (ICON_BORDER * 2));
+  gtk_container_set_border_width (GTK_CONTAINER (alignment), ICON_BORDER);
 
   priv->label = gtk_label_new (NULL);
   gtk_widget_show (priv->label);
-  gtk_widget_set_size_request (priv->label, 140, -1);
+  gtk_widget_set_size_request (priv->label, LABEL_WIDTH, -1);
+  hildon_helper_set_logical_font (priv->label, LABEL_FONT);
+  hildon_helper_set_logical_color (priv->label, GTK_RC_FG, GTK_STATE_NORMAL, LABEL_COLOR);
 
   priv->icon = gtk_image_new ();
   gtk_widget_show (priv->icon);
-  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), 64);
-  gtk_widget_set_size_request (priv->icon, 64, 64);
+  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), ICON_WIDTH);
+  gtk_widget_set_size_request (priv->icon, ICON_WIDTH, ICON_HEIGHT);
 
   gtk_container_add (GTK_CONTAINER (applet), ebox);
   gtk_container_add (GTK_CONTAINER (ebox), vbox);
   gtk_box_pack_start (GTK_BOX (vbox), alignment, FALSE, FALSE, 0);
   gtk_container_add (GTK_CONTAINER (alignment), priv->icon);
-  gtk_box_pack_start (GTK_BOX (vbox), priv->label, FALSE, FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (vbox), priv->label, TRUE, TRUE, 0);
+
+  gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH + (BORDER_WIDTH * 2), SHORTCUT_HEIGHT + (BORDER_WIDTH * 2));
+  gtk_container_set_border_width (GTK_CONTAINER (applet), BORDER_WIDTH);
 }

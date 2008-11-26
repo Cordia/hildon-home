@@ -1,5 +1,9 @@
 2008-11-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-task-shortcut.c (hd_task_shortcut_init): Update layout.
+
+2008-11-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* configure.ac: Increase version.
 
 	* debian/changelog: Add new entry for next release.
