@@ -1,5 +1,9 @@
 2008-11-27  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Update changelog.
+
+2008-11-27  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-applet-manager.c (items_configuration_loaded_cb): Only show
 	  not yet selected applets in dialog.
 	  (delete_event_cb): Remove applet from configuration if it is closed,

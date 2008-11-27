@@ -1,6 +1,7 @@
 hildon-home (0.3.0~unreleased) unstable; urgency=low
 
-  * Update support for task shortcuts. Fixes NB#93164
+  * Update support for managing applets. Fixes NB92206
+  * Update support for managing task shortcuts. Fixes NB#93164
   * Update support for bookmark shortcuts. Store and load bookmark data
     in/from GConf.
 
