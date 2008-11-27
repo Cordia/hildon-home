@@ -27,6 +27,10 @@
 #include <glib-object.h>
 #include <glib/gi18n.h>
 
+#include <gdk/gdkx.h>
+
+#include <X11/Xlib.h>
+
 #include <string.h>
 
 #include "hd-applet-manager.h"
@@ -43,7 +47,7 @@
 
 struct _HDAppletManagerPrivate 
 {
-  HDPluginConfiguration *plugin_configuration;
+  HDPluginManager *plugin_manager;
 
   GtkTreeModel *model;
 
@@ -79,30 +83,35 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
 
   priv->applets_key_file = key_file;
 
+  /* Clear displayed applets */
+  g_hash_table_remove_all (priv->displayed_applets);
+  g_hash_table_remove_all (priv->used_ids);
+
+  /* Iterate over all groups and get all displayed applets */
   groups = g_key_file_get_groups (key_file, NULL);
-
-  if (groups == NULL)
-    return;
-
-  for (i = 0; groups[i]; i++)
+  for (i = 0; groups && groups[i]; i++)
     {
       gchar *desktop_file;
 
       g_hash_table_insert (priv->used_ids,
-                           groups[i],
+                           g_strdup (groups[i]),
                            GUINT_TO_POINTER (1));
 
       desktop_file = g_key_file_get_string (key_file,
                                             groups[i],
                                             ITEMS_KEY_DESKTOP_FILE,
                                             NULL);
+      g_debug ("Group: %s, desktop-id: %s", groups[i], desktop_file);
+
       if (desktop_file != NULL)
         g_hash_table_insert (priv->displayed_applets,
                              desktop_file,
                              GUINT_TO_POINTER (1));
     }
+  g_strfreev (groups);
 
-  plugins = hd_plugin_configuration_get_all_plugin_paths (configuration);
+  /* Get all plugin paths FIXME: does not need to be done all times */
+  plugins = hd_plugin_configuration_get_all_plugin_paths (HD_PLUGIN_CONFIGURATION (configuration));
   for (i = 0; plugins[i]; i++)
     {
       if (!g_hash_table_lookup (priv->installed, plugins[i]))
@@ -173,13 +182,76 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
   g_hash_table_iter_init (&iter, priv->installed);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
-                                         NULL,
-                                         -1,
-                                         0, ((HDPluginInfo *)value)->name,
-                                         1, key,
-                                         -1);
+      g_debug (".desktop: %s, %d, %x", (gchar *) key, ((HDPluginInfo *)value)->multiple, GPOINTER_TO_UINT (g_hash_table_lookup (priv->displayed_applets, key)));
+
+      if (((HDPluginInfo *)value)->multiple ||
+          g_hash_table_lookup (priv->displayed_applets, key) == NULL)
+        {
+          gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
+                                             NULL,
+                                             -1,
+                                             0, ((HDPluginInfo *)value)->name,
+                                             1, key,
+                                             -1);
+        }
     }
+}
+
+static gboolean
+delete_event_cb (GtkWidget       *widget,
+                 GdkEvent        *event,
+                 HDAppletManager *manager)
+{
+  gchar *plugin_id;
+
+  plugin_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (widget));
+  hd_applet_manager_remove_applet (manager, plugin_id);
+  g_free (plugin_id);
+
+  gtk_widget_hide (widget);
+
+  return TRUE;
+}
+
+static void
+plugin_added_cb (HDPluginManager *pm,
+                 GObject         *plugin,
+                 HDAppletManager *manager)
+{
+  if (HD_IS_HOME_PLUGIN_ITEM (plugin))
+    {
+      Display *display;
+      Window root;
+
+      g_signal_connect (plugin, "delete-event",
+                        G_CALLBACK (delete_event_cb), manager);
+
+      /* Set menu transient for root window */
+      gtk_widget_realize (GTK_WIDGET (plugin));
+      display = GDK_DISPLAY_XDISPLAY (gtk_widget_get_display (GTK_WIDGET (plugin)));
+      root = RootWindow (display, GDK_SCREEN_XNUMBER (gtk_widget_get_screen (GTK_WIDGET (plugin))));
+      XSetTransientForHint (display, GDK_WINDOW_XID (GTK_WIDGET (plugin)->window), root);
+
+      gtk_widget_show (GTK_WIDGET (plugin));
+    }
+}
+
+static void
+plugin_removed_cb (HDPluginManager *pm,
+                   GObject         *plugin,
+                   gpointer         data)
+{
+  if (HD_IS_HOME_PLUGIN_ITEM (plugin))
+    gtk_widget_destroy (GTK_WIDGET (plugin));
+}
+
+static gboolean
+run_idle (gpointer data)
+{
+  /* Load the configuration of the plugin manager and load plugins */
+  hd_plugin_manager_run (HD_PLUGIN_MANAGER (data));
+
+  return FALSE;
 }
 
 static void
@@ -189,8 +261,7 @@ hd_applet_manager_init (HDAppletManager *manager)
   manager->priv = HD_APPLET_MANAGER_GET_PRIVATE (manager);
   priv = manager->priv;
 
-  priv->plugin_configuration = hd_plugin_configuration_new (
-                                   hd_config_file_new_with_defaults ("home.conf"));
+  priv->plugin_manager = hd_plugin_manager_new (hd_config_file_new_with_defaults ("home.conf"));
 
   priv->displayed_applets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   priv->used_ids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
@@ -201,10 +272,14 @@ hd_applet_manager_init (HDAppletManager *manager)
                                         0,
                                         GTK_SORT_ASCENDING);
 
-  g_signal_connect (priv->plugin_configuration, "items-configuration-loaded",
+  g_signal_connect (priv->plugin_manager, "items-configuration-loaded",
                     G_CALLBACK (items_configuration_loaded_cb), manager);
+  g_signal_connect (priv->plugin_manager, "plugin-added",
+                    G_CALLBACK (plugin_added_cb), manager);
+  g_signal_connect (priv->plugin_manager, "plugin-removed",
+                    G_CALLBACK (plugin_removed_cb), manager);
 
-  hd_plugin_configuration_run (priv->plugin_configuration);
+  gdk_threads_add_idle (run_idle, priv->plugin_manager);
 }
 
 static void
@@ -262,21 +337,21 @@ hd_applet_manager_install_applet (HDAppletManager *manager,
   g_free (id);
 
   /* Store file atomically */
-  hd_plugin_configuration_store_items_key_file (priv->plugin_configuration);
+  hd_plugin_configuration_store_items_key_file (HD_PLUGIN_CONFIGURATION (priv->plugin_manager));
 }
 
 void
 hd_applet_manager_remove_applet (HDAppletManager *manager,
-                                 const gchar     *applet_id)
+                                 const gchar     *plugin_id)
 {
   HDAppletManagerPrivate *priv = manager->priv;
 
   if (g_key_file_remove_group (priv->applets_key_file,
-                               applet_id,
+                               plugin_id,
                                NULL))
     {
       /* Store file atomically */
-      hd_plugin_configuration_store_items_key_file (priv->plugin_configuration);
+      hd_plugin_configuration_store_items_key_file (HD_PLUGIN_CONFIGURATION (priv->plugin_manager));
     }
 }
 

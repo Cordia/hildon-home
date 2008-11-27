@@ -33,6 +33,7 @@
 #include <X11/Xlib.h>
 
 #include "hd-add-applet-dialog.h"
+#include "hd-applet-manager.h"
 #include "hd-add-bookmark-dialog.h"
 #include "hd-bookmark-manager.h"
 #include "hd-add-task-dialog.h"
@@ -275,6 +276,7 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
   GtkWidget *menu, *button;
   Display *display;
   Window root;
+  HDAppletManager *applet_manager;
   HDTaskManager *task_manager;
   HDBookmarkManager *bookmark_manager;
   GtkTreeModel *model;
@@ -289,6 +291,16 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                           G_CALLBACK (select_applets_clicked_cb), dbus);
   hildon_app_menu_append (HILDON_APP_MENU (menu),
                           GTK_BUTTON (button));
+
+  applet_manager = hd_applet_manager_get ();
+  model = hd_applet_manager_get_model (applet_manager);
+  g_signal_connect (G_OBJECT (model), "row-inserted",
+                    G_CALLBACK (model_row_inserted_cb), button);
+  g_signal_connect (G_OBJECT (model), "row-deleted",
+                    G_CALLBACK (model_row_deleted_cb), button);
+  if (!gtk_tree_model_get_iter_first (model, &iter))
+    gtk_widget_hide (button);
+  g_object_unref (model);
 
   button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_shortcuts"));
   g_signal_connect_after (button, "clicked",

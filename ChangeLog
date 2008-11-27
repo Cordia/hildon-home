@@ -1,3 +1,18 @@
+2008-11-27  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-applet-manager.c (items_configuration_loaded_cb): Only show
+	  not yet selected applets in dialog.
+	  (delete_event_cb): Remove applet from configuration if it is closed,
+	  which means removed from Home.
+	  (plugin_added_cb, plugin_removed_cb, run_idle, hd_applet_manager_init,
+	  hd_applet_manager_install_applet, hd_applet_manager_remove_applet):
+	  Use only one plugin manager to load applets and manage the applets
+	  on Home.
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu): Only
+	  show menu item if list of applets is not empty.
+	* src/hildon-home.c (load_plugins_idle, main): Move plugin manager to
+	  load applets to HDAppletManager.
+
 2008-11-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-task-shortcut.c (hd_task_shortcut_init): Update layout.

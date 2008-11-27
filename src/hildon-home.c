@@ -44,6 +44,7 @@
 #include "hd-task-manager.h"
 #include "hd-task-shortcut.h"
 #include "hd-hildon-home-dbus.h"
+#include "hd-applet-manager.h"
 
 #define HD_STAMP_DIR   "/tmp/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
@@ -85,29 +86,10 @@ load_plugins_idle (gpointer data)
   return FALSE;
 }
 
-static void
-home_plugin_added (HDPluginManager *pm,
-                   GObject         *plugin,
-                   gpointer         data)
-{
-  if (HD_IS_HOME_PLUGIN_ITEM (plugin))
-    gtk_widget_show (GTK_WIDGET (plugin));
-}
-
-static void
-home_plugin_removed (HDPluginManager *pm,
-                     GObject         *plugin,
-                     gpointer         data)
-{
-  if (HD_IS_HOME_PLUGIN_ITEM (plugin))
-    gtk_widget_destroy (GTK_WIDGET (plugin));
-}
-
-
 int
 main (int argc, char **argv)
 {
-  HDPluginManager *notification_pm, *home_pm;
+  HDPluginManager *notification_pm;
   HDNotificationManager *nm;
   HDSystemNotifications *sn;
   GConfClient *client;
@@ -126,23 +108,17 @@ main (int argc, char **argv)
 
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
 
-  notification_pm = hd_plugin_manager_new (
-                        hd_config_file_new_with_defaults ("notification.conf"));
+  /* Initialize applet manager*/
+  hd_applet_manager_get ();
 
-  home_pm = hd_plugin_manager_new (
-                hd_config_file_new_with_defaults ("home.conf"));
-
-  g_signal_connect (home_pm, "plugin-added",
-                    G_CALLBACK (home_plugin_added), NULL);
-  g_signal_connect (home_pm, "plugin-removed",
-                    G_CALLBACK (home_plugin_removed), NULL);
+  /* Intialize notifications */
+  notification_pm = hd_plugin_manager_new (hd_config_file_new_with_defaults ("notification.conf"));
 
   nm = hd_notification_manager_get ();
   sn = hd_system_notifications_get ();
   hd_incoming_events_new (notification_pm);
 
   /* Load Plugins when idle */
-  gdk_threads_add_idle (load_plugins_idle, home_pm);
   gdk_threads_add_idle (load_plugins_idle, notification_pm);
 
   /* Add shortcuts gconf dirs so hildon-home gets notifications about changes */
