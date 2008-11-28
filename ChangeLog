@@ -1,5 +1,15 @@
 2008-11-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Update entry.
+
+	* src/hd-add-bookmark-dialog.c (hd_add_bookmark_dialog_init): Use a
+	pixbuf and a text cell renderer to also display the bookmark icon.
+
+	* src/hd-add-task-dialog.c (hd_add_task_dialog_init): Use a pixbuf and
+	a text cell renderer to also display the task icon.
+
+2008-11-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-task-manager.c (HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN):
 	Use X-Text-Domain.
 

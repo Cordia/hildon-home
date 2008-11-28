@@ -129,6 +129,8 @@ static void
 hd_add_task_dialog_init (HDAddTaskDialog *dialog)
 {
   HDAddTaskDialogPrivate *priv = HD_ADD_TASK_DIALOG_GET_PRIVATE (dialog);
+  HildonTouchSelectorColumn *column;
+  GtkCellRenderer *renderer;
 
   dialog->priv = priv;
 
@@ -140,17 +142,27 @@ hd_add_task_dialog_init (HDAddTaskDialog *dialog)
 
   priv->model = hd_task_manager_get_model (hd_task_manager_get ());
 
-  /* Text column */
-  hildon_touch_selector_append_text_column (HILDON_TOUCH_SELECTOR (priv->selector),
-                                            priv->model,
-                                            TRUE);
+  /* Create empty column */
+  column = hildon_touch_selector_append_column (HILDON_TOUCH_SELECTOR (priv->selector),
+                                                priv->model,
+                                                NULL);
+  /* Add the icon renderer */
+  renderer = gtk_cell_renderer_pixbuf_new ();
+  gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (column),
+                              renderer,
+                              FALSE);
+  gtk_cell_layout_add_attribute (GTK_CELL_LAYOUT (column),
+                                 renderer,
+                                 "icon-name", 1);
 
-/*  hildon_touch_selector_set_column_selection_mode (HILDON_TOUCH_SELECTOR (priv->selector),
-                                                   HILDON_TOUCH_SELECTOR_SELECTION_MODE_SINGLE);*/
-
-/*  hildon_touch_selector_set_active (HILDON_TOUCH_SELECTOR (selector),
-                                    0,
-                                    -1);*/
+  /* Add the label renderer */
+  renderer = gtk_cell_renderer_text_new ();
+  gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (column),
+                              renderer,
+                              FALSE);
+  gtk_cell_layout_add_attribute (GTK_CELL_LAYOUT (column),
+                                 renderer,
+                                 "text", 0);
 
   hildon_picker_dialog_set_selector (HILDON_PICKER_DIALOG (dialog),
                                      HILDON_TOUCH_SELECTOR (priv->selector));

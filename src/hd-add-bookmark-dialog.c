@@ -57,8 +57,6 @@ enum
 
 struct _HDAddBookmarkDialogPrivate
 {
-  GtkListStore *store;
-
   GtkWidget *selector;
 };
 
@@ -67,14 +65,6 @@ G_DEFINE_TYPE (HDAddBookmarkDialog, hd_add_bookmark_dialog, HILDON_TYPE_PICKER_D
 static void
 hd_add_bookmark_dialog_dispose (GObject *object)
 {
-  HDAddBookmarkDialogPrivate *priv = HD_ADD_BOOKMARK_DIALOG (object)->priv;
-
-  if (priv->store)
-    {
-      g_object_unref (priv->store);
-      priv->store = NULL;
-    }
-
   G_OBJECT_CLASS (hd_add_bookmark_dialog_parent_class)->dispose (object);
 }
 
@@ -129,6 +119,8 @@ static void
 hd_add_bookmark_dialog_init (HDAddBookmarkDialog *dialog)
 {
   HDAddBookmarkDialogPrivate *priv = HD_ADD_BOOKMARK_DIALOG_GET_PRIVATE (dialog);
+  HildonTouchSelectorColumn *column;
+  GtkCellRenderer *renderer;
 
   dialog->priv = priv;
 
@@ -138,19 +130,28 @@ hd_add_bookmark_dialog_init (HDAddBookmarkDialog *dialog)
   /* */
   priv->selector = g_object_ref (hildon_touch_selector_new ());
 
-  priv->store = GTK_LIST_STORE (hd_bookmark_manager_get_model (hd_bookmark_manager_get ()));
+  /* One Column */
+  column = hildon_touch_selector_append_column (HILDON_TOUCH_SELECTOR (priv->selector),
+                                                hd_bookmark_manager_get_model (hd_bookmark_manager_get ()),
+                                                NULL);
 
-  /* Text column */
-  hildon_touch_selector_append_text_column (HILDON_TOUCH_SELECTOR (priv->selector),
-                                            hd_bookmark_manager_get_model (hd_bookmark_manager_get ()),
-                                            TRUE);
+  /* Add the icon renderer */
+  renderer = gtk_cell_renderer_pixbuf_new ();
+  gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (column),
+                              renderer,
+                              FALSE);
+  gtk_cell_layout_add_attribute (GTK_CELL_LAYOUT (column),
+                                 renderer,
+                                 "pixbuf", 3);
 
-/*  hildon_touch_selector_set_column_selection_mode (HILDON_TOUCH_SELECTOR (priv->selector),
-                                                   HILDON_TOUCH_SELECTOR_SELECTION_MODE_SINGLE);*/
-
-/*  hildon_touch_selector_set_active (HILDON_TOUCH_SELECTOR (selector),
-                                    0,
-                                    -1);*/
+  /* Add the label renderer */
+  renderer = gtk_cell_renderer_text_new ();
+  gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (column),
+                              renderer,
+                              FALSE);
+  gtk_cell_layout_add_attribute (GTK_CELL_LAYOUT (column),
+                                 renderer,
+                                 "text", 0);
 
   hildon_picker_dialog_set_selector (HILDON_PICKER_DIALOG (dialog),
                                      HILDON_TOUCH_SELECTOR (priv->selector));
