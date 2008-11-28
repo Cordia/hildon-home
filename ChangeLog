@@ -1,3 +1,8 @@
+2008-11-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-task-manager.c (HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN):
+	Use X-Text-Domain.
+
 2008-11-27  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update changelog.

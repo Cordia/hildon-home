@@ -43,7 +43,7 @@
 
 /* Task .desktop file keys */
 #define HD_KEY_FILE_DESKTOP_KEY_SERVICE "X-Osso-Service"
-#define HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN "X-Osso-Translation-Domain"
+#define HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN "X-Text-Domain"
 
 /* Launch tasks */
 #define SERVICE_NAME_LEN        255
