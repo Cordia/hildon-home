@@ -48,10 +48,10 @@ hildon_home_SOURCES = \
 	hd-add-task-dialog.h		\
 	hd-applet-manager.c		\
 	hd-applet-manager.h		\
-	hd-background-dialog.c		\
-	hd-background-dialog.h		\
 	hd-bookmark-shortcut.c		\
 	hd-bookmark-shortcut.h		\
+	hd-change-background-dialog.c	\
+	hd-change-background-dialog.h	\
 	hd-hildon-home-dbus.c		\
 	hd-hildon-home-dbus.h		\
 	hd-incoming-event-window.c	\

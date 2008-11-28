@@ -1,5 +1,18 @@
 2008-11-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* configure.ac: Add hilon-fm-2 to the deps.
+
+	* src/Makefile.am:
+	* src/hd-background-dialog.c (deleted):
+	* src/hd-background-dialog.h (deleted):
+	* src/hd-change-background-dialog.c (added):
+	* src/hd-change-background-dialog.h (added): Implement the new UI of the
+	  change background dialog.
+
+	* src/hd-hildon-home-dbus.c: Fix grabs and ungrabs.
+
+2008-11-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* debian/changelog: Update entry.
 
 	* src/hd-add-bookmark-dialog.c (hd_add_bookmark_dialog_init): Use a
