@@ -1,3 +1,8 @@
+2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu):
+	Add call to ungrab pointer (moved from hildon-desktop).
+
 2008-11-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* configure.ac: Add hilon-fm-2 to the deps.

@@ -407,6 +407,12 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
       XSetTransientForHint (display, GDK_WINDOW_XID (priv->menu->window), root);
     }
 
+  /* Ungrab pointer in home */
+  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
+                              "UngrabPointer",
+                              G_TYPE_INVALID);
+
+
   /* Show menu */
   gtk_widget_show (priv->menu);
 }
