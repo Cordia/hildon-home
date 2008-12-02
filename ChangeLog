@@ -1,5 +1,13 @@
 2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-change-background-dialog.c:
+	  (hd_change_background_dialog_class_init, get_image_label_from_uri,
+	  response_cb, hd_change_background_dialog_init): Implement getting
+	  list of available background images and make it possible to select
+	  them.
+
+2008-12-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu):
 	Add call to ungrab pointer (moved from hildon-desktop).
 
@@ -12,7 +20,7 @@
 	* src/hd-background-dialog.h (deleted):
 	* src/hd-change-background-dialog.c (added):
 	* src/hd-change-background-dialog.h (added): Implement the new UI of the
-	  change background dialog.
+	  change background dialog. Fixes NB#93117
 
 	* src/hd-hildon-home-dbus.c: Fix grabs and ungrabs.
 
