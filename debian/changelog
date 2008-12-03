@@ -1,3 +1,9 @@
+hildon-home (0.3.1~unreleased) unstable; urgency=low
+
+  * unreleased
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  3 Dec 2008 14:07:06 +0200
+
 hildon-home (0.3.0) unstable; urgency=low
 
   * Update support for managing applets. Fixes: NB#92206, NB#93932
