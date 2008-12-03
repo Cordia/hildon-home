@@ -23,9 +23,9 @@
 #include <config.h>
 #endif
 
-#include <glib.h>
 #include <glib/gi18n.h>
-#include <glib-object.h>
+
+#include <hildon/hildon.h>
 
 #include <gconf/gconf-client.h>
 
@@ -116,9 +116,29 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
   GError *error = NULL;
   HDTaskInfo *info = NULL;
   gchar *desktop_id = NULL;
-  gchar *translation_domain = NULL, *name = NULL;
+  gchar *type = NULL, *translation_domain = NULL, *name = NULL;
+  GdkPixbuf *pixbuf = NULL;
+  /* FIXME xmas workaround */
+  gchar *dirname, *w50id, *w50id_dot, *w50_filename;
 
   g_debug ("hd_task_manager_load_desktop_file (%s)", filename);
+
+  /* FIXME xmas workaround */
+  dirname = g_path_get_dirname (filename);
+  w50id = g_path_get_basename (filename);
+  w50id_dot = strrchr (w50id, '.');
+  if (w50id_dot)
+    *w50id_dot = '\0';
+  w50_filename = g_strdup_printf ("%s/%s.w50-desktop", dirname, w50id);
+  desktop_id = g_strdup_printf ("%s.desktop", w50id);
+  g_free (dirname);
+  g_free (w50id);
+  if (strcmp (filename, w50_filename) && g_file_test (w50_filename, G_FILE_TEST_EXISTS))
+    {
+      g_free (w50_filename);
+      return;
+    }
+  g_free (w50_filename);
 
   desktop_file = g_key_file_new ();
   if (!g_key_file_load_from_file (desktop_file,
@@ -130,6 +150,17 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
                filename,
                error->message);
       g_error_free (error);
+      goto cleanup;
+    }
+
+  type = g_key_file_get_string (desktop_file,
+                                G_KEY_FILE_DESKTOP_GROUP,
+                                G_KEY_FILE_DESKTOP_KEY_TYPE,
+                                NULL);
+
+  /* Test if type is Application */
+  if (!type || strcmp (type, G_KEY_FILE_DESKTOP_TYPE_APPLICATION))
+    {
       goto cleanup;
     }
 
@@ -188,17 +219,36 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
                                          NULL);
 
   /* Get the desktop_id */
-  desktop_id = g_path_get_basename (filename);
+  /* FIXME xmas workaround */
+  /* desktop_id = g_path_get_basename (filename);*/
 
   g_hash_table_insert (priv->available_tasks,
                        desktop_id,
                        info);
+
+  /* Load icon for list */
+  if (info->icon)
+    {
+      GtkIconTheme *icon_theme = gtk_icon_theme_get_default ();
+      GtkIconInfo *icon_info;
+
+      icon_info = gtk_icon_theme_lookup_icon (icon_theme,
+                                              info->icon,
+                                              64,
+                                              GTK_ICON_LOOKUP_NO_SVG);
+      if (icon_info)
+        {
+          pixbuf = gtk_icon_info_load_icon (icon_info, NULL);
+          gtk_icon_info_free (icon_info);
+        }
+    }
 
   gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
                                      NULL, -1,
                                      0, info->label,
                                      1, info->icon,
                                      2, desktop_id,
+                                     3, pixbuf,
                                      -1);
 
   g_signal_emit (manager,
@@ -207,8 +257,11 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
 
 cleanup:
   g_key_file_free (desktop_file);
+  g_free (type);
   g_free (translation_domain);
   g_free (name);
+  if (pixbuf)
+    g_object_unref (pixbuf);
 }
 
 static int
@@ -336,7 +389,7 @@ hd_task_manager_init (HDTaskManager *manager)
   priv->installed_shortcuts = g_hash_table_new_full (g_str_hash, g_str_equal,
                                                      g_free, NULL);
 
-  priv->model = GTK_TREE_MODEL (gtk_list_store_new (3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING));
+  priv->model = GTK_TREE_MODEL (gtk_list_store_new (4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, GDK_TYPE_PIXBUF));
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
                                         0,
                                         GTK_SORT_ASCENDING);

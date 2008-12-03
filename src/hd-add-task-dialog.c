@@ -153,7 +153,7 @@ hd_add_task_dialog_init (HDAddTaskDialog *dialog)
                               FALSE);
   gtk_cell_layout_add_attribute (GTK_CELL_LAYOUT (column),
                                  renderer,
-                                 "icon-name", 1);
+                                 "pixbuf", 3);
 
   /* Add the label renderer */
   renderer = gtk_cell_renderer_text_new ();

@@ -1,3 +1,13 @@
+2008-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-add-task-dialog.c (hd_add_task_dialog_init): Use pixbuf in
+	  the icon renderer in the application list.
+
+	* src/hd-task-manager.c (hd_task_manager_load_desktop_file,
+	  hd_task_manager_init): Only scan .desktop files of type Application.
+	  Store a pixbuf of the icon for the Add shortcut dialog. Add -w50
+	  workaround.
+
 2008-12-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.0
