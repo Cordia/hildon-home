@@ -1,11 +1,11 @@
-hildon-home (0.3.0~unreleased) unstable; urgency=low
+hildon-home (0.3.0) unstable; urgency=low
 
-  * Update support for managing applets. Fixes NB#92206, NB#93932
-  * Update support for managing task shortcuts. Fixes NB#93164
+  * Update support for managing applets. Fixes: NB#92206, NB#93932
+  * Update support for managing task shortcuts. Fixes: NB#93164
   * Update support for bookmark shortcuts. Store and load bookmark data
     in/from GConf.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Nov 2008 14:39:06 +0100
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 03 Dec 2008 14:04:30 +0200
 
 hildon-home (0.2.1) unstable; urgency=low
 
