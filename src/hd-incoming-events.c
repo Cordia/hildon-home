@@ -154,7 +154,7 @@ group_update (HDIncomingEventGroup *group)
       if (group->notifications->len > 1)
         {
           guint i;
-          time_t max_time = -2;
+          gint64 max_time = -2;
           const gchar *latest_summary = "";
           gchar *text_domain;
           gchar *summary;
@@ -163,7 +163,7 @@ group_update (HDIncomingEventGroup *group)
           for (i = 0; i < group->notifications->len; i++)
             {
               HDNotification *notification;
-              time_t time;
+              gint64 time;
 
               notification = g_ptr_array_index (group->notifications,
                                                 i);
@@ -191,7 +191,7 @@ group_update (HDIncomingEventGroup *group)
                         "title", summary,
                         "message", body,
                         "icon", group->icon,
-                        "time", (gint64) max_time,
+                        "time", max_time,
                         NULL);
 
           g_free (summary);
@@ -206,7 +206,7 @@ group_update (HDIncomingEventGroup *group)
                         "title", hd_notification_get_summary (notification),
                         "message", hd_notification_get_body (notification),
                         "icon", hd_notification_get_icon (notification),
-                        "time", hd_notification_get_time (notification),
+                        "time", (gint64) hd_notification_get_time (notification),
                         NULL);
         }
 

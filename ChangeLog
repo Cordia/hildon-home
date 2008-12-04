@@ -1,3 +1,12 @@
+2008-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Update.
+
+	* src/hd-incoming-events.c (group_update): Add missing cast to gint64.
+
+	* src/notification-groups.conf: Add more groups. Fixes NB#94404
+	  NB#94408
+
 2008-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-add-task-dialog.c (hd_add_task_dialog_init): Use pixbuf in
