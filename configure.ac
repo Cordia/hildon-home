@@ -112,6 +112,8 @@ AC_SUBST(hildondesktoplibdir)
 
 AC_OUTPUT([
 Makefile
+com.nokia.HildonHome.service
+org.freedesktop.Notifications.service
 src/Makefile
 src/home.conf
 src/home.plugins

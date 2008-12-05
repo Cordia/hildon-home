@@ -1,3 +1,14 @@
+2008-12-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* com.nokia.HildonHome.service.in:
+	* org.freedesktop.Notifications.service.in: Add D-Bus .service files.
+
+	* Makefile.am:  Install the .service files.
+
+	* configure.ac: Add .service files.
+
+	* debian/hildon-home.install: Install .service file in package.
+
 2008-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update.
