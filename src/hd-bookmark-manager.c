@@ -131,15 +131,19 @@ static gboolean
 hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
 {
   BookmarkItem *root = create_bookmark_new ();
+  gboolean result;
 
-  if (!get_root_bookmark (&root,
-                          MYBOOKMARKS))
-    {
-      g_debug ("Could not read bookmark file");
-    }
+  result = get_root_bookmark (&root, MYBOOKMARKS);
 
-  hd_bookmark_manager_add_bookmark_item (manager,
-                                         root);
+  if (!result)
+    result = get_bookmark_from_backup(&root,
+                                      MYBOOKMARKSFILEBACKUP);
+
+  if (result)
+    hd_bookmark_manager_add_bookmark_item (manager,
+                                           root);
+  else
+    g_warning ("Could not read bookmark file");
 
   return FALSE;
 }
