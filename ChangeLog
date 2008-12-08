@@ -1,5 +1,10 @@
 2008-12-08  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/notification-groups.conf: Change destination of email-message
+	category to Modest.
+
+2008-12-08  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-bookmark-manager.c
 	  (hd_bookmark_manager_parse_bookmark_files): Only call
 	  hd_bookmark_manager_add_bookmark_item if the bookmarks file was
