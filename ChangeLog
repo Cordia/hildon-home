@@ -1,5 +1,11 @@
 2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-bookmark-manager.c
+	(hd_bookmark_manager_parse_bookmark_files): Really fix the broken
+	parse bookmark function.
+
+2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* configure.ac: Increase required libhildondesktop version.
 
 	* debian/control: Increase required libhildondesktop1-dev version.

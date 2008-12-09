@@ -132,20 +132,31 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
 static gboolean
 hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
 {
-  BookmarkItem *root = create_bookmark_new ();
-  gboolean result;
+  BookmarkItem *root;
 
-  result = get_root_bookmark (&root, MYBOOKMARKS);
+  /* Create the bookmark paths if they do not exist yet */
+  set_bookmark_files_path ();
 
-/*  if (!result)
-    result = get_bookmark_from_backup(&root,
-                                      MYBOOKMARKSFILEBACKUP);*/
+  /* Try to load user bookmarks from file */
+  root = NULL;
+  if (!get_root_bookmark (&root, MYBOOKMARKS))
+    get_bookmark_from_backup(&root, MYBOOKMARKSFILEBACKUP);
 
-  if (result)
+  if (root != NULL)
     hd_bookmark_manager_add_bookmark_item (manager,
                                            root);
   else
-    g_warning ("Could not read bookmark file");
+    g_warning ("Could not read users bookmarks from file");
+
+  /* Try to load operator bookmarks from file */
+  root = NULL;
+  get_root_bookmark (&root, OPERATORBOOKMARKS);
+
+  if (root != NULL)
+    hd_bookmark_manager_add_bookmark_item (manager,
+                                           root);
+  else
+    g_warning ("Could not read operator bookmarks from file");
 
   return FALSE;
 }
