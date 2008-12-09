@@ -356,6 +356,10 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
       hd_notification_plugin_notify (plugin, notification);
     }
 
+  /* Do not show visual notification for incoming-call notifications */
+  if (g_strcmp0 (category, "incoming-call") == 0)
+    return;
+
   /* Create the notification preview window */
   preview_window = hd_incoming_event_window_new (TRUE,
                                                  NULL,

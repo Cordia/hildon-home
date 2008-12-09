@@ -1,5 +1,10 @@
 2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-incoming-events.c (hd_incoming_events_notified): Do not show
+	a visual notification for incoming-call notifications.
+
+2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-bookmark-manager.c
 	(hd_bookmark_manager_parse_bookmark_files): Really fix the broken
 	parse bookmark function.
