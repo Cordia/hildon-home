@@ -2,6 +2,7 @@ hildon-home (0.3.1~unreleased) unstable; urgency=low
 
   * Added libhildonfm2-dev to debian/control.
   * Update notifcation groups with more categories. Fixes NB#94404 NB#94408
+  * Do not show a visual notification if category is "incoming-call". Fixes NB#94960
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  3 Dec 2008 14:07:06 +0200
 
