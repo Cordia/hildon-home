@@ -1,4 +1,4 @@
-AC_INIT([hildon-home], [0.3.0])
+AC_INIT([hildon-home], [0.3.1])
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(config.h)
@@ -70,7 +70,7 @@ AC_DEFINE(GETTEXT_PACKAGE, ["maemo-af-desktop"], [Localisation domain])
 PKG_CHECK_MODULES(HILDON_HOME,
                   [hildon-1		>= 2.1.4	dnl
 		   hildon-fm-2		>= 2.0.9	dnl
-                   libhildondesktop-1	>= 2.1.8	dnl
+                   libhildondesktop-1	>= 2.1.10	dnl
 		   gnome-vfs-2.0	>= 2.8.3	dnl
 		   sqlite3				dnl
 		   osso-bookmark-engine])

@@ -1,3 +1,15 @@
+2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac: Increase required libhildondesktop version.
+
+	* debian/control: Increase required libhildondesktop1-dev version.
+
+	* src/hd-bookmark-manager.c
+	  (hd_bookmark_manager_parse_bookmark_files): Do not use broken backup
+	  bookmarks function (fixes segfault).
+	  (hd_bookmark_manager_install_bookmark): Moved the code to create a
+	  bookmark shortcut to libhildondesktop.
+
 2008-12-08  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/notification-groups.conf: Change destination of email-message

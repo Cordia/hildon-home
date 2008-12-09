@@ -29,6 +29,8 @@
 
 #include <gconf/gconf-client.h>
 
+#include <libhildondesktop/libhildondesktop.h>
+
 #include <string.h>
 
 #include <osso_bookmark_parser.h>
@@ -135,9 +137,9 @@ hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
 
   result = get_root_bookmark (&root, MYBOOKMARKS);
 
-  if (!result)
+/*  if (!result)
     result = get_bookmark_from_backup(&root,
-                                      MYBOOKMARKSFILEBACKUP);
+                                      MYBOOKMARKSFILEBACKUP);*/
 
   if (result)
     hd_bookmark_manager_add_bookmark_item (manager,
@@ -197,18 +199,10 @@ hd_bookmark_manager_get_model (HDBookmarkManager *manager)
 
 void
 hd_bookmark_manager_install_bookmark (HDBookmarkManager *manager,
-                              GtkTreeIter     *iter)
+                                      GtkTreeIter     *iter)
 {
   HDBookmarkManagerPrivate *priv = manager->priv;
-  GConfClient *client;
   gchar *label, *icon, *url;
-  gchar *canon_url, *id = NULL;
-  guint count = 0;
-  gchar *key;
-  GSList *list;
-  GError *error = NULL;
-
-  client = gconf_client_get_default ();
 
   gtk_tree_model_get (priv->model, iter,
                       0, &label,
@@ -216,104 +210,12 @@ hd_bookmark_manager_install_bookmark (HDBookmarkManager *manager,
                       2, &url,
                       -1);
 
-  /* Get the current list of bookmark shortcuts from GConf */
-  list = gconf_client_get_list (client,
-                                BOOKMARK_SHORTCUTS_GCONF_KEY,
-                                GCONF_VALUE_STRING,
-                                &error);
+  hd_shortcuts_add_bookmark_shortcut (url,
+                                      label,
+                                      icon);
 
-  if (error)
-    {
-      g_warning ("Could not get string list from GConf (%s): %s.",
-                 BOOKMARK_SHORTCUTS_GCONF_KEY,
-                 error->message);
-      g_error_free (error);
-      error = NULL;
-    }
-
-  /* Create an unique id for the bookmark */
-  canon_url = g_strdup (url);
-  g_strcanon (canon_url, ID_VALID_CHARS, ID_SUBSTITUTOR);
-  do
-    {
-      g_free (id);
-      id = g_strdup_printf ("%s-%u", canon_url, count++);
-    }
-  while (g_slist_find_custom (list, id, (GCompareFunc) strcmp));
-
-  /* Store the bookmark itself into GConf */
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_LABEL, id);
-  gconf_client_set_string (client,
-                           key,
-                           label,
-                           &error);
-  if (error)
-    {
-      g_warning ("Could not store label for bookmark %s into GConf: %s.",
-                 id,
-                 error->message);
-      g_error_free (error);
-      error = NULL;
-    }
-  g_free (key);
-
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_ICON, id);
-  gconf_client_set_string (client,
-                           key,
-                           icon,
-                           &error);
-  if (error)
-    {
-      g_warning ("Could not store icon for bookmark %s into GConf: %s.",
-                 id,
-                 error->message);
-      g_error_free (error);
-      error = NULL;
-    }
-  g_free (key);
-
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_URL, id);
-  gconf_client_set_string (client,
-                           key,
-                           url,
-                           &error);
-  if (error)
-    {
-      g_warning ("Could not store URL for bookmark %s into GConf: %s.",
-                 id,
-                 error->message);
-      g_error_free (error);
-      error = NULL;
-    }
-  g_free (key);
-
-  /* Append the new bookmark to bookmark shortcut list */
-  list = g_slist_append (list, id);
-
-  /* Store the new list in GConf */
-  gconf_client_set_list (client,
-                         BOOKMARK_SHORTCUTS_GCONF_KEY,
-                         GCONF_VALUE_STRING,
-                         list,
-                         &error);
-  if (error)
-    {
-      g_warning ("Could not write string list from GConf (%s): %s.",
-                 BOOKMARK_SHORTCUTS_GCONF_KEY,
-                 error->message);
-      g_error_free (error);
-      error = NULL;
-    }
-
-  /* Free */
+  /* Free memory */
   g_free (label);
   g_free (icon);
   g_free (url);
-
-  g_free (canon_url);
-
-  g_slist_foreach (list, (GFunc) g_free, NULL);
-  g_slist_free (list);
-
-  g_object_unref (client);
 }
