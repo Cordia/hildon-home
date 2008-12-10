@@ -1,3 +1,7 @@
+2008-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Update changelogs
+
 2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update changelog.
@@ -11,7 +15,7 @@
 
 	* src/hd-bookmark-manager.c
 	(hd_bookmark_manager_parse_bookmark_files): Really fix the broken
-	parse bookmark function.
+	parse bookmark function. Fixes NB#95149
 
 2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
@@ -65,7 +69,7 @@
 	* src/hd-task-manager.c (hd_task_manager_load_desktop_file,
 	  hd_task_manager_init): Only scan .desktop files of type Application.
 	  Store a pixbuf of the icon for the Add shortcut dialog. Add -w50
-	  workaround.
+	  workaround. Fixes NB#95228
 
 2008-12-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
