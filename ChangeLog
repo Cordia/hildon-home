@@ -1,5 +1,20 @@
 2008-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-change-background-dialog.c
+	  (hd_change_background_dialog_dispose): Unref proxy.
+	  (hd_change_background_dialog_set_property,
+	   hd_change_background_dialog_class_init): Add proxy property
+	  (response_cb): Fix selecting image. Fixes NB#95247
+	  (hd_change_background_dialog_init,
+	   hd_change_background_dialog_new): Add a D-Bus proxy argument and
+	   property.
+	* src/hd-change-background-dialog.h (hd_change_background_dialog_new):
+	  Add a D-Bus proxy argument.
+
+	* src/hd-hildon-home-dbus.c (change_background_clicked_cb):
+
+2008-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* debian/changelog: Update changelogs
 
 2008-12-09  Jan Arne Petersen  <jpetersen@openismus.com>

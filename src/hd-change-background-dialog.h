@@ -25,6 +25,8 @@
 
 #include <hildon/hildon.h>
 
+#include <dbus/dbus-glib.h>
+
 G_BEGIN_DECLS
 
 #define HD_TYPE_CHANGE_BACKGROUND_DIALOG             (hd_change_background_dialog_get_type ())
@@ -56,7 +58,7 @@ struct _HDChangeBackgroundDialogClass
 
 GType      hd_change_background_dialog_get_type (void);
 
-GtkWidget *hd_change_background_dialog_new      (guint current_view);
+GtkWidget *hd_change_background_dialog_new      (DBusGProxy *proxy);
 
 G_END_DECLS
 

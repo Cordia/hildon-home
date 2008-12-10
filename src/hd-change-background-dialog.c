@@ -81,6 +81,12 @@ enum
 #define HD_CHANGE_BACKGROUND_DIALOG_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_CHANGE_BACKGROUND_DIALOG, HDChangeBackgroundDialogPrivate))
 
+enum
+{
+  PROP_0,
+  PROP_PROXY
+};
+
 struct _HDChangeBackgroundDialogPrivate
 {
   GtkTreeModel *model;
@@ -88,6 +94,8 @@ struct _HDChangeBackgroundDialogPrivate
   GtkWidget    *selector;
 
   GtkTreePath  *custom_image;
+
+  DBusGProxy   *proxy;
 };
 
 G_DEFINE_TYPE (HDChangeBackgroundDialog, hd_change_background_dialog, GTK_TYPE_DIALOG);
@@ -98,10 +106,10 @@ hd_change_background_dialog_dispose (GObject *object)
   HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG (object)->priv;
 
   if (priv->model)
-    {
-      g_object_unref (priv->model);
-      priv->model = NULL;
-    }
+    priv->model = (g_object_unref (priv->model), NULL);
+
+  if (priv->proxy)
+    priv->proxy = (g_object_unref (priv->proxy), NULL);
 
   G_OBJECT_CLASS (hd_change_background_dialog_parent_class)->dispose (object);
 }
@@ -115,12 +123,43 @@ hd_change_background_dialog_finalize (GObject *object)
 }
 
 static void
+hd_change_background_dialog_set_property (GObject      *object,
+                                          guint         prop_id,
+                                          const GValue *value,
+                                          GParamSpec   *pspec)
+{
+  HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG (object)->priv;
+
+  switch (prop_id)
+    {
+    case PROP_PROXY:
+      if (priv->proxy)
+        g_object_unref (priv->proxy);
+      priv->proxy = g_value_dup_object (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
 hd_change_background_dialog_class_init (HDChangeBackgroundDialogClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->dispose = hd_change_background_dialog_dispose;
   object_class->finalize = hd_change_background_dialog_finalize;
+
+  object_class->set_property = hd_change_background_dialog_set_property;
+
+  g_object_class_install_property (object_class,
+                                   PROP_PROXY,
+                                   g_param_spec_object ("proxy",
+                                                        "Proxy",
+                                                        "D-Bus proxy to the hildon-desktop Home object",
+                                                        DBUS_TYPE_G_PROXY,
+                                                        G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
 
   g_type_class_add_private (klass, sizeof (HDChangeBackgroundDialogPrivate));
 }
@@ -148,8 +187,6 @@ response_cb (HDChangeBackgroundDialog *dialog,
              gpointer         data)
 {
   HDChangeBackgroundDialogPrivate *priv = dialog->priv;
-
-  g_signal_handlers_disconnect_by_func (dialog, response_cb, data);
 
   g_debug ("response_cb called %d", response_id);
 
@@ -201,6 +238,8 @@ response_cb (HDChangeBackgroundDialog *dialog,
             }
           else
             {
+              gchar *filename = g_filename_from_uri (uri, NULL, NULL);
+                            
               if (priv->custom_image)
                 {
                   gtk_tree_model_get_iter (priv->model, &iter, priv->custom_image);
@@ -215,11 +254,17 @@ response_cb (HDChangeBackgroundDialog *dialog,
 
               gtk_list_store_set (GTK_LIST_STORE (priv->model), &iter,
                                   COL_NAME, label,
-                                  COL_IMAGE, uri,
+                                  COL_IMAGE, filename,
                                   COL_ORDER, -1, /* first entry */
                                   -1);
 
+              hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
+                                                                        0,
+                                                                        &iter,
+                                                                        TRUE);
+
               g_free (uri);
+              g_free (filename);
               g_free (label);
             }
         }
@@ -245,6 +290,8 @@ response_cb (HDChangeBackgroundDialog *dialog,
                               COL_IMAGE_3, &image[3],
                               COL_IMAGE_4, &image[4],
                               -1);
+
+          g_debug ("Selected: %s", image[0]);
 
           client = gconf_client_get_default ();
 
@@ -280,6 +327,46 @@ response_cb (HDChangeBackgroundDialog *dialog,
           else
             {
               /* Set background of current view only */
+              gchar *key;
+              guint current_view;
+              GError *error = NULL;
+
+              dbus_g_proxy_call (priv->proxy,
+                                 "GetCurrentViewID",
+                                 &error,
+                                 G_TYPE_INVALID,
+                                 G_TYPE_UINT, &current_view,
+                                 G_TYPE_INVALID);
+              if (error)
+                {
+                  g_warning ("Could not get ID of current view. %s", error->message);
+
+                  g_error_free (error);
+
+                  current_view = 0;
+
+                  error = NULL;
+                }
+
+              /* ID is from 0 to 3 */
+              current_view++;
+
+              g_debug ("current_view: %u", current_view);
+
+              key = g_strdup_printf (GCONF_BACKGROUND_KEY, current_view - 1);
+              gconf_client_set_string (client,
+                                       key,
+                                       image[0],
+                                       &error);
+
+              if (error)
+                {
+                  g_warning ("Could not set background image for view %u, '%s'. %s",
+                             current_view, key, error->message);
+                  g_error_free (error);
+                }
+
+              g_free (key);
             }
 
           /* free memory */
@@ -287,6 +374,24 @@ response_cb (HDChangeBackgroundDialog *dialog,
             g_free (image[i]);
           g_object_unref (client);
         }
+
+      gtk_widget_hide (GTK_WIDGET (dialog));
+
+      dbus_g_proxy_call_no_reply (priv->proxy,
+                                  "GrabPointer",
+                                  G_TYPE_INVALID);
+
+      gtk_widget_destroy (GTK_WIDGET (dialog));
+    }
+  else
+    {
+      gtk_widget_hide (GTK_WIDGET (dialog));
+
+      dbus_g_proxy_call_no_reply (priv->proxy,
+                                  "GrabPointer",
+                                  G_TYPE_INVALID);
+
+      gtk_widget_destroy (GTK_WIDGET (dialog));
     }
 }
 
@@ -307,6 +412,8 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   /* Add buttons */
   gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_add"), RESPONSE_ADD);
   gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
+
+  gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
 
   /* */
   priv->selector = hildon_touch_selector_new ();
@@ -428,11 +535,12 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
 }
 
 GtkWidget *
-hd_change_background_dialog_new (guint current_view)
+hd_change_background_dialog_new (DBusGProxy *proxy)
 {
   GtkWidget *window;
 
   window = g_object_new (HD_TYPE_CHANGE_BACKGROUND_DIALOG,
+                         "proxy", proxy,
                          NULL);
 
   return window;
