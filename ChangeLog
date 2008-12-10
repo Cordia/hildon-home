@@ -1,5 +1,12 @@
 2008-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Update changelog.
+
+	* src/hd-notification-manager.c (hd_notification_manager_notify): Do
+	  not assert that an icon is set. Fixes NB#94962
+
+2008-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-change-background-dialog.c
 	  (hd_change_background_dialog_dispose): Unref proxy.
 	  (hd_change_background_dialog_set_property,

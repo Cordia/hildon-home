@@ -5,6 +5,8 @@ hildon-home (0.3.1~unreleased) unstable; urgency=low
   * Do not show a visual notification if category is "incoming-call". Fixes NB#94960
   * Fix parsing of bookmark files. Fixes NB#95149
   * Fix task dialog. Fixes NB#95228
+  * Fix selecting image. Fixes NB#95247
+  * Do not assert that an icon is set in notifications daemon. Fixes NB#94962
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  3 Dec 2008 14:07:06 +0200
 

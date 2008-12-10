@@ -909,7 +909,6 @@ hd_notification_manager_notify (HDNotificationManager *nm,
   gboolean replace = FALSE;
   const gchar *category;
 
-  g_return_val_if_fail (*icon != '\0', FALSE);
   g_return_val_if_fail (summary != '\0', FALSE);
   g_return_val_if_fail (body != '\0', FALSE);
 
