@@ -40,8 +40,6 @@ hd-marshal.h: hd-marshal.list
 
 hildon_home_SOURCES = \
 	$(BUILT_SOURCES)		\
-	hd-activate-views-dialog.c	\
-	hd-activate-views-dialog.h	\
 	hd-add-applet-dialog.c		\
 	hd-add-applet-dialog.h		\
 	hd-add-bookmark-dialog.c	\
