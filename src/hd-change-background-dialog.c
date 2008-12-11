@@ -61,10 +61,14 @@
 #define KEY_FILE_BACKGROUND_KEY_FILE_4 "X-File4"
 
 /* Background gconf key */
-#define GCONF_BACKGROUND_KEY "/apps/hildon_home/view_%u/bg_image"
+#define GCONF_BACKGROUND_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/bg-image", i)
 
 /* Images folder */
 #define USER_IMAGES_FOLDER "MyDocs", ".images"
+
+/* Directories */
+#define DIR_THEMES "/usr/share/themes"
+#define DIR_BACKGROUNDS "/usr/share/backgrounds"
 
 enum
 {
@@ -308,7 +312,7 @@ response_cb (HDChangeBackgroundDialog *dialog,
                   if (!image[i])
                     continue;
 
-                  key = g_strdup_printf (GCONF_BACKGROUND_KEY, i - 1);
+                  key = GCONF_BACKGROUND_KEY (i);
                   gconf_client_set_string (client,
                                            key,
                                            image[i],
@@ -353,7 +357,7 @@ response_cb (HDChangeBackgroundDialog *dialog,
 
               g_debug ("current_view: %u", current_view);
 
-              key = g_strdup_printf (GCONF_BACKGROUND_KEY, current_view - 1);
+              key = GCONF_BACKGROUND_KEY (current_view);
               gconf_client_set_string (client,
                                        key,
                                        image[0],
@@ -396,34 +400,18 @@ response_cb (HDChangeBackgroundDialog *dialog,
 }
 
 static void
-hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
+hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog *dialog,
+                                                const gchar              *dirname)
 {
-  HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG_GET_PRIVATE (dialog);
-  HildonTouchSelectorColumn *column;
-  GtkCellRenderer *renderer;
+  HDChangeBackgroundDialogPrivate *priv = dialog->priv;
   GDir *dir;
   const gchar *basename;
 
-  dialog->priv = priv;
+  dir = g_dir_open (dirname, 0, NULL);
 
-  /* Set dialog title */
-  gtk_window_set_title (GTK_WINDOW (dialog), _("home_ti_change_backgr"));
+  if (!dir)
+    return;
 
-  /* Add buttons */
-  gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_add"), RESPONSE_ADD);
-  gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
-
-  gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
-
-  /* */
-  priv->selector = hildon_touch_selector_new ();
-
-  priv->model = (GtkTreeModel *) gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_INT,
-                                                     G_TYPE_STRING,
-                                                     G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
-
-  /* Append backgrounds */
-  dir = g_dir_open ("/usr/share/backgrounds", 0, NULL);
   for (basename = g_dir_read_name (dir); basename; basename = g_dir_read_name (dir))
     {
       gchar *type, *filename, *name;
@@ -438,7 +426,7 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
       keyfile = g_key_file_new ();
 
       /* Lod from file */
-      filename = g_build_filename ("/usr/share/backgrounds",
+      filename = g_build_filename (dirname,
                                    basename,
                                    NULL);
       g_key_file_load_from_file (keyfile,
@@ -507,7 +495,63 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
       g_free (name);
     }
   g_dir_close (dir);
+}
+ 
+static void
+hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
+{
+  HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG_GET_PRIVATE (dialog);
+  HildonTouchSelectorColumn *column;
+  GtkCellRenderer *renderer;
+  GDir *dir;
+  const gchar *basename;
 
+  dialog->priv = priv;
+
+  /* Set dialog title */
+  gtk_window_set_title (GTK_WINDOW (dialog), _("home_ti_change_backgr"));
+
+  /* Add buttons */
+  gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_add"), RESPONSE_ADD);
+  gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
+
+  gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
+
+  /* */
+  priv->selector = hildon_touch_selector_new ();
+
+  priv->model = (GtkTreeModel *) gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_INT,
+                                                     G_TYPE_STRING,
+                                                     G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+
+  /* Append backgrounds from themes */
+  dir = g_dir_open (DIR_THEMES, 0, NULL);
+  if (dir)
+    {
+      for (basename = g_dir_read_name (dir); basename; basename = g_dir_read_name (dir))
+        {
+          if (g_strcmp0 (basename, "default") != 0)
+            {
+              gchar *themes_dir;
+
+              themes_dir = g_build_filename (DIR_THEMES,
+                                             basename,
+                                             "backgrounds",
+                                             NULL);
+
+              hd_change_background_dialog_append_backgrounds (dialog,
+                                                              themes_dir);
+
+              g_free (themes_dir);
+            }
+        }
+      g_dir_close (dir);
+    }
+
+  /* Append backgrounds from background dir */
+  hd_change_background_dialog_append_backgrounds (dialog,
+                                                  DIR_BACKGROUNDS);
+ 
   /* Sort by order */
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
                                         COL_ORDER,

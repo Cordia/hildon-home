@@ -1,3 +1,10 @@
+2008-12-11  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-change-background-dialog.c (response_cb,
+	  hd_change_background_dialog_append_backgrounds,
+	  hd_change_background_dialog_init): Fix for new themes directory
+	  layout. Fix for new bg iamge gconf paths.
+
 2008-12-10  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update changelog.
