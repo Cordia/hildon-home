@@ -32,6 +32,7 @@
 
 #include <X11/Xlib.h>
 
+#include "hd-activate-views-dialog.h"
 #include "hd-add-applet-dialog.h"
 #include "hd-applet-manager.h"
 #include "hd-add-bookmark-dialog.h"
@@ -259,11 +260,17 @@ manage_views_clicked_cb (GtkButton        *button,
                          HDHildonHomeDBus *dbus)
 {
   HDHildonHomeDBusPrivate *priv = dbus->priv;
-
-  g_debug ("manage_views_clicked_cb");
+  GtkWidget *dialog = hd_activate_views_dialog_new ();
 
   dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "ShowActivateViewsDialog",
+                              "UngrabPointer",
+                              G_TYPE_INVALID);
+
+  gtk_dialog_run (GTK_DIALOG (dialog));
+  gtk_widget_destroy (dialog);
+
+  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
+                              "GrabPointer",
                               G_TYPE_INVALID);
 }
 

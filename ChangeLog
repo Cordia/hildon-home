@@ -1,5 +1,16 @@
 2008-12-11  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-activate-views-dialog.c:
+	* src/hd-activate-views-dialog.h: Implement "Activate views" dialog (gtk
+	  version).
+
+	* src/Makefile.am: Add hd-activate-views-dialog.[ch] to sources.
+
+	* src/hd-hildon-home-dbus.c (manage_views_clicked_cb): Use "Activate
+	  views" dialog
+
+2008-12-11  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-change-background-dialog.c (response_cb,
 	  hd_change_background_dialog_append_backgrounds,
 	  hd_change_background_dialog_init): Fix for new themes directory
