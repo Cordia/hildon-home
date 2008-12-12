@@ -314,7 +314,12 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
 
   g_debug ("hd_hildon_home_dbus_show_edit_menu (current_view: %u):", current_view);
 
-  /* Constrcut menu */
+  /* Ungrab pointer in home */
+  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
+                              "UngrabPointer",
+                              G_TYPE_INVALID);
+
+  /* Construct menu */
   if (!priv->menu)
     {
       GtkWidget *button;
@@ -402,12 +407,6 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
       root = RootWindow (display, GDK_SCREEN_XNUMBER (gtk_widget_get_screen (priv->menu)));
       XSetTransientForHint (display, GDK_WINDOW_XID (priv->menu->window), root);
     }
-
-  /* Ungrab pointer in home */
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "UngrabPointer",
-                              G_TYPE_INVALID);
-
 
   /* Show menu */
   gtk_widget_show (priv->menu);

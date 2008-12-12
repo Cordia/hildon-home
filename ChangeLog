@@ -1,3 +1,14 @@
+2008-12-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/Makefile.am:
+	* src/home-w50.plugins:
+	* src/home.conf.in:
+	* src/home.plugins.in: xmas workaround (fix around
+	  mediaplayerhomeapplet bug).
+
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu):
+	  fix comment.
+
 2008-12-11  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-activate-views-dialog.c:
