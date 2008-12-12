@@ -170,58 +170,30 @@ static void
 select_applets_clicked_cb (GtkButton        *button,
                            HDHildonHomeDBus *dbus)
 {
-  HDHildonHomeDBusPrivate *priv = dbus->priv;
   GtkWidget *dialog = hd_add_applet_dialog_new ();
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "UngrabPointer",
-                              G_TYPE_INVALID);
-
 
   gtk_dialog_run (GTK_DIALOG (dialog));
   gtk_widget_destroy (dialog);
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "GrabPointer",
-                              G_TYPE_INVALID);
 }
 
 static void
 select_shortcuts_clicked_cb (GtkButton        *button,
                              HDHildonHomeDBus *dbus)
 {
-  HDHildonHomeDBusPrivate *priv = dbus->priv;
   GtkWidget *dialog = hd_add_task_dialog_new ();
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "UngrabPointer",
-                              G_TYPE_INVALID);
 
   gtk_dialog_run (GTK_DIALOG (dialog));
   gtk_widget_destroy (dialog);
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "GrabPointer",
-                              G_TYPE_INVALID);
 }
 
 static void
 select_bookmarks_clicked_cb (GtkButton        *button,
                              HDHildonHomeDBus *dbus)
 {
-  HDHildonHomeDBusPrivate *priv = dbus->priv;
   GtkWidget *dialog = hd_add_bookmark_dialog_new ();
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "UngrabPointer",
-                              G_TYPE_INVALID);
 
   gtk_dialog_run (GTK_DIALOG (dialog));
   gtk_widget_destroy (dialog);
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "GrabPointer",
-                              G_TYPE_INVALID);
 }
 
 static void
@@ -231,10 +203,6 @@ change_background_clicked_cb (GtkButton        *button,
   HDHildonHomeDBusPrivate *priv = dbus->priv;
   GtkWidget *dialog = hd_change_background_dialog_new (priv->hd_home_proxy);
 
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "UngrabPointer",
-                              G_TYPE_INVALID);
-
   gtk_widget_show (dialog);
 }
 
@@ -242,36 +210,17 @@ static void
 select_contacts_clicked_cb (GtkButton        *button,
                             HDHildonHomeDBus *dbus)
 {
-  HDHildonHomeDBusPrivate *priv = dbus->priv;
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "UngrabPointer",
-                              G_TYPE_INVALID);
-
   g_debug ("select_contacts_clicked_cb: NOT IMPLEMENTED YET");
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "GrabPointer",
-                              G_TYPE_INVALID);
 }
 
 static void
 manage_views_clicked_cb (GtkButton        *button,
                          HDHildonHomeDBus *dbus)
 {
-  HDHildonHomeDBusPrivate *priv = dbus->priv;
   GtkWidget *dialog = hd_activate_views_dialog_new ();
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "UngrabPointer",
-                              G_TYPE_INVALID);
 
   gtk_dialog_run (GTK_DIALOG (dialog));
   gtk_widget_destroy (dialog);
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "GrabPointer",
-                              G_TYPE_INVALID);
 }
 
 static void

@@ -1,5 +1,13 @@
 2008-12-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-change-background-dialog.c (response_cb):
+	* src/hd-hildon-home-dbus.c (select_applets_clicked_cb,
+	  select_shortcuts_clicked_cb, select_bookmarks_clicked_cb,
+	  select_contacts_clicked_cb, manage_views_clicked_cb): Pointer grab
+	  and ungrab for system modal dialogs is done in HDCompMgr now.
+
+2008-12-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/Makefile.am:
 	* src/home-w50.plugins:
 	* src/home.conf.in:

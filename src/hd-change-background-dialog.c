@@ -379,22 +379,10 @@ response_cb (HDChangeBackgroundDialog *dialog,
           g_object_unref (client);
         }
 
-      gtk_widget_hide (GTK_WIDGET (dialog));
-
-      dbus_g_proxy_call_no_reply (priv->proxy,
-                                  "GrabPointer",
-                                  G_TYPE_INVALID);
-
       gtk_widget_destroy (GTK_WIDGET (dialog));
     }
   else
     {
-      gtk_widget_hide (GTK_WIDGET (dialog));
-
-      dbus_g_proxy_call_no_reply (priv->proxy,
-                                  "GrabPointer",
-                                  G_TYPE_INVALID);
-
       gtk_widget_destroy (GTK_WIDGET (dialog));
     }
 }
