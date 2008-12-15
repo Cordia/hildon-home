@@ -34,17 +34,21 @@
 #include "hd-bookmark-shortcut.h"
 
 /* Size from Home layout guide 1.2 */
-#define SHORTCUT_WIDTH 176
-#define SHORTCUT_HEIGHT 146
+#define SHORTCUT_WIDTH 182 /* 176 */
+#define SHORTCUT_HEIGHT 154 /* 146 */
 
-#define THUMBNAIL_WIDTH 160
-#define THUMBNAIL_HEIGHT 96
+#define THUMBNAIL_WIDTH 166 /* 160 */
+#define THUMBNAIL_HEIGHT 100 /* 96 */
+
+#define THUMBNAIL_BORDER HILDON_MARGIN_HALF
 
 #define BORDER_WIDTH HILDON_MARGIN_DEFAULT
 
 #define LABEL_WIDTH SHORTCUT_WIDTH - (2 * HILDON_MARGIN_DEFAULT) - (2 * HILDON_MARGIN_HALF)
 #define LABEL_FONT "SmallSystemFont"
 #define LABEL_COLOR "ReversedSecondaryTextColor"
+
+#define BG_IMAGE_FILE "/usr/share/themes/default/images/WebShortcutAppletBackground.png"
 
 /* D-Bus method/interface to load URL in browser */
 #define BROWSER_INTERFACE   "com.nokia.osso_browser"
@@ -73,6 +77,7 @@ struct _HDBookmarkShortcutPrivate
   GConfClient *gconf_client;
 
   GdkPixbuf *thumbnail_icon;
+  GdkPixbuf *bg_image;
 };
 
 G_DEFINE_TYPE (HDBookmarkShortcut, hd_bookmark_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
@@ -324,22 +329,31 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
   cairo_clip (cr);
 
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
-  cairo_paint (cr);
+
+  if (priv->bg_image)
+    {
+      gdk_cairo_set_source_pixbuf (cr, priv->bg_image, 0.0, 0.0);
+      cairo_paint (cr);
+    }
+  else
+    {
+      cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
+      cairo_paint (cr);
+
+      cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
+      rounded_rectangle (cr, 0, 0,
+                         SHORTCUT_WIDTH, SHORTCUT_HEIGHT,
+                         BORDER_WIDTH * 2);
+      cairo_fill (cr);
+    }
 
   cairo_new_path (cr);
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-  rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH,
-                     SHORTCUT_WIDTH - (2 * BORDER_WIDTH), SHORTCUT_HEIGHT - 2 * (BORDER_WIDTH),
+  gdk_cairo_set_source_pixbuf (cr, priv->thumbnail_icon, BORDER_WIDTH, BORDER_WIDTH + THUMBNAIL_BORDER * 2);
+  rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH + THUMBNAIL_BORDER * 2,
+                     THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT,
                      BORDER_WIDTH * 1.5);
-  cairo_fill (cr);
 
-  cairo_new_path (cr);
-  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-  gdk_cairo_set_source_pixbuf (cr, priv->thumbnail_icon, BORDER_WIDTH, BORDER_WIDTH);
-  rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH,
-                     THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, BORDER_WIDTH * 1.5);
   cairo_fill (cr);
 
   cairo_destroy (cr);
@@ -513,7 +527,7 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
 
   alignment = gtk_alignment_new (0.5, 0.5, 0.0, 0.0);
   gtk_widget_show (alignment);
-  gtk_widget_set_size_request (alignment, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+  gtk_widget_set_size_request (alignment, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT + 2 * THUMBNAIL_BORDER);
 
   label_alignment = gtk_alignment_new (0.5, 0.5, 0.0, 0.0);
   gtk_alignment_set_padding (GTK_ALIGNMENT (label_alignment), 0, 0, HILDON_MARGIN_HALF, HILDON_MARGIN_HALF);
@@ -528,7 +542,7 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   priv->icon = gtk_alignment_new (0.5, 0.5, 0.0, 0.0); /* gtk_image_new (); */
   gtk_widget_show (priv->icon);
   /*  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), 64); */
-  gtk_widget_set_size_request (priv->icon, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+  gtk_widget_set_size_request (priv->icon, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT + 2 * THUMBNAIL_BORDER);
 
   gtk_container_add (GTK_CONTAINER (applet), vbox);
   gtk_box_pack_start (GTK_BOX (vbox), alignment, FALSE, FALSE, 0);
@@ -540,6 +554,8 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   gtk_container_set_border_width (GTK_CONTAINER (applet), BORDER_WIDTH);
   g_signal_connect (applet, "delete-event",
                     G_CALLBACK (delete_event_cb), applet);
+
+  priv->bg_image = gdk_pixbuf_new_from_file (BG_IMAGE_FILE, NULL);
 
   priv->gconf_client = gconf_client_get_default ();
 }
