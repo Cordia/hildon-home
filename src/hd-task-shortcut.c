@@ -211,7 +211,8 @@ hd_task_shortcut_expose_event (GtkWidget *widget,
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
   cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.5);
   rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH + (ICON_BORDER * 2.0) + ICON_HEIGHT,
-                   SHORTCUT_WIDTH, SHORTCUT_HEIGHT - ICON_HEIGHT - (ICON_BORDER), BORDER_WIDTH * 2);
+                   SHORTCUT_WIDTH, SHORTCUT_HEIGHT - ICON_HEIGHT - (ICON_BORDER),
+                   BORDER_WIDTH * 1.5);
   cairo_fill (cr);
 
   cairo_destroy (cr);

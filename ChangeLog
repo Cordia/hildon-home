@@ -1,5 +1,21 @@
 2008-12-15  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_init): Fix
+	  localized strings.
+	* src/hd-change-background-dialog.c (response_cb,
+	  hd_change_background_dialog_init): Fix localised strings.
+
+	* src/hd-bookmark-shortcut.c (gconf_client, thumbnail_icon,
+	  hd_bookmark_shortcut_update_from_gconf, hd_bookmark_shortcut_realize,
+	  rounded_rectangle, hd_bookmark_shortcut_expose_event,
+	  hd_bookmark_shortcut_class_init, hd_bookmark_shortcut_init): Draw
+	  nicer shortcut.
+
+	* src/hd-task-shortcut.c (hd_task_shortcut_expose_event): Use a
+	  smaller curve.
+
+2008-12-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-bookmark-manager.c (hd_bookmark_manager_add_bookmark_item):
 	Use thumbnail instead of favicon.
 

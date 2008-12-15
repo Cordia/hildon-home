@@ -204,7 +204,7 @@ response_cb (HDChangeBackgroundDialog *dialog,
                                                                   "action", GTK_FILE_CHOOSER_ACTION_OPEN,
                                                                   "title", _("home_ti_add_image"),
                                                                   "empty-text", _("home_li_no_images"),
-                                                                  "open-button-text", _("wdgt_bd_done"),
+                                                                  "open-button-text", dgettext ("hildon-libs", "wdgt_bd_done"),
                                                                   "select-multiple", FALSE,
                                                                   "selection-mode", HILDON_FILE_SELECTION_MODE_THUMBNAILS,
                                                                   NULL);
@@ -500,8 +500,8 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   gtk_window_set_title (GTK_WINDOW (dialog), _("home_ti_change_backgr"));
 
   /* Add buttons */
-  gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_add"), RESPONSE_ADD);
-  gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
+  gtk_dialog_add_button (GTK_DIALOG (dialog), dgettext ("hildon-libs", "wdgt_bd_add"), RESPONSE_ADD);
+  gtk_dialog_add_button (GTK_DIALOG (dialog), dgettext ("hildon-libs", "wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
 
   gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
 

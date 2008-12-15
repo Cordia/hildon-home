@@ -172,7 +172,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gtk_window_set_title (GTK_WINDOW (dialog), _("home_ti_manage_views"));
 
   /* Add buttons */
-  gtk_dialog_add_button (GTK_DIALOG (dialog), _("wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
+  gtk_dialog_add_button (GTK_DIALOG (dialog), dgettext ("hildon-libs", "wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
 
   /* Create Touch grid list */
   priv->model = (GtkTreeModel *) gtk_list_store_new (NUM_COLS, GDK_TYPE_PIXBUF);
