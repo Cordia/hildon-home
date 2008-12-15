@@ -1,3 +1,10 @@
+2008-12-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-task-shortcut.c (hd_task_shortcut_realize, rounded_rectangle,
+	  hd_task_shortcut_expose_event, hd_task_shortcut_class_init,
+	  hd_task_shortcut_init): Use nicer transparent background for task
+	  shortcuts.
+
 2008-12-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-change-background-dialog.c (response_cb):

@@ -145,15 +145,95 @@ hd_task_shortcut_get_applet_id (HDHomePluginItem *item)
 }
 
 static void
+hd_task_shortcut_realize (GtkWidget *widget)
+{
+  GdkScreen *screen;
+
+  screen = gtk_widget_get_screen (widget);
+  gtk_widget_set_colormap (widget,
+                           gdk_screen_get_rgba_colormap (screen));
+
+  gtk_widget_set_app_paintable (widget,
+                                TRUE);
+
+  GTK_WIDGET_CLASS (hd_task_shortcut_parent_class)->realize (widget);
+}
+
+static void
+rounded_rectangle (cairo_t *cr,
+                   double   x,
+                   double   y,
+                   double   w,
+                   double   h,
+                   double   r)
+{
+        /*   A----BQ
+         *  H      C
+         *  |      |
+         *  G      D
+         *   F----E
+         */
+
+        cairo_move_to  (cr, x + r,     y);          /* Move to A */
+        cairo_line_to  (cr, x + w - r, y);          /* Straight line to B */
+        cairo_curve_to (cr, x + w,     y,           /* Curve to C, */
+                            x + w,     y,           /* control points are both at Q */
+                            x + w,     y + r);
+        cairo_line_to  (cr, x + w,     y + h - r);  /* Move to D */
+        cairo_curve_to (cr, x + w,     y + h,       /* Curve to E */
+                            x + w,     y + h,
+                            x + w - r, y + h);
+        cairo_line_to  (cr, x + r,     y + h);      /* Line to F */
+        cairo_curve_to (cr, x,         y + h,       /* Curve to G */
+                            x,         y + h,
+                            x,         y + h - r);
+        cairo_line_to  (cr, x,         y + r);      /* Line to H */
+        cairo_curve_to (cr, x,         y,
+                            x,         y,
+                            x + r,     y);          /* Curve to A */
+}
+
+static gboolean
+hd_task_shortcut_expose_event (GtkWidget *widget,
+                               GdkEventExpose *event)
+{
+  cairo_t *cr;
+
+  cr = gdk_cairo_create (GDK_DRAWABLE (widget->window));
+  gdk_cairo_region (cr, event->region);
+  cairo_clip (cr);
+
+  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
+  cairo_paint (cr);
+
+  cairo_new_path (cr);
+  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.5);
+  rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH + (ICON_BORDER * 2.0) + ICON_HEIGHT,
+                   SHORTCUT_WIDTH, SHORTCUT_HEIGHT - ICON_HEIGHT - (ICON_BORDER), BORDER_WIDTH * 2);
+  cairo_fill (cr);
+
+  cairo_destroy (cr);
+
+  return GTK_WIDGET_CLASS (hd_task_shortcut_parent_class)->expose_event (widget,
+                                                                         event);
+}
+
+static void
 hd_task_shortcut_class_init (HDTaskShortcutClass *klass)
 {
   HDHomePluginItemClass *home_plugin_class = HD_HOME_PLUGIN_ITEM_CLASS (klass);
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
   home_plugin_class->get_applet_id = hd_task_shortcut_get_applet_id;
 
   object_class->constructed = hd_task_shortcut_constructed;
   object_class->finalize = hd_task_shortcut_finalize;
+
+  widget_class->realize = hd_task_shortcut_realize;
+  widget_class->expose_event = hd_task_shortcut_expose_event;
 
   g_type_class_add_private (klass, sizeof (HDTaskShortcutPrivate));
 }
@@ -218,22 +298,20 @@ static void
 hd_task_shortcut_init (HDTaskShortcut *applet)
 {
   HDTaskShortcutPrivate *priv;
-  GtkWidget *ebox, *vbox, *alignment;
+  GtkWidget *vbox, *alignment;
 
   priv = HD_TASK_SHORTCUT_GET_PRIVATE (applet);
   applet->priv = priv;
 
-  ebox = gtk_event_box_new ();
-  gtk_widget_show (ebox);
-  gtk_widget_add_events (ebox,
+  gtk_widget_add_events (GTK_WIDGET (applet),
                          GDK_BUTTON_PRESS_MASK |
                          GDK_BUTTON_RELEASE_MASK |
                          GDK_LEAVE_NOTIFY_MASK);
-  g_signal_connect (ebox, "button-press-event",
+  g_signal_connect (applet, "button-press-event",
                     G_CALLBACK (button_press_event_cb), applet);
-  g_signal_connect (ebox, "button-release-event",
+  g_signal_connect (applet, "button-release-event",
                     G_CALLBACK (button_release_event_cb), applet);
-  g_signal_connect (ebox, "leave-notify-event",
+  g_signal_connect (applet, "leave-notify-event",
                     G_CALLBACK (leave_notify_event_cb), applet);
 
   vbox = gtk_vbox_new (FALSE, 0);
@@ -255,8 +333,7 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), ICON_WIDTH);
   gtk_widget_set_size_request (priv->icon, ICON_WIDTH, ICON_HEIGHT);
 
-  gtk_container_add (GTK_CONTAINER (applet), ebox);
-  gtk_container_add (GTK_CONTAINER (ebox), vbox);
+  gtk_container_add (GTK_CONTAINER (applet), vbox);
   gtk_box_pack_start (GTK_BOX (vbox), alignment, FALSE, FALSE, 0);
   gtk_container_add (GTK_CONTAINER (alignment), priv->icon);
   gtk_box_pack_start (GTK_BOX (vbox), priv->label, TRUE, TRUE, 0);
