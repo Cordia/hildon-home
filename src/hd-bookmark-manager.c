@@ -101,18 +101,18 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
   info = g_slice_new0 (HDBookmarkInfo);
 
   info->name = g_strndup (item->name, strlen (item->name) - BOOKMARK_EXTENSION_LEN);
-  info->icon = g_strdup (item->favicon_file);
+  info->icon = g_strdup (item->thumbnail_file);
   info->url = g_strdup (item->url);
 
   g_hash_table_insert (priv->available_bookmarks,
                        info->url,
                        info);
 
-  if (item->favicon_file)
+  if (item->thumbnail_file)
     {
       icon_path = g_build_filename (g_get_home_dir (),
-                                    FAVICONS_PATH,
-                                    item->favicon_file,
+                                    THUMBNAIL_PATH,
+                                    item->thumbnail_file,
                                     NULL);
 
       pixbuf = gdk_pixbuf_new_from_file (icon_path, NULL);

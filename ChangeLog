@@ -1,5 +1,10 @@
 2008-12-15  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-bookmark-manager.c (hd_bookmark_manager_add_bookmark_item):
+	Use thumbnail instead of favicon.
+
+2008-12-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-task-shortcut.c (hd_task_shortcut_realize, rounded_rectangle,
 	  hd_task_shortcut_expose_event, hd_task_shortcut_class_init,
 	  hd_task_shortcut_init): Use nicer transparent background for task
