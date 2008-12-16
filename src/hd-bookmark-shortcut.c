@@ -379,6 +379,13 @@ hd_bookmark_shortcut_class_init (HDBookmarkShortcutClass *klass)
   object_class->dispose = hd_bookmark_shortcut_dispose;
   object_class->finalize = hd_bookmark_shortcut_finalize;
 
+  /* Add shadow to label */
+  gtk_rc_parse_string ("style \"HDBookmarkShortcut-Label\" = \"osso-color-themeing\"{\n"
+                       "  engine \"sapwood\" {\n"
+                       "    shadowcolor = @ReversedBackgroundColor\n"
+                       "  }\n"
+                       "} widget \"*.HDBookmarkShortcut-Label\" style \"HDBookmarkShortcut-Label\"");
+
   g_type_class_add_private (klass, sizeof (HDBookmarkShortcutPrivate));
 }
 
@@ -534,6 +541,7 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   gtk_widget_show (label_alignment);
 
   priv->label = gtk_label_new (NULL);
+  gtk_widget_set_name (priv->label, "HDBookmarkShortcut-Label");
   gtk_widget_show (priv->label);
   gtk_widget_set_size_request (priv->label, LABEL_WIDTH, -1);
   hildon_helper_set_logical_font (priv->label, LABEL_FONT);

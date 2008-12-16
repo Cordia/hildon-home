@@ -159,40 +159,6 @@ hd_task_shortcut_realize (GtkWidget *widget)
   GTK_WIDGET_CLASS (hd_task_shortcut_parent_class)->realize (widget);
 }
 
-static void
-rounded_rectangle (cairo_t *cr,
-                   double   x,
-                   double   y,
-                   double   w,
-                   double   h,
-                   double   r)
-{
-        /*   A----BQ
-         *  H      C
-         *  |      |
-         *  G      D
-         *   F----E
-         */
-
-        cairo_move_to  (cr, x + r,     y);          /* Move to A */
-        cairo_line_to  (cr, x + w - r, y);          /* Straight line to B */
-        cairo_curve_to (cr, x + w,     y,           /* Curve to C, */
-                            x + w,     y,           /* control points are both at Q */
-                            x + w,     y + r);
-        cairo_line_to  (cr, x + w,     y + h - r);  /* Move to D */
-        cairo_curve_to (cr, x + w,     y + h,       /* Curve to E */
-                            x + w,     y + h,
-                            x + w - r, y + h);
-        cairo_line_to  (cr, x + r,     y + h);      /* Line to F */
-        cairo_curve_to (cr, x,         y + h,       /* Curve to G */
-                            x,         y + h,
-                            x,         y + h - r);
-        cairo_line_to  (cr, x,         y + r);      /* Line to H */
-        cairo_curve_to (cr, x,         y,
-                            x,         y,
-                            x + r,     y);          /* Curve to A */
-}
-
 static gboolean
 hd_task_shortcut_expose_event (GtkWidget *widget,
                                GdkEventExpose *event)
@@ -206,14 +172,6 @@ hd_task_shortcut_expose_event (GtkWidget *widget,
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
   cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
   cairo_paint (cr);
-
-  cairo_new_path (cr);
-  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.5);
-  rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH + (ICON_BORDER * 2.0) + ICON_HEIGHT,
-                   SHORTCUT_WIDTH, SHORTCUT_HEIGHT - ICON_HEIGHT - (ICON_BORDER),
-                   BORDER_WIDTH * 1.5);
-  cairo_fill (cr);
 
   cairo_destroy (cr);
 
@@ -235,6 +193,13 @@ hd_task_shortcut_class_init (HDTaskShortcutClass *klass)
 
   widget_class->realize = hd_task_shortcut_realize;
   widget_class->expose_event = hd_task_shortcut_expose_event;
+
+  /* Add shadow to label */
+  gtk_rc_parse_string ("style \"HDTaskShortcut-Label\" = \"osso-color-themeing\" {\n"
+                       "  engine \"sapwood\" {\n"
+                       "    shadowcolor = @DarkerBackgroundColor\n"
+                       "  }\n"
+                       "} widget \"*.HDTaskShortcut-Label\" style \"HDTaskShortcut-Label\"");
 
   g_type_class_add_private (klass, sizeof (HDTaskShortcutPrivate));
 }
@@ -324,6 +289,7 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_container_set_border_width (GTK_CONTAINER (alignment), ICON_BORDER);
 
   priv->label = gtk_label_new (NULL);
+  gtk_widget_set_name (priv->label, "HDTaskShortcut-Label");
   gtk_widget_show (priv->label);
   gtk_widget_set_size_request (priv->label, LABEL_WIDTH, -1);
   hildon_helper_set_logical_font (priv->label, LABEL_FONT);
