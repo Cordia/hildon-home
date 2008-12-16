@@ -1,6 +1,12 @@
-hildon-home (0.3.2~unreleased) unstable; urgency=low
+hildon-home (0.3.2) unstable; urgency=low
 
-  * unreleased
+  Jan Arne:
+  * src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_class_init,
+    hd_bookmark_shortcut_init): Add shadow.
+  * src/hd-task-shortcut.c (hd_task_shortcut_class_init,
+    hd_task_shortcut_init): Add shadow.
+  * src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_expose_event,
+    hd_bookmark_shortcut_init): Use background image from theme.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Dec 2008 15:24:30 +0200
 

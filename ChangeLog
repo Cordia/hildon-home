@@ -1,3 +1,7 @@
+2008-12-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.2
+
 2008-12-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_class_init,
