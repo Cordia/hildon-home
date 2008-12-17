@@ -1,6 +1,6 @@
-hildon-home (0.3.3~unreleased) unstable; urgency=low
+hildon-home (0.3.3) unstable; urgency=low
 
-  * unreleased
+  * Jan Arne: use RGB instead of RGBA windows for shortcuts and bookmarks.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 16 Dec 2008 15:33:51 +0200
 
