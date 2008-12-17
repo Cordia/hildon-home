@@ -1,3 +1,9 @@
+2008-12-17  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_realize):
+	* src/hd-task-shortcut.c (hd_task_shortcut_realize): Use rgb windows
+	as long as rgba windows are not shown on the device.
+
 2008-12-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.2

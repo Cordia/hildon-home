@@ -275,7 +275,7 @@ hd_bookmark_shortcut_realize (GtkWidget *widget)
 
   screen = gtk_widget_get_screen (widget);
   gtk_widget_set_colormap (widget,
-                           gdk_screen_get_rgba_colormap (screen));
+                           gdk_screen_get_rgb_colormap (screen));
 
   gtk_widget_set_app_paintable (widget,
                                 TRUE);
