@@ -1,3 +1,10 @@
+2008-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/Makefile.am:
+	* src/hd-task-manager.c (hd_task_manager_load_desktop_file):
+	* src/home.conf.in:
+	* src/home-w50.plugins (deleted): Remove Xmas workarounds.
+
 2008-12-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.3

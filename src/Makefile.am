@@ -1,7 +1,6 @@
 hildondesktopconf_DATA = \
 	home.conf		\
 	home.plugins		\
-	home-w50.plugins	\
 	notification.conf	\
 	notification-groups.conf
 

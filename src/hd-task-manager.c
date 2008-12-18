@@ -118,27 +118,8 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
   gchar *desktop_id = NULL;
   gchar *type = NULL, *translation_domain = NULL, *name = NULL;
   GdkPixbuf *pixbuf = NULL;
-  /* FIXME xmas workaround */
-  gchar *dirname, *w50id, *w50id_dot, *w50_filename;
 
   g_debug ("hd_task_manager_load_desktop_file (%s)", filename);
-
-  /* FIXME xmas workaround */
-  dirname = g_path_get_dirname (filename);
-  w50id = g_path_get_basename (filename);
-  w50id_dot = strrchr (w50id, '.');
-  if (w50id_dot)
-    *w50id_dot = '\0';
-  w50_filename = g_strdup_printf ("%s/%s.w50-desktop", dirname, w50id);
-  desktop_id = g_strdup_printf ("%s.desktop", w50id);
-  g_free (dirname);
-  g_free (w50id);
-  if (strcmp (filename, w50_filename) && g_file_test (w50_filename, G_FILE_TEST_EXISTS))
-    {
-      g_free (w50_filename);
-      return;
-    }
-  g_free (w50_filename);
 
   desktop_file = g_key_file_new ();
   if (!g_key_file_load_from_file (desktop_file,
@@ -219,8 +200,7 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
                                          NULL);
 
   /* Get the desktop_id */
-  /* FIXME xmas workaround */
-  /* desktop_id = g_path_get_basename (filename);*/
+  desktop_id = g_path_get_basename (filename);
 
   g_hash_table_insert (priv->available_tasks,
                        desktop_id,
