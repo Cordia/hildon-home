@@ -1,3 +1,7 @@
+2008-12-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hildon-home.c (main): Initialize Hildon with hildon_init ().
+
 2008-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/Makefile.am:

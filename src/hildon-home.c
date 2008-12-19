@@ -100,10 +100,17 @@ main (int argc, char **argv)
   textdomain (GETTEXT_PACKAGE);
 
   g_thread_init (NULL);
+
+  /* Initialize Gtk+ */
   gtk_init (&argc, &argv);
 
+  /* Initialize Hildon */
+  hildon_init ();
+
+  /* Initialize GnomeVFS */
   gnome_vfs_init ();
 
+  /* Add handler for TERM signal */
   signal (SIGTERM, signal_handler);
 
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
