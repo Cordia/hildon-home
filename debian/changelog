@@ -1,8 +1,14 @@
-hildon-home (0.3.4~unreleased) unstable; urgency=low
+hildon-home (0.3.4) unstable; urgency=low
 
-  * unreleased
+  Jan Arne Petersen  <jpetersen@openismus.com>:
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 17 Dec 2008 16:19:38 +0200
+        * src/hildon-home.c (main): Initialize Hildon with hildon_init ().
+        * src/Makefile.am:
+        * src/hd-task-manager.c (hd_task_manager_load_desktop_file):
+        * src/home.conf.in:
+        * src/home-w50.plugins (deleted): Remove Xmas workarounds.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 29 Dec 2008 15:41:39 +0200
 
 hildon-home (0.3.3) unstable; urgency=low
 

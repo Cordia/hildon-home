@@ -1,3 +1,9 @@
+2008-12-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.4
+
+	* configure.ac: 0.3.4
+
 2008-12-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hildon-home.c (main): Initialize Hildon with hildon_init ().
