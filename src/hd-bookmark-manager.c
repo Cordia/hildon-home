@@ -28,6 +28,7 @@
 #include <glib-object.h>
 
 #include <gconf/gconf-client.h>
+#include <libgnomevfs/gnome-vfs.h>
 
 #include <libhildondesktop/libhildondesktop.h>
 
@@ -61,6 +62,11 @@ struct _HDBookmarkManagerPrivate
   GtkTreeModel *model;
 
   GHashTable *available_bookmarks;
+
+  GnomeVFSMonitorHandle *user_bookmarks_handle;
+  GnomeVFSMonitorHandle *operator_bookmarks_handle;
+
+  guint parse_thread_id;
 };
 
 typedef struct
@@ -132,13 +138,16 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
 static gboolean
 hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
 {
-  BookmarkItem *root;
+  HDBookmarkManagerPrivate *priv = manager->priv;
+  BookmarkItem *root = NULL;
 
-  /* Create the bookmark paths if they do not exist yet */
-  set_bookmark_files_path ();
+  /* Unset the thread id so the files are parsed again if there is a change */
+  priv->parse_thread_id = 0;
+
+  /* Clear all entries from the model */
+  gtk_list_store_clear (GTK_LIST_STORE (priv->model));
 
   /* Try to load user bookmarks from file */
-  root = NULL;
   if (!get_root_bookmark (&root, MYBOOKMARKS))
     get_bookmark_from_backup(&root, MYBOOKMARKSFILEBACKUP);
 
@@ -156,9 +165,69 @@ hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
     hd_bookmark_manager_add_bookmark_item (manager,
                                            root);
   else
-    g_warning ("Could not read operator bookmarks from file");
+    g_debug ("Could not read operator bookmarks from file");
 
   return FALSE;
+}
+
+static void
+hd_bookmark_manager_bookmark_files_changed (GnomeVFSMonitorHandle *handle,
+                                            const gchar *monitor_uri,
+                                            const gchar *info_uri,
+                                            GnomeVFSMonitorEventType event_type,
+                                            gpointer user_data)
+{
+  HDBookmarkManager *manager = HD_BOOKMARK_MANAGER (user_data);
+  HDBookmarkManagerPrivate *priv = manager->priv;
+
+  if (!priv->parse_thread_id)
+    priv->parse_thread_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
+                                                  user_data);
+}
+
+static void
+hd_bookmark_manager_monitor_bookmark_files (HDBookmarkManager *manager)
+{
+  HDBookmarkManagerPrivate *priv = manager->priv;
+  gchar *user_bookmarks, *operator_bookmarks;
+  gchar *user_bookmarks_uri, *operator_bookmarks_uri;
+  GnomeVFSResult result;
+
+  /* Create the bookmark paths if they do not exist yet */
+  set_bookmark_files_path ();
+  
+  user_bookmarks = g_build_filename (g_get_home_dir (),
+                                     MYBOOKMARKS,
+                                     NULL);
+  operator_bookmarks = g_build_filename (g_get_home_dir (),
+                                         OPERATORBOOKMARKS,
+                                         NULL);
+  user_bookmarks_uri = gnome_vfs_get_uri_from_local_path (user_bookmarks);
+  operator_bookmarks_uri = gnome_vfs_get_uri_from_local_path (operator_bookmarks);
+
+  result = gnome_vfs_monitor_add (&priv->user_bookmarks_handle,
+                                  user_bookmarks_uri,
+                                  GNOME_VFS_MONITOR_FILE,
+                                  hd_bookmark_manager_bookmark_files_changed,
+                                  manager);
+  if (result != GNOME_VFS_OK)
+    g_debug ("Could not add monitor for user bookmark file. %s", gnome_vfs_result_to_string (result));
+
+  result = gnome_vfs_monitor_add (&priv->operator_bookmarks_handle,
+                                  operator_bookmarks_uri,
+                                  GNOME_VFS_MONITOR_FILE,
+                                  hd_bookmark_manager_bookmark_files_changed,
+                                  manager);
+  if (result != GNOME_VFS_OK)
+    g_debug ("Could not add monitor for operator bookmark file. %s", gnome_vfs_result_to_string (result));
+
+  priv->parse_thread_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
+                                                manager);
+
+  g_free (user_bookmarks);
+  g_free (operator_bookmarks);
+  g_free (user_bookmarks_uri);
+  g_free (operator_bookmarks_uri);
 }
 
 static void
@@ -193,8 +262,7 @@ hd_bookmark_manager_get (void)
     {
       manager = g_object_new (HD_TYPE_BOOKMARK_MANAGER, NULL);
 
-      gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
-                            manager);
+      hd_bookmark_manager_monitor_bookmark_files (manager);
     }
 
   return manager;

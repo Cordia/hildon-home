@@ -1,5 +1,15 @@
 2009-01-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-bookmark-manager.c (hd_bookmark_manager_parse_bookmark_files,
+	  hd_bookmark_manager_bookmark_files_changed,
+	  hd_bookmark_manager_monitor_bookmark_files,
+	  hd_bookmark_manager_get): Monitor bookmark files for changes and
+	  parse them again. Fixes NB#95283
+
+	* debian/changelog: Update changelog.
+
+2009-01-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-bookmark-shortcut.c
 	  (hd_bookmark_shortcut_update_from_gconf): Only try to load thumbnail
 	  icon when there was no error.
