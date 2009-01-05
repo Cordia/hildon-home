@@ -1,3 +1,14 @@
+2009-01-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-bookmark-shortcut.c
+	  (hd_bookmark_shortcut_update_from_gconf): Only try to load thumbnail
+	  icon when there was no error.
+	  (hd_bookmark_shortcut_dispose): Add missing unrefs.
+	  (hd_bookmark_shortcut_expose_event): Only draw thumbnail icon if
+	  available. Fixes NB#96683
+
+	* debian/changelog: Update changelog.
+
 2008-12-29  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.4

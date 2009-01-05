@@ -116,6 +116,9 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
   g_free (value);
 
   /* Get icon path from GConf */
+  if (priv->thumbnail_icon)
+    priv->thumbnail_icon = (g_object_unref (priv->thumbnail_icon), NULL);
+
   key = g_strdup_printf (BOOKMARKS_GCONF_KEY_ICON, plugin_id);
   value = gconf_client_get_string (priv->gconf_client,
                                    key,
@@ -130,12 +133,11 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
       g_error_free (error);
       error = NULL;
     }
-
-  /* Set icon */
-/*  gtk_image_set_from_file (GTK_IMAGE (priv->icon), value); */
-  if (priv->thumbnail_icon)
-    priv->thumbnail_icon = (g_object_unref (priv->thumbnail_icon), NULL);
-  priv->thumbnail_icon = gdk_pixbuf_new_from_file_at_size (value, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, NULL);
+  else
+    {
+      /* Set icon */
+      priv->thumbnail_icon = gdk_pixbuf_new_from_file_at_size (value, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, NULL);
+    }
 
   /* Free memory */
   g_free (key);
@@ -178,10 +180,13 @@ hd_bookmark_shortcut_dispose (GObject *object)
   HDBookmarkShortcutPrivate *priv = HD_BOOKMARK_SHORTCUT (object)->priv;
 
   if (priv->gconf_client)
-    {
-      g_object_unref (priv->gconf_client);
-      priv->gconf_client = NULL;
-    }
+    priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
+
+  if (priv->bg_image)
+    priv->bg_image = (g_object_unref (priv->bg_image), NULL);
+
+  if (priv->thumbnail_icon)
+    priv->thumbnail_icon = (g_object_unref (priv->thumbnail_icon), NULL);
 
   /* Chain up */
   G_OBJECT_CLASS (hd_bookmark_shortcut_parent_class)->dispose (object);
@@ -347,14 +352,17 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
       cairo_fill (cr);
     }
 
-  cairo_new_path (cr);
-  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-  gdk_cairo_set_source_pixbuf (cr, priv->thumbnail_icon, BORDER_WIDTH, BORDER_WIDTH + THUMBNAIL_BORDER * 2);
-  rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH + THUMBNAIL_BORDER * 2,
-                     THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT,
-                     BORDER_WIDTH * 1.5);
-
-  cairo_fill (cr);
+  /* Display thumbmail icon */
+  if (priv->thumbnail_icon)
+    {
+      cairo_new_path (cr);
+      cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+      gdk_cairo_set_source_pixbuf (cr, priv->thumbnail_icon, BORDER_WIDTH, BORDER_WIDTH + THUMBNAIL_BORDER * 2);
+      rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH + THUMBNAIL_BORDER * 2,
+                         THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT,
+                         BORDER_WIDTH * 1.5);
+      cairo_fill (cr);
+    }
 
   cairo_destroy (cr);
 
