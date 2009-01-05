@@ -1,5 +1,12 @@
 2009-01-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-change-background-dialog.c (response_cb): Select the
+	background image only for the current view. Fixes NB#96380
+
+	* debian/changelog: Update changelog.
+
+2009-01-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-bookmark-manager.c (hd_bookmark_manager_parse_bookmark_files,
 	  hd_bookmark_manager_bookmark_files_changed,
 	  hd_bookmark_manager_monitor_bookmark_files,

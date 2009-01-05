@@ -284,9 +284,14 @@ response_cb (HDChangeBackgroundDialog *dialog,
                                               &iter))
         {
           gchar *image[5];
-          GConfClient *client;
           guint i;
+          guint current_view;
+          GConfClient *client;
+          gchar *key;
+          const gchar *value;
+          GError *error = NULL;
 
+          /* Get selected background image */
           gtk_tree_model_get (priv->model, &iter,
                               COL_IMAGE, &image[0],
                               COL_IMAGE_1, &image[1],
@@ -297,86 +302,54 @@ response_cb (HDChangeBackgroundDialog *dialog,
 
           g_debug ("Selected: %s", image[0]);
 
+          /* Get current view */
+          dbus_g_proxy_call (priv->proxy,
+                             "GetCurrentViewID",
+                             &error,
+                             G_TYPE_INVALID,
+                             G_TYPE_UINT, &current_view,
+                             G_TYPE_INVALID);
+          if (error)
+            {
+              g_warning ("Could not get ID of current view. %s", error->message);
+
+              g_error_free (error);
+
+              current_view = 0;
+
+              error = NULL;
+            }
+
+          /* ID is from 0 to 3 */
+          current_view++;
+
+          /* GConf client, key, value */
           client = gconf_client_get_default ();
 
-          if (image[1] || image[2] || image[3] || image[4])
-            {
-              /* Set backgrounds of all views */
-              gchar *key;
+          key = GCONF_BACKGROUND_KEY (current_view);
 
-              for (i = 1; i <= 4; i++)
-                {
-                  GError *error = NULL;
-
-                  /* ignore not set images */
-                  if (!image[i])
-                    continue;
-
-                  key = GCONF_BACKGROUND_KEY (i);
-                  gconf_client_set_string (client,
-                                           key,
-                                           image[i],
-                                           &error);
-
-                  if (error)
-                    {
-                      g_warning ("Could not set background image for view %u, '%s'. %s",
-                                 i, key, error->message);
-                      g_error_free (error);
-                    }
-
-                  g_free (key);
-                }
-            }
+          if (image[current_view])
+            value = image[current_view];
           else
+            value = image[0];
+
+          /* Set GConf key/value */
+          gconf_client_set_string (client,
+                                   key,
+                                   value,
+                                   &error);
+          if (error)
             {
-              /* Set background of current view only */
-              gchar *key;
-              guint current_view;
-              GError *error = NULL;
-
-              dbus_g_proxy_call (priv->proxy,
-                                 "GetCurrentViewID",
-                                 &error,
-                                 G_TYPE_INVALID,
-                                 G_TYPE_UINT, &current_view,
-                                 G_TYPE_INVALID);
-              if (error)
-                {
-                  g_warning ("Could not get ID of current view. %s", error->message);
-
-                  g_error_free (error);
-
-                  current_view = 0;
-
-                  error = NULL;
-                }
-
-              /* ID is from 0 to 3 */
-              current_view++;
-
-              g_debug ("current_view: %u", current_view);
-
-              key = GCONF_BACKGROUND_KEY (current_view);
-              gconf_client_set_string (client,
-                                       key,
-                                       image[0],
-                                       &error);
-
-              if (error)
-                {
-                  g_warning ("Could not set background image for view %u, '%s'. %s",
-                             current_view, key, error->message);
-                  g_error_free (error);
-                }
-
-              g_free (key);
+              g_warning ("Could not set background image for view %u, '%s'. %s",
+                         current_view, key, error->message);
+              g_error_free (error);
             }
 
           /* free memory */
           for (i = 0; i < 5; i++)
             g_free (image[i]);
           g_object_unref (client);
+          g_free (key);
         }
 
       gtk_widget_destroy (GTK_WIDGET (dialog));
