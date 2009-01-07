@@ -1,3 +1,7 @@
+2009-01-07  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Added fixed bug.
+
 2009-01-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-change-background-dialog.c (response_cb): Select the
