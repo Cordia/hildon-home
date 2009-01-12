@@ -1,3 +1,12 @@
+2009-01-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Update.
+
+	* src/hd-incoming-events.c (group_window_response): Invoke default
+	action for notifications in switcher when no D-Bus callback is
+	defined. Fixes: NB#97103
+	  (load_notification_groups): Make D-Bus callback optional.
+
 2009-01-07  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Added fixed bug.

@@ -3,6 +3,8 @@ hildon-home (0.3.5~unreleased) unstable; urgency=low
   * Only draw thumbnail icon if available. Fixes: NB#96683, NB#97339
   * Monitor bookmark configurations file. Fixes: NB#95283
   * Background image of only current home view is changed. Fixes: NB#96380
+  * Invoke default action for notifications in switcher when no D-Bus callback
+    is defined. Fixes: NB#97103
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 29 Dec 2008 15:46:33 +0200
 

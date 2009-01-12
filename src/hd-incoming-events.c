@@ -102,8 +102,27 @@ group_window_response (HDIncomingEventWindow *window,
 
   if (response_id == GTK_RESPONSE_OK)
     {
-      hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
-                                                  group->dbus_callback);
+      if (group->dbus_callback)
+        {
+          g_debug ("Use D-Bus callback %s to open notifications.", group->dbus_callback);
+          hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
+                                                      group->dbus_callback);
+        }
+      else
+        {
+          g_debug ("Invoke default action to open notifications.");
+          for (i = 0; i < group->notifications->len; i++)
+            {
+              HDNotification *notification;
+
+              notification = g_ptr_array_index (group->notifications,
+                                                i);
+
+              hd_notification_manager_call_action (hd_notification_manager_get (),
+                                                   notification,
+                                                   "default");
+            }
+        }
     }
 
   for (i = 0; i < group->notifications->len; i++)
@@ -466,9 +485,7 @@ load_notification_groups (HDIncomingEvents *ie)
       group->dbus_callback = g_key_file_get_string (key_file,
                                                     groups[i],
                                                     NOTIFICATION_GROUP_KEY_DBUS_CALL,
-                                                    &error);
-      if (error)
-        goto load_key_error;
+                                                    NULL);
 
       group->text_domain = g_key_file_get_string (key_file,
                                                   groups[i],
