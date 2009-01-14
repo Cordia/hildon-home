@@ -34,6 +34,8 @@
 #include "hd-notification-manager-glue.h"
 #include "hd-marshal.h"
 
+#include <libgnomevfs/gnome-vfs.h>
+
 #include <string.h>
 #include <stdio.h>
 #include <gtk/gtk.h>
@@ -665,6 +667,7 @@ hd_notification_manager_init (HDNotificationManager *nm)
 {
   DBusGProxy *bus_proxy;
   GError *error = NULL;
+  gchar *config_dir;
   gchar *notifications_db;
   guint result;
 
@@ -724,32 +727,54 @@ hd_notification_manager_init (HDNotificationManager *nm)
 
   nm->priv->db = NULL;
 
-  notifications_db = g_build_filename (g_get_home_dir (), 
-                                       ".osso/hildon-desktop",
-                                       "notifications.db",
-                                       NULL); 
+  config_dir = g_build_filename (g_get_home_dir (),
+                                 ".config",
+                                 "hildon-desktop",
+                                 NULL);
 
-  result = sqlite3_open (notifications_db, &nm->priv->db);
-
-  g_free (notifications_db);
-
-  if (result != SQLITE_OK)
+  if (!g_mkdir_with_parents (config_dir,
+                             S_IRWXU |
+                             S_IRGRP | S_IXGRP |
+                             S_IROTH | S_IXOTH))
     {
-      g_warning ("Can't open database: %s", sqlite3_errmsg (nm->priv->db));
-      sqlite3_close (nm->priv->db);
-      nm->priv->db = NULL;
-    } else {
-        result = hd_notification_manager_db_create (nm);
+      notifications_db = g_build_filename (g_get_home_dir (), 
+                                           ".config",
+                                           "hildon-desktop",
+                                           "notifications.db",
+                                           NULL); 
 
-        if (result != SQLITE_OK)
-          {
-            g_warning ("Can't create database: %s", sqlite3_errmsg (nm->priv->db));
-          }
-        else
-          {
-            hd_notification_manager_db_load (nm);
-          }
+      result = sqlite3_open (notifications_db, &nm->priv->db);
+
+      g_free (notifications_db);
+
+      if (result != SQLITE_OK)
+        {
+          g_warning ("Can't open database: %s", sqlite3_errmsg (nm->priv->db));
+          sqlite3_close (nm->priv->db);
+          nm->priv->db = NULL;
+        } else {
+            result = hd_notification_manager_db_create (nm);
+
+            if (result != SQLITE_OK)
+              {
+                g_warning ("Can't create database: %s", sqlite3_errmsg (nm->priv->db));
+              }
+            else
+              {
+                hd_notification_manager_db_load (nm);
+              }
+        }
     }
+  else
+    {
+      /* User config dir could not be created */
+      result = gnome_vfs_result_from_errno ();
+      g_warning ("Could not mkdir '%s', %s",
+                 config_dir,
+                 gnome_vfs_result_to_string (result));
+    }
+
+  g_free (config_dir);
 }
 
 static void 
