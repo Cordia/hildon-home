@@ -53,7 +53,9 @@
 
 /* Background gconf key */
 #define GCONF_BACKGROUND_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/bg-image", i)
-#define GCONF_ACTIVE_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/active", i)
+
+#define HD_MAX_HOME_VIEWS 4
+#define HD_GCONF_KEY_ACTIVE_VIEWS "/apps/osso/hildon-desktop/views/active"
 
 /* Images folder */
 #define USER_IMAGES_FOLDER "MyDocs", ".images"
@@ -72,6 +74,8 @@ struct _HDActivateViewsDialogPrivate
   GtkTreeModel *model;
 
   GtkWidget    *icon_view;
+
+  GConfClient  *gconf_client;
 };
 
 G_DEFINE_TYPE (HDActivateViewsDialog, hd_activate_views_dialog, GTK_TYPE_DIALOG);
@@ -82,10 +86,10 @@ hd_activate_views_dialog_dispose (GObject *object)
   HDActivateViewsDialogPrivate *priv = HD_ACTIVATE_VIEWS_DIALOG (object)->priv;
 
   if (priv->model)
-    {
-      g_object_unref (priv->model);
-      priv->model = NULL;
-    }
+    priv->model = (g_object_unref (priv->model), NULL);
+
+  if (priv->gconf_client)
+    priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
 
   G_OBJECT_CLASS (hd_activate_views_dialog_parent_class)->dispose (object);
 }
@@ -124,36 +128,38 @@ response_cb (HDActivateViewsDialog *dialog,
 
       if (gtk_tree_model_get_iter_first (priv->model, &iter))
         {
-          GConfClient *client = gconf_client_get_default ();
-          guint i = 1;
+          GSList *list = NULL;
+          gint i = 1;
+          GError *error = NULL;
 
           do
             {
               GtkTreePath *path;
-              gchar *key;
-              GError *error = NULL;
 
               path = gtk_tree_model_get_path (priv->model, &iter);
 
-              key = GCONF_ACTIVE_KEY (i++);
-              gconf_client_set_bool (client,
-                                     key,
-                                     gtk_icon_view_path_is_selected (GTK_ICON_VIEW (priv->icon_view),
-                                                                     path),
-                                     &error);
-
-              if (error)
-                {
-                  g_warning ("Could not activate/deactivate view via GConf. %s", error->message);
-                  g_error_free (error);
-                }
+              if (gtk_icon_view_path_is_selected (GTK_ICON_VIEW (priv->icon_view),
+                                                  path))
+                list = g_slist_append (list, GINT_TO_POINTER (i));
 
               gtk_tree_path_free (path);
-              g_free (key);
+
+              i++;
             }
           while (gtk_tree_model_iter_next (priv->model, &iter));
 
-          g_object_unref (client);
+          gconf_client_set_list (priv->gconf_client,
+                                 HD_GCONF_KEY_ACTIVE_VIEWS,
+                                 GCONF_VALUE_INT,
+                                 list,
+                                 &error);
+          if (error)
+            {
+              g_warning ("Could not activate/deactivate view via GConf. %s", error->message);
+              g_error_free (error);
+            }
+
+          g_slist_free (list);
         }
     }
 }
@@ -165,6 +171,10 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   GtkCellRenderer *renderer;
   guint i;
   GtkWidget *pannable;
+  GSList *list = NULL;
+  gboolean active_views[HD_MAX_HOME_VIEWS] = { 0,};
+  gboolean none_active = TRUE;
+  GError *error = NULL;
 
   dialog->priv = priv;
 
@@ -182,7 +192,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gtk_icon_view_set_selection_mode (GTK_ICON_VIEW (priv->icon_view),
                                     GTK_SELECTION_MULTIPLE);
   gtk_icon_view_set_columns (GTK_ICON_VIEW (priv->icon_view),
-                             4);
+                             HD_MAX_HOME_VIEWS);
 
   renderer = gtk_cell_renderer_pixbuf_new ();
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (priv->icon_view),
@@ -193,19 +203,58 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
                                   "pixbuf", COL_PIXBUF,
                                   NULL);
 
-  /* Append views */
-  for (i = 1; i <= 4; i++)
+  /* Read active views from GConf */
+  priv->gconf_client = gconf_client_get_default ();
+  list = gconf_client_get_list (priv->gconf_client,
+                                HD_GCONF_KEY_ACTIVE_VIEWS,
+                                GCONF_VALUE_INT,
+                                &error);
+
+  if (!error)
     {
-      GError *error = NULL;
+
+      GSList *l;
+
+      for (l = list; l; l = l->next)
+        {
+          gint id = GPOINTER_TO_INT (l->data);
+
+          /* Stored in GConf 1..HD_MAX_HOME_VIEWS */
+
+          if (id > 0 && id <= HD_MAX_HOME_VIEWS)
+            {
+              active_views[id - 1] = TRUE;
+              none_active = FALSE;
+            }
+        }
+    }
+  else
+    {
+      /* Error */
+      g_warning ("Error reading active views from GConf. %s", error->message);
+      error = (g_error_free (error), NULL);
+    }
+
+  g_slist_free (list);
+
+  /* Check if there is an view active */
+  if (none_active)
+    {
+      g_warning ("No active views. Make first view active");
+      active_views[0] = TRUE;
+    }
+
+  /* Append views */
+  for (i = 1; i <= HD_MAX_HOME_VIEWS; i++)
+    {
       gchar *key;
       gchar *bg_image;
       GdkPixbuf *pixbuf = NULL;
-      GConfClient *client = gconf_client_get_default ();
       GtkTreeIter iter;
       GtkTreePath *path = NULL;
 
       key = GCONF_BACKGROUND_KEY (i);
-      bg_image = gconf_client_get_string (client,
+      bg_image = gconf_client_get_string (priv->gconf_client,
                                           key,
                                           &error);
       g_free (key);
@@ -243,10 +292,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
 
       path = gtk_tree_model_get_path (priv->model, &iter);
 
-      key = GCONF_ACTIVE_KEY (i);
-      if (gconf_client_get_bool (client,
-                                 key,
-                                 &error))
+      if (active_views[i - 1])
         {
           gtk_icon_view_select_path (GTK_ICON_VIEW (priv->icon_view),
                                      path);
@@ -256,9 +302,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
           gtk_icon_view_unselect_path (GTK_ICON_VIEW (priv->icon_view),
                                        path);
         }
-      g_free (key);
 
-      g_object_unref (client);
       if (pixbuf)
         g_object_unref (pixbuf);
       if (path)

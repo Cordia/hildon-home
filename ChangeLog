@@ -1,3 +1,9 @@
+2009-01-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_dispose,
+	  response_cb, hd_activate_views_dialog_init): Update for changed
+	  GConf storage (in a list) of the active views.
+
 2009-01-14  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-notification-manager.c (hd_notification_manager_init): Change
