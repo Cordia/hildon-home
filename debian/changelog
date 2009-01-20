@@ -1,3 +1,9 @@
+hildon-home (0.3.8~unreleased) unstable; urgency=low
+
+  * unreleased
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 20 Jan 2009 15:48:39 +0200
+
 hildon-home (0.3.7) unstable; urgency=low
 
   * Remove D-Bus-Call keys from notification-groups.conf configuration file,
