@@ -1,6 +1,7 @@
 hildon-home (0.3.7~unreleased) unstable; urgency=low
 
-  * unreleased
+  * Remove D-Bus-Call keys from notification-groups.conf configuration file,
+    so that ActionInvoked signal is sent by default. Fixes NB#97103
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 20 Jan 2009 14:42:36 +0200
 

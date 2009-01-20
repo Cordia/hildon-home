@@ -1,3 +1,16 @@
+2009-01-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/notification-groups.conf: Remove D-Bus-Call keys, so the
+	ActionInvoked signal is sent by default. Fixes NB#97103
+
+	* src/test-notifications.py (emit_notification,
+	  notification_closed_handler, action_invoked_handler): Update
+	  test code.
+
+	* configure.ac: 0.3.7
+
+	* debian/changelog: Update
+
 2009-01-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.6
