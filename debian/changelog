@@ -1,8 +1,15 @@
-hildon-home (0.3.6~unreleased) unstable; urgency=low
+hildon-home (0.3.6) unstable; urgency=low
 
-  * unreleased
+  Jan Arne Petersen <jpetersen@openismus.com>:
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 13 Jan 2009 14:00:15 +0200
+  * src/hd-activate-views-dialog.c (hd_activate_views_dialog_dispose,
+    response_cb, hd_activate_views_dialog_init): Update for changed
+    GConf storage (in a list) of the active views.
+  * src/hd-notification-manager.c (hd_notification_manager_init): Change
+    directory for the persistent notifications db to
+    ~/.config/hildon-desktop and create it if not exist.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 20 Jan 2009 14:25:14 +0200
 
 hildon-home (0.3.5) unstable; urgency=low
 
