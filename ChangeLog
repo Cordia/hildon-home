@@ -1,3 +1,15 @@
+2009-01-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/changelog: Update.
+
+	* debian/control: Add upstart-dev to build-deps.
+
+	* debian/rules: Add call to dh_installxsession.
+
+	* debian/hildon-home.xsession (added): Add xsession file from
+	system-services.
+	* debian/hildon-home.init (deleted): Remove unused init file.
+
 2009-01-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.7

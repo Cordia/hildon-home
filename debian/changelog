@@ -1,6 +1,6 @@
 hildon-home (0.3.8~unreleased) unstable; urgency=low
 
-  * unreleased
+  * Add hildon-home xsession post script (from system services).
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 20 Jan 2009 15:48:39 +0200
 
