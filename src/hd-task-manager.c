@@ -28,6 +28,7 @@
 #include <hildon/hildon.h>
 
 #include <gconf/gconf-client.h>
+#include <libgnomevfs/gnome-vfs.h>
 
 #include <string.h>
 
@@ -65,6 +66,8 @@ struct _HDTaskManagerPrivate
   GHashTable *available_tasks;
   GHashTable *installed_shortcuts;
 
+  GHashTable *monitors;
+
   GConfClient *gconf_client;
 };
 
@@ -75,15 +78,20 @@ typedef struct
 
   gchar *exec;
   gchar *service;
+
+  GtkTreeRowReference *row;
 } HDTaskInfo;
 
 enum
 {
   DESKTOP_FILE_CHANGED,
+  DESKTOP_FILE_DELETED,
   LAST_SIGNAL
 };
 
 static guint task_manager_signals [LAST_SIGNAL] = { 0 };
+
+static gboolean hd_task_manager_scan_for_desktop_files (const gchar *directory);
 
 G_DEFINE_TYPE (HDTaskManager, hd_task_manager, G_TYPE_OBJECT);
 
@@ -104,13 +112,16 @@ hd_task_info_free (HDTaskInfo *info)
   g_free (info->exec);
   g_free (info->service);
 
+  if (info->row)
+    gtk_tree_row_reference_free (info->row);
+
   g_slice_free (HDTaskInfo, info);
 }
 
-static void
-hd_task_manager_load_desktop_file (HDTaskManager *manager,
-                                   const gchar   *filename)
+static gboolean
+hd_task_manager_load_desktop_file (const gchar *filename)
 {
+  HDTaskManager *manager = hd_task_manager_get ();
   HDTaskManagerPrivate *priv = manager->priv;
   GKeyFile *desktop_file;
   GError *error = NULL;
@@ -164,7 +175,26 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
       goto cleanup;
     }
 
-  info = g_slice_new0 (HDTaskInfo);
+  /* Get the desktop_id */
+  desktop_id = g_path_get_basename (filename);
+
+  info = g_hash_table_lookup (priv->available_tasks,
+                              desktop_id);
+  if (!info)
+    {
+      info = g_slice_new0 (HDTaskInfo);
+
+      g_hash_table_insert (priv->available_tasks,
+                           desktop_id,
+                           info);
+    }
+  else
+    {
+      g_free (info->label);
+      g_free (info->icon);
+      g_free (info->exec);
+      g_free (info->service);
+    }
 
   /* Translate name */
   if (!translation_domain)
@@ -199,12 +229,6 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
                                          HD_KEY_FILE_DESKTOP_KEY_SERVICE,
                                          NULL);
 
-  /* Get the desktop_id */
-  desktop_id = g_path_get_basename (filename);
-
-  g_hash_table_insert (priv->available_tasks,
-                       desktop_id,
-                       info);
 
   /* Load icon for list */
   if (info->icon)
@@ -223,13 +247,43 @@ hd_task_manager_load_desktop_file (HDTaskManager *manager,
         }
     }
 
-  gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
-                                     NULL, -1,
-                                     0, info->label,
-                                     1, info->icon,
-                                     2, desktop_id,
-                                     3, pixbuf,
-                                     -1);
+  if (gtk_tree_row_reference_valid (info->row))
+    {
+      GtkTreeIter iter;
+      GtkTreePath *path;
+
+      path = gtk_tree_row_reference_get_path (info->row);
+      if (gtk_tree_model_get_iter (priv->model, &iter, path))
+        {
+          gtk_list_store_set (GTK_LIST_STORE (priv->model),
+                              &iter,
+                              0, info->label,
+                              1, info->icon,
+                              2, desktop_id,
+                              3, pixbuf,
+                              -1);
+        }
+      gtk_tree_path_free (path);
+    }
+  else
+    {
+      GtkTreeIter iter;
+      GtkTreePath *path;
+
+      gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
+                                         &iter, -1,
+                                         0, info->label,
+                                         1, info->icon,
+                                         2, desktop_id,
+                                         3, pixbuf,
+                                         -1);
+
+      /* Update row reference */
+      path = gtk_tree_model_get_path (priv->model, &iter);
+      gtk_tree_row_reference_free (info->row);
+      info->row = gtk_tree_row_reference_new (priv->model, path);
+      gtk_tree_path_free (path);
+    }
 
   g_signal_emit (manager,
                  task_manager_signals[DESKTOP_FILE_CHANGED],
@@ -242,6 +296,80 @@ cleanup:
   g_free (name);
   if (pixbuf)
     g_object_unref (pixbuf);
+
+  return FALSE;
+}
+
+static gboolean
+hd_task_manager_remove_desktop_file (const gchar *filename)
+{
+  HDTaskManager *manager = hd_task_manager_get ();
+  HDTaskManagerPrivate *priv = manager->priv;
+  gchar *desktop_id = NULL;
+  HDTaskInfo *info = NULL;
+
+
+  /* Get the desktop_id */
+  desktop_id = g_path_get_basename (filename);
+
+  info = g_hash_table_lookup (priv->available_tasks,
+                              desktop_id);
+
+  if (info && gtk_tree_row_reference_valid (info->row))
+    {
+      GtkTreeIter iter;
+      GtkTreePath *path;
+
+      path = gtk_tree_row_reference_get_path (info->row);
+      if (gtk_tree_model_get_iter (priv->model, &iter, path))
+        gtk_list_store_remove (GTK_LIST_STORE (priv->model),
+                               &iter);
+      gtk_tree_path_free (path);
+    }
+
+  g_signal_emit (manager,
+                 task_manager_signals[DESKTOP_FILE_DELETED],
+                 g_quark_from_string (desktop_id));
+
+  g_hash_table_remove (priv->available_tasks,
+                       desktop_id);
+
+  g_free (desktop_id);
+
+  return FALSE;
+}
+ 
+static void
+applications_dir_changed (GnomeVFSMonitorHandle    *handle,
+                          const gchar              *monitor_uri,
+                          const gchar              *info_uri,
+                          GnomeVFSMonitorEventType  event_type,
+                          gpointer                  user_data)
+{
+  if (g_file_test (info_uri, G_FILE_TEST_IS_DIR))
+    {
+      if (event_type == GNOME_VFS_MONITOR_EVENT_CREATED)
+        g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+                         (GSourceFunc) hd_task_manager_scan_for_desktop_files,
+                         gnome_vfs_get_local_path_from_uri (info_uri),
+                         (GDestroyNotify) g_free);
+    }
+  else
+    {
+      if (event_type == GNOME_VFS_MONITOR_EVENT_CREATED ||
+          event_type == GNOME_VFS_MONITOR_EVENT_CHANGED)
+        g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+                         (GSourceFunc) hd_task_manager_load_desktop_file,
+                         gnome_vfs_get_local_path_from_uri (info_uri),
+                         (GDestroyNotify) g_free);
+      else if (event_type == GNOME_VFS_MONITOR_EVENT_DELETED)
+        {
+          g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+                           (GSourceFunc) hd_task_manager_remove_desktop_file,
+                           gnome_vfs_get_local_path_from_uri (info_uri),
+                           (GDestroyNotify) g_free);
+        }
+    }
 }
 
 static int
@@ -257,18 +385,22 @@ visit_func (const char        *f_path,
     {
       case FTW_D:
           {
-/*            GnomeVFSMonitorHandle* handle;
+            GnomeVFSMonitorHandle *handle;
+            HDTaskManagerPrivate *priv = hd_task_manager_get ()->priv;
 
             gnome_vfs_monitor_add (&handle,
                                    f_path,
                                    GNOME_VFS_MONITOR_DIRECTORY,
                                    (GnomeVFSMonitorCallback) applications_dir_changed,
-                                   NULL);*/
+                                   NULL);
+
+            g_hash_table_insert (priv->monitors,
+                                 g_strdup (f_path),
+                                 handle);
           }
         break;
       case FTW_F:
-        hd_task_manager_load_desktop_file (hd_task_manager_get (),
-                                           f_path);
+        hd_task_manager_load_desktop_file (f_path);
         break;
       default:
         g_debug ("%s, %d", f_path, type_flag);
@@ -368,6 +500,8 @@ hd_task_manager_init (HDTaskManager *manager)
                                                  g_free, (GDestroyNotify) hd_task_info_free);
   priv->installed_shortcuts = g_hash_table_new_full (g_str_hash, g_str_equal,
                                                      g_free, NULL);
+  priv->monitors = g_hash_table_new_full (g_str_hash, g_str_equal,
+                                          g_free, (GDestroyNotify) gnome_vfs_monitor_cancel);
 
   priv->model = GTK_TREE_MODEL (gtk_list_store_new (4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, GDK_TYPE_PIXBUF));
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
@@ -399,22 +533,13 @@ hd_task_manager_dispose (GObject *obj)
   HDTaskManagerPrivate *priv = HD_TASK_MANAGER (obj)->priv;
 
   if (priv->gconf_client)
-    {
-      g_object_unref (priv->gconf_client);
-      priv->gconf_client = NULL;
-    }
+    priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
 
   if (priv->filtered_model)
-    {
-      g_object_unref (priv->filtered_model);
-      priv->filtered_model = NULL;
-    }
+    priv->filtered_model = (g_object_unref (priv->filtered_model), NULL);
 
   if (priv->model)
-    {
-      g_object_unref (priv->model);
-      priv->model = NULL;
-    }
+    priv->model = (g_object_unref (priv->model), NULL);
 
   G_OBJECT_CLASS (hd_task_manager_parent_class)->dispose (obj);
 }
@@ -426,6 +551,7 @@ hd_task_manager_finalize (GObject *obj)
 
   g_hash_table_destroy (priv->available_tasks);
   g_hash_table_destroy (priv->installed_shortcuts);
+  g_hash_table_destroy (priv->monitors);
 
   G_OBJECT_CLASS (hd_task_manager_parent_class)->finalize (obj);
 }
@@ -443,6 +569,13 @@ hd_task_manager_class_init (HDTaskManagerClass *klass)
                                                               G_SIGNAL_RUN_FIRST | G_SIGNAL_DETAILED,
                                                               G_STRUCT_OFFSET (HDTaskManagerClass,
                                                                                desktop_file_changed),
+                                                              NULL, NULL,
+                                                              g_cclosure_marshal_VOID__VOID,
+                                                              G_TYPE_NONE, 0);
+  task_manager_signals [DESKTOP_FILE_DELETED] = g_signal_new ("desktop-file-deleted",
+                                                              G_TYPE_FROM_CLASS (klass),
+                                                              G_SIGNAL_RUN_FIRST | G_SIGNAL_DETAILED,
+                                                              0,
                                                               NULL, NULL,
                                                               g_cclosure_marshal_VOID__VOID,
                                                               G_TYPE_NONE, 0);

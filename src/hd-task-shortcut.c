@@ -97,6 +97,17 @@ hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
 }
 
 static void
+hd_task_shortcut_desktop_file_deleted_cb (HDTaskManager  *manager,
+                                          HDTaskShortcut *shortcut)
+{
+  gboolean result;
+
+  gtk_widget_hide (GTK_WIDGET (shortcut));
+
+  g_signal_emit_by_name (shortcut, "delete-event", 0, &result);
+}
+
+static void
 hd_task_shortcut_constructed (GObject *object)
 {
   HDTaskShortcut *shortcut = HD_TASK_SHORTCUT (object);
@@ -110,10 +121,18 @@ hd_task_shortcut_constructed (GObject *object)
 
   /* Connect to detailed desktop-file-changed signal */
   detailed_signal = g_strdup_printf ("desktop-file-changed::%s", desktop_id);
-  g_signal_connect (manager,
-                    detailed_signal,
-                    G_CALLBACK (hd_task_shortcut_desktop_file_changed_cb),
-                    shortcut);
+  g_signal_connect_object (manager,
+                           detailed_signal,
+                           G_CALLBACK (hd_task_shortcut_desktop_file_changed_cb),
+                           shortcut,
+                           0);
+  g_free (detailed_signal);
+  detailed_signal = g_strdup_printf ("desktop-file-deleted::%s", desktop_id);
+  g_signal_connect_object (manager,
+                           detailed_signal,
+                           G_CALLBACK (hd_task_shortcut_desktop_file_deleted_cb),
+                           shortcut,
+                           0);
 
   /* Update label and icon if already there */
   hd_task_shortcut_desktop_file_changed_cb (manager,

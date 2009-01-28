@@ -1,3 +1,24 @@
+2009-01-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-task-manager.c (monitors, service, row, HDTaskInfo,
+	  DESKTOP_FILE_CHANGED, DESKTOP_FILE_DELETED, LAST_SIGNAL,
+	  task_manager_signals, hd_task_info_free,
+	  hd_task_manager_load_desktop_file,
+	  hd_task_manager_remove_desktop_file, applications_dir_changed,
+	  visit_func, hd_task_manager_init, hd_task_manager_dispose,
+	  hd_task_manager_finalize, hd_task_manager_class_init): Monitor the
+	  applications directory for changes and reload .desktop files if a
+	  file fas created/changed or remove task shortcuts i a file was
+	  deleted.
+
+	* src/hd-task-shortcut.c (hd_task_shortcut_desktop_file_deleted_cb,
+	  hd_task_shortcut_constructed): Send delete event to window if the
+	  .desktop file was removed.
+
+	* debian/changelog: Update.
+
+	Fixes NB#93939
+
 2009-01-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update.
