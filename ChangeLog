@@ -1,3 +1,16 @@
+2009-01-29  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-applet-manager.c (HDPluginInfo, plugin_removed_cb,
+	  plugin_module_added_cb, hd_applet_manager_init,
+	  hd_applet_manager_get_model,
+	  hd_applet_manager_install_applet_from_desktop_file,
+	  hd_applet_manager_install_applet): Add installed applet to Home.
+	  Fixes NB#96229
+	* src/home.conf.in: Installing of new applets is now done by
+	  HDAppletManager.
+
+	* debian/changelog: Update.
+
 2009-01-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-task-manager.c (monitors, service, row, HDTaskInfo,

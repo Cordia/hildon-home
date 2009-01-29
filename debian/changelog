@@ -2,6 +2,7 @@ hildon-home (0.3.8~unreleased) unstable; urgency=low
 
   * Add hildon-home xsession post script (from system services).
   * Monitor applications dir for changed/removed tasks. Fixes NB#93939
+  * Add installed applet to Home. Fixes NB#96229
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 20 Jan 2009 15:48:39 +0200
 

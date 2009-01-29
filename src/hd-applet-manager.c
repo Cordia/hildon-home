@@ -67,6 +67,9 @@ typedef struct
   gboolean multiple;
 } HDPluginInfo;
 
+static void hd_applet_manager_install_applet_from_desktop_file (HDAppletManager *manager,
+                                                                const gchar     *desktop_file);
+
 G_DEFINE_TYPE (HDAppletManager, hd_applet_manager, G_TYPE_OBJECT);
 
 static void
@@ -245,6 +248,15 @@ plugin_removed_cb (HDPluginManager *pm,
     gtk_widget_destroy (GTK_WIDGET (plugin));
 }
 
+static void
+plugin_module_added_cb (HDPluginConfiguration *pc,
+                        const gchar           *desktop_file,
+                        HDAppletManager       *manager)
+{
+  hd_applet_manager_install_applet_from_desktop_file (manager,
+                                                      desktop_file);
+}
+
 static gboolean
 run_idle (gpointer data)
 {
@@ -278,6 +290,8 @@ hd_applet_manager_init (HDAppletManager *manager)
                     G_CALLBACK (plugin_added_cb), manager);
   g_signal_connect (priv->plugin_manager, "plugin-removed",
                     G_CALLBACK (plugin_removed_cb), manager);
+  g_signal_connect (priv->plugin_manager, "plugin-module-added",
+                    G_CALLBACK (plugin_module_added_cb), manager);
 
   gdk_threads_add_idle (run_idle, priv->plugin_manager);
 }
@@ -307,18 +321,13 @@ hd_applet_manager_get_model (HDAppletManager *manager)
   return g_object_ref (priv->model);
 }
 
-void
-hd_applet_manager_install_applet (HDAppletManager *manager,
-                                  GtkTreeIter     *iter)
+static void
+hd_applet_manager_install_applet_from_desktop_file (HDAppletManager *manager,
+                                                    const gchar     *desktop_file)
 {
   HDAppletManagerPrivate *priv = manager->priv;
-  gchar *desktop_file;
   gchar *basename, *id;
   guint i = 0;
-
-  gtk_tree_model_get (priv->model, iter,
-                      1, &desktop_file,
-                      -1);
 
   basename = g_path_get_basename (desktop_file);
 
@@ -332,12 +341,28 @@ hd_applet_manager_install_applet (HDAppletManager *manager,
                          "X-Desktop-File",
                          desktop_file);
 
-  g_free (desktop_file);
   g_free (basename);
   g_free (id);
 
   /* Store file atomically */
   hd_plugin_configuration_store_items_key_file (HD_PLUGIN_CONFIGURATION (priv->plugin_manager));
+}
+
+void
+hd_applet_manager_install_applet (HDAppletManager *manager,
+                                  GtkTreeIter     *iter)
+{
+  HDAppletManagerPrivate *priv = manager->priv;
+  gchar *desktop_file;
+
+  gtk_tree_model_get (priv->model, iter,
+                      1, &desktop_file,
+                      -1);
+
+  hd_applet_manager_install_applet_from_desktop_file (manager,
+                                                      desktop_file);
+
+  g_free (desktop_file);
 }
 
 void
