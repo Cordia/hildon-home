@@ -39,7 +39,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <gtk/gtk.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
 #include <sqlite3.h>
 
 #define HD_NOTIFICATION_MANAGER_GET_PRIVATE(object) \
@@ -126,48 +125,6 @@ hd_notification_manager_next_id (HDNotificationManager *nm)
   g_mutex_unlock (nm->priv->mutex);
 
   return next_id;
-}
-
-static GdkPixbuf *
-hd_notification_manager_get_icon (const gchar *icon_name)
-{
-  GdkPixbuf *pixbuf = NULL;
-  GError *error = NULL;	
-  GtkIconTheme *icon_theme;
-
-  if (!g_str_equal (icon_name, ""))
-    {
-      if (g_file_test (icon_name, G_FILE_TEST_EXISTS))
-        {
-          pixbuf = gdk_pixbuf_new_from_file (icon_name, &error);
-
-          if (error)
-            {
-              pixbuf = NULL; /* It'd be already NULL */
-              g_warning ("Notification icon not loaded: %s", error->message);
-              g_error_free (error);
-            }
-        }
-      else
-        {	    
-          icon_theme = gtk_icon_theme_get_default ();
-
-          pixbuf = gtk_icon_theme_load_icon (icon_theme,
-                                             icon_name,
-                                             40,
-                                             GTK_ICON_LOOKUP_NO_SVG,
-                                             &error);
-
-          if (error)
-            {
-              pixbuf = NULL; /* It'd be already NULL */
-              g_warning ("Notification Manager %s:",error->message);
-              g_error_free (error);
-            }
-        }
-    }
-
-  return pixbuf;
 }
 
 static int 
@@ -923,7 +880,6 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                                 gint                   timeout, 
                                 DBusGMethodInvocation *context)
 {
-  GdkPixbuf *pixbuf = NULL;
   GHashTable *hints_copy;
   GValue *hint;
   gchar **actions_copy;
@@ -936,14 +892,6 @@ hd_notification_manager_notify (HDNotificationManager *nm,
 
   g_return_val_if_fail (summary != '\0', FALSE);
   g_return_val_if_fail (body != '\0', FALSE);
-
-  pixbuf = hd_notification_manager_get_icon (icon);
-
-  if (!pixbuf)
-    {
-      g_warning ("Notification icon not found. Ignoring this notification.");
-      return FALSE;
-    }
 
   /* Get "persisitent" hint */
   hint = g_hash_table_lookup (hints, "persistent");
@@ -996,6 +944,19 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                                           (GDestroyNotify) hint_value_free);
 
       g_hash_table_foreach (hints, (GHFunc) copy_hash_table_item, hints_copy);
+
+      /* If there is no time hint use the current time */
+      if (!g_hash_table_lookup (hints_copy, "time"))
+        {
+          GValue *value = g_new0 (GValue, 1);
+          time_t t;
+
+          time (&t);
+
+          g_value_init (value, G_TYPE_INT64);
+          g_value_set_int64 (value, (gint64) t);
+          g_hash_table_insert (hints_copy, g_strdup ("time"), value);
+        }
 
       sender = dbus_g_method_get_sender (context);
 

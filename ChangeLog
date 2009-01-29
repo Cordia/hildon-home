@@ -1,3 +1,14 @@
+2009-01-30  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-incoming-event-window.c
+	  (hd_incoming_event_window_set_property): Fix icon size.
+
+	* src/hd-notification-manager.c (hd_notification_manager_notify): Do
+	not check existence of icon. If no "time" hint is set use current
+	time. Fixes NB#97905.
+
+	* src/home.plugins.in: Revert.
+
 2009-01-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-applet-manager.c (HDPluginInfo, plugin_removed_cb,

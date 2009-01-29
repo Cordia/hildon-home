@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include <gdk/gdkx.h>
+#include <hildon/hildon.h>
 
 #include <X11/X.h>
 #include <X11/Xatom.h>
@@ -335,7 +336,7 @@ hd_incoming_event_window_set_property (GObject      *object,
     case PROP_ICON:
       gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
                                     g_value_get_string (value),
-                                    0);
+                                    HILDON_ICON_SIZE_SMALL);
       hd_incoming_event_window_set_string_xwindow_property (
                              GTK_WIDGET (object),
                              "_HILDON_INCOMING_EVENT_NOTIFICATION_ICON",
