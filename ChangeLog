@@ -1,5 +1,12 @@
 2009-01-30  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hildon-home.c (load_operator_applet, main): Load the operator
+	  applet if it is available.
+
+	* debian/changelog: Update.
+
+2009-01-30  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-incoming-event-window.c
 	  (hd_incoming_event_window_set_property): Fix icon size.
 

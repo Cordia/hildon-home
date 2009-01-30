@@ -49,6 +49,9 @@
 #define HD_STAMP_DIR   "/tmp/hildon-desktop/"
 #define HD_HOME_STAMP_FILE HD_STAMP_DIR "hildon-home.stamp"
 
+#define OPERATOR_APPLET_MODULE_PATH "/usr/lib/hildon-desktop/connui-cellular-operator-home-item.so"
+#define OPERATOR_APPLET_PLUGIN_ID "_HILDON_OPERATOR_APPLET"
+
 #define HD_GCONF_DIR_HILDON_HOME "/apps/osso/hildon-home"
 #define HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS HD_GCONF_DIR_HILDON_HOME "/task-shortcuts"
 #define HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS HD_GCONF_DIR_HILDON_HOME "/bookmark-shortcuts"
@@ -66,16 +69,6 @@ signal_handler (int signal)
   }
 }
 
-/*
-static guint
-load_priority_func (const gchar *plugin_id,
-                    GKeyFile    *keyfile,
-                    gpointer     data)
-{
-  return G_MAXUINT;
-}
-*/
-
 static gboolean
 load_plugins_idle (gpointer data)
 {
@@ -84,6 +77,33 @@ load_plugins_idle (gpointer data)
   hd_plugin_manager_run (HD_PLUGIN_MANAGER (data));
 
   return FALSE;
+}
+
+static void
+load_operator_applet (void)
+{
+  GTypeModule *module;
+  GObject *operator_applet;
+
+  /* Load operator applet module */
+  module = (GTypeModule *) hd_plugin_module_new (OPERATOR_APPLET_MODULE_PATH);
+
+  if (!g_type_module_use (module))
+    {
+      g_warning ("Could not load operator module %s.", OPERATOR_APPLET_MODULE_PATH);
+
+      return;
+    }
+
+  /* Create operator applet */
+  operator_applet = hd_plugin_module_new_object (HD_PLUGIN_MODULE (module),
+                                                 OPERATOR_APPLET_PLUGIN_ID);
+
+  /* Show operator applet */
+  if (GTK_IS_WIDGET (operator_applet))
+    gtk_widget_show (GTK_WIDGET (operator_applet));
+
+  g_type_module_unuse (module);
 }
 
 int
@@ -115,6 +135,9 @@ main (int argc, char **argv)
 
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
 
+  /* Load operator applet */
+  load_operator_applet ();
+
   /* Initialize applet manager*/
   hd_applet_manager_get ();
 
@@ -125,7 +148,7 @@ main (int argc, char **argv)
   sn = hd_system_notifications_get ();
   hd_incoming_events_new (notification_pm);
 
-  /* Load Plugins when idle */
+  /* Load notification plugins when idle */
   gdk_threads_add_idle (load_plugins_idle, notification_pm);
 
   /* Add shortcuts gconf dirs so hildon-home gets notifications about changes */
