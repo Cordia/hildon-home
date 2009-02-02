@@ -1,3 +1,18 @@
+2009-02-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixed some memory leaks.
+
+	* src/hd-applet-manager.c (items_configuration_loaded_cb): Free
+	plugins (NULL-terminated array of strings).
+
+	* src/hd-notification-manager.c (hd_notification_manager_finalize):
+	  Free notifications hashtable.
+	  (hd_notification_manager_notify): Free sender.
+
+	* src/hildon-home.c (signal_handler, main): Free notification manager.
+
+	* src/test-notifications.py (emit_notification): Update.
+
 2009-01-30  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hildon-home.c (load_operator_applet, main): Load the operator

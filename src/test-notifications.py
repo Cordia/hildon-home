@@ -7,8 +7,13 @@ import gobject
 import dbus
 import dbus.mainloop.glib
 
+emitted = 0
+
 def emit_notification(iface):
-	id = iface.Notify ('test-send.py', '0', 'qgn_list_messagin', 'Jan Arne Petersen', 'Subject 1', ['default', 'default'], { 'category': 'email-message', 'time': dbus.Int64 (time.time() - 1800) }, 0)
+	global emitted
+	emitted += 1
+	sender = "Sender %d" % (emitted) 
+	id = iface.Notify ('test-send.py', '0', 'qgn_list_messagin', sender, 'Subject 1', ['default', 'default'], { 'category': 'sms-message' }, 0)
 	print 'notification emmited. id: ' + str(id)
 
 	return True

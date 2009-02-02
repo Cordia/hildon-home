@@ -740,16 +740,20 @@ hd_notification_manager_finalize (GObject *object)
   HDNotificationManager *nm = HD_NOTIFICATION_MANAGER (object);
 
   if (nm->priv->mutex)
-    {
-      g_mutex_free (nm->priv->mutex);
-      nm->priv->mutex = NULL;
-    }
+    nm->priv->mutex = (g_mutex_free (nm->priv->mutex), NULL);
 
   if (nm->priv->db)
     {
-      sqlite3_close (nm->priv->db);
-      nm->priv->db = NULL;
+      sqlite3_stmt *stmt;
+      while ((stmt = sqlite3_next_stmt(nm->priv->db, 0)) != NULL) {
+          sqlite3_finalize (stmt);
+      }
+
+      nm->priv->db = (sqlite3_close (nm->priv->db), NULL);
     }
+
+  if (nm->priv->notifications)
+    nm->priv->notifications = (g_hash_table_destroy (nm->priv->notifications), NULL);
 
   G_OBJECT_CLASS (hd_notification_manager_parent_class)->finalize (object);
 }
@@ -993,6 +997,8 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                                              timeout,
                                              sender);
         }
+
+      g_free (sender);
     }
   else 
     {

@@ -173,12 +173,13 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
                                                    DESKTOP_KEY_MULTIPLE,
                                                    NULL);
 
-          g_hash_table_insert (priv->installed, plugins[i],
+          g_hash_table_insert (priv->installed, g_strdup (plugins[i]),
                                info);
 
           g_key_file_free (key_file);
         }
     }
+  g_strfreev (plugins);
 
   gtk_list_store_clear (GTK_LIST_STORE (priv->model));
 

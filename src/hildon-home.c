@@ -65,6 +65,9 @@ signal_handler (int signal)
   {
     hd_stamp_file_finalize (HD_HOME_STAMP_FILE);
 
+    /* Close notifications db */
+    g_object_unref (hd_notification_manager_get ());
+
     exit (0);
   }
 }
@@ -179,6 +182,8 @@ main (int argc, char **argv)
 
   /* Start the main loop */
   gtk_main ();
+
+  g_object_unref (nm);
 
   return 0;
 }
