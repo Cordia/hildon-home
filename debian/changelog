@@ -3,7 +3,7 @@ hildon-home (0.3.8~unreleased) unstable; urgency=low
   * Add hildon-home xsession post script (from system services).
   * Monitor applications dir for changed/removed tasks. Fixes NB#93939
   * Add installed applet to Home. Fixes NB#96229
-  * If no "time" hint is set use current time. Fixes NB#97905.
+  * If no "time" hint is set use current time. Fixes NB#97905, NB#100041.
   * Add handling of preview summary and empty summary strings for
     notification display. Fixes NB#99742, NB#97906
 

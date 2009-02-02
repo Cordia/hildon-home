@@ -1,5 +1,9 @@
 2009-02-02  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Update.
+
+2009-02-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-incoming-events.c (NOTIFICATION_GROUP_KEY_EMPTY_SUMMARY,
 	  NOTIFICATION_GROUP_KEY_PREVIEW_SUMMARY, empty_summary,
 	  preview_summary, group_free, group_update,
