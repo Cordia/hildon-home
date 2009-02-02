@@ -13,7 +13,7 @@ def emit_notification(iface):
 	global emitted
 	emitted += 1
 	sender = "Sender %d" % (emitted) 
-	id = iface.Notify ('test-send.py', '0', 'qgn_list_messagin', sender, 'Subject 1', ['default', 'default'], { 'category': 'sms-message' }, 0)
+	id = iface.Notify ('test-send.py', '0', '', 'janarne@gmail.com', '', ['default', 'default'], { 'category': 'auth-request' }, 0)
 	print 'notification emmited. id: ' + str(id)
 
 	return True
@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
 # iface.Notify ('test-send.py', '0', 'qgn_list_messagin', 'Jan Arne Petersen', 'Subject', ['default', 'default'], { 'category': 'email' }, 0)
 
-	gobject.timeout_add(10000, emit_notification, iface)
+	gobject.timeout_add(100, emit_notification, iface)
 
 	loop = gobject.MainLoop()
 	loop.run()

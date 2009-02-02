@@ -1,5 +1,19 @@
 2009-02-02  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-incoming-events.c (NOTIFICATION_GROUP_KEY_EMPTY_SUMMARY,
+	  NOTIFICATION_GROUP_KEY_PREVIEW_SUMMARY, empty_summary,
+	  preview_summary, group_free, group_update,
+	  hd_incoming_events_notified, load_notification_groups): Add handling
+	  of preview summary and empty summary strings for notification
+	  display. Fixes NB#99742, NB#97906
+
+	* src/notification-groups.conf: Add some more key/values for empty
+	summary and preview summary.
+
+	* debian/changelog: Update.
+
+2009-02-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixed some memory leaks.
 
 	* src/hd-applet-manager.c (items_configuration_loaded_cb): Free

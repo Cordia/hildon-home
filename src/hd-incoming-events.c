@@ -43,6 +43,8 @@
 #define NOTIFICATION_GROUP_KEY_SUMMARY "Summary"
 #define NOTIFICATION_GROUP_KEY_BODY "Body"
 #define NOTIFICATION_GROUP_KEY_ICON "Icon"
+#define NOTIFICATION_GROUP_KEY_EMPTY_SUMMARY "Empty-Summary"
+#define NOTIFICATION_GROUP_KEY_PREVIEW_SUMMARY "Preview-Summary"
 #define NOTIFICATION_GROUP_KEY_DBUS_CALL "D-Bus-Call"
 #define NOTIFICATION_GROUP_KEY_TEXT_DOMAIN "Text-Domain"
 
@@ -53,6 +55,8 @@ typedef struct
   gchar *body;
   gchar *icon;
   gchar *dbus_callback;
+  gchar *empty_summary;
+  gchar *preview_summary;
   gchar *text_domain;
   GtkWidget *switcher_window;
   GPtrArray *notifications;
@@ -76,6 +80,8 @@ group_free (HDIncomingEventGroup *group)
   g_free (group->body);
   g_free (group->icon);
   g_free (group->dbus_callback);
+  g_free (group->empty_summary);
+  g_free (group->preview_summary);
   g_free (group->text_domain);
   if (GTK_IS_WIDGET (group->switcher_window))
     gtk_widget_destroy (group->switcher_window);
@@ -179,7 +185,7 @@ group_update (HDIncomingEventGroup *group)
           gchar *summary;
           gchar *body;
 
-          for (i = 0; i < group->notifications->len; i++)
+          for (i = group->notifications->len - 1; i >= 0; i--)
             {
               HDNotification *notification;
               gint64 time;
@@ -194,6 +200,9 @@ group_update (HDIncomingEventGroup *group)
                   latest_summary = hd_notification_get_summary (notification);
                 }
             }
+
+          if (group->empty_summary && (!latest_summary || !latest_summary[0]))
+            latest_summary = group->empty_summary;
 
           /* Use default domain if no text domain is set */
           text_domain = group->text_domain ? group->text_domain : GETTEXT_PACKAGE;
@@ -220,9 +229,13 @@ group_update (HDIncomingEventGroup *group)
         {
           HDNotification *notification = g_ptr_array_index (group->notifications,
                                                             0);
+          const gchar *summary = hd_notification_get_summary (notification);
+
+          if (group->empty_summary && (!summary || !summary[0]))
+            summary = group->empty_summary;
 
           g_object_set (group->switcher_window,
-                        "title", hd_notification_get_summary (notification),
+                        "title", summary,
                         "message", hd_notification_get_body (notification),
                         "icon", hd_notification_get_icon (notification),
                         "time", (gint64) hd_notification_get_time (notification),
@@ -357,6 +370,8 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   GtkWidget *preview_window;
   PreviewWindowResponseInfo *preview_window_response_info;
   guint i;
+  HDIncomingEventGroup *group;
+  const gchar *summary, *body, *icon;
 
   g_return_if_fail (HD_IS_INCOMING_EVENTS (ie));
 
@@ -379,13 +394,37 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   if (g_strcmp0 (category, "incoming-call") == 0)
     return;
 
+  /* Lookup category and handle special summary cases */
+  group = g_hash_table_lookup (ie->priv->groups,
+                               category);
+
+  summary = hd_notification_get_summary (notification);
+  if (group && group->empty_summary &&
+      (!summary || !summary[0]))
+    {
+        summary = group->empty_summary;
+    }
+
+  body = hd_notification_get_body (notification);
+  if (group && group->preview_summary)
+    {
+      body = summary;
+      summary = group->preview_summary;
+    }
+
+  icon = hd_notification_get_icon (notification);
+  if (group && (!icon || !icon[0]))
+    {
+      icon = group->icon;
+    }
+
   /* Create the notification preview window */
   preview_window = hd_incoming_event_window_new (TRUE,
                                                  NULL,
-                                                 hd_notification_get_summary (notification),
-                                                 hd_notification_get_body (notification),
+                                                 summary,
+                                                 body,
                                                  hd_notification_get_time (notification),
-                                                 hd_notification_get_icon (notification));
+                                                 icon);
 
   preview_window_response_info = g_new (PreviewWindowResponseInfo, 1);
   preview_window_response_info->ie = ie;
@@ -448,6 +487,7 @@ load_notification_groups (HDIncomingEvents *ie)
   for (i = 0; groups[i]; i++)
     {
       HDIncomingEventGroup *group;
+      gchar *untranslated;
       GError *error = NULL;
 
       group = g_new0 (HDIncomingEventGroup, 1);
@@ -482,15 +522,37 @@ load_notification_groups (HDIncomingEvents *ie)
       if (error)
         goto load_key_error;
 
-      group->dbus_callback = g_key_file_get_string (key_file,
-                                                    groups[i],
-                                                    NOTIFICATION_GROUP_KEY_DBUS_CALL,
-                                                    NULL);
-
       group->text_domain = g_key_file_get_string (key_file,
                                                   groups[i],
                                                   NOTIFICATION_GROUP_KEY_TEXT_DOMAIN,
                                                   NULL);
+
+      untranslated = g_key_file_get_string (key_file,
+                                            groups[i],
+                                            NOTIFICATION_GROUP_KEY_EMPTY_SUMMARY,
+                                            NULL);
+      if (untranslated)
+        {
+          group->empty_summary = g_strdup (dgettext (group->text_domain,
+                                                     untranslated));
+          g_free (untranslated);
+        }
+
+      untranslated = g_key_file_get_string (key_file,
+                                            groups[i],
+                                            NOTIFICATION_GROUP_KEY_PREVIEW_SUMMARY,
+                                            NULL);
+      if (untranslated)
+        {
+          group->preview_summary = g_strdup (dgettext (group->text_domain,
+                                                       untranslated));
+          g_free (untranslated);
+        }
+
+      group->dbus_callback = g_key_file_get_string (key_file,
+                                                    groups[i],
+                                                    NOTIFICATION_GROUP_KEY_DBUS_CALL,
+                                                    NULL);
 
       g_debug ("Add group %s", groups[i]);
       g_hash_table_insert (ie->priv->groups,
