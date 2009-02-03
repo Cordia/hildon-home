@@ -178,7 +178,7 @@ group_update (HDIncomingEventGroup *group)
 
       if (group->notifications->len > 1)
         {
-          guint i;
+          gint i;
           gint64 max_time = -2;
           const gchar *latest_summary = "";
           gchar *text_domain;
