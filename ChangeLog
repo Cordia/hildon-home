@@ -1,3 +1,8 @@
+2009-02-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.9
+	* configure.ac: 0.3.9
+
 2009-02-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-incoming-events.c (group_update): Fix crash.

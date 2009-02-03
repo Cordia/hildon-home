@@ -1,3 +1,9 @@
+hildon-home (0.3.9) unstable; urgency=low
+
+  * Jan Arne: fix crash with incoming events.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  3 Feb 2009 17:18:50 +0200
+
 hildon-home (0.3.8) unstable; urgency=low
 
   * Add hildon-home xsession post script (from system services).
