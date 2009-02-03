@@ -1,13 +1,13 @@
-hildon-home (0.3.8~unreleased) unstable; urgency=low
+hildon-home (0.3.8) unstable; urgency=low
 
   * Add hildon-home xsession post script (from system services).
-  * Monitor applications dir for changed/removed tasks. Fixes NB#93939
-  * Add installed applet to Home. Fixes NB#96229
-  * If no "time" hint is set use current time. Fixes NB#97905, NB#100041.
+  * Monitor applications dir for changed/removed tasks. Fixes: NB#93939
+  * Add installed applet to Home. Fixes: NB#96229
+  * If no "time" hint is set use current time. Fixes: NB#97905, NB#100041.
   * Add handling of preview summary and empty summary strings for
-    notification display. Fixes NB#99742, NB#97906
+    notification display. Fixes: NB#99742, NB#97906
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 20 Jan 2009 15:48:39 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 03 Feb 2009 12:47:59 +0200
 
 hildon-home (0.3.7) unstable; urgency=low
 
