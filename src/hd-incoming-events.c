@@ -187,7 +187,8 @@ group_update (HDIncomingEventGroup *group)
           gchar *summary;
           gchar *body;
 
-          for (i = group->notifications->len - 1; i >= 0; i--)
+          i = group->notifications->len - 1;
+          do
             {
               HDNotification *notification;
               gint64 time;
@@ -202,6 +203,7 @@ group_update (HDIncomingEventGroup *group)
                   latest_summary = hd_notification_get_summary (notification);
                 }
             }
+          while (i-- > 0);
 
           if (group->empty_summary && (!latest_summary || !latest_summary[0]))
             latest_summary = group->empty_summary;

@@ -1,3 +1,9 @@
+2009-02-04  Adam Endrodi <ext-adam.endrodi@nokia.com>
+
+	* src/hd-incoming-events.c:
+	  Crash fix for the case when two or more notifications arrive
+	  in the same category.
+
 2009-02-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-incoming-events.c (NOTIFICATION_GROUP_KEY_NO_WINDOW,
@@ -19,6 +25,7 @@
 
 	* debian/changelog: Update.
 
+>>>>>>> .r34955
 2009-02-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.9
