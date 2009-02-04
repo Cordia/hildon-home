@@ -1,3 +1,9 @@
+hildon-home (0.3.10~unreleased) unstable; urgency=low
+
+  * Open bookmark shortcuts in new browser window. Fixes: NB#97193
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  4 Feb 2009 15:02:37 +0100
+
 hildon-home (0.3.9) unstable; urgency=low
 
   * Jan Arne: fix crash with incoming events.

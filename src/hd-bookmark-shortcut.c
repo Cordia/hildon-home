@@ -53,7 +53,7 @@
 /* D-Bus method/interface to load URL in browser */
 #define BROWSER_INTERFACE   "com.nokia.osso_browser"
 #define BROWSER_PATH        "/com/nokia/osso_browser"
-#define LOAD_URL_METHOD     "load_url"
+#define LOAD_URL_METHOD     "open_new_window"
 
 /* GConf path for boomarks */
 #define BOOKMARKS_GCONF_PATH      "/apps/osso/hildon-home/bookmarks"
