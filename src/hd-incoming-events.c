@@ -47,6 +47,7 @@
 #define NOTIFICATION_GROUP_KEY_PREVIEW_SUMMARY "Preview-Summary"
 #define NOTIFICATION_GROUP_KEY_DBUS_CALL "D-Bus-Call"
 #define NOTIFICATION_GROUP_KEY_TEXT_DOMAIN "Text-Domain"
+#define NOTIFICATION_GROUP_KEY_NO_WINDOW "No-Window"
 
 typedef struct
 {
@@ -60,6 +61,7 @@ typedef struct
   gchar *text_domain;
   GtkWidget *switcher_window;
   GPtrArray *notifications;
+  gboolean no_window : 1;
 } HDIncomingEventGroup;
 
 struct _HDIncomingEventsPrivate
@@ -390,13 +392,13 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
       hd_notification_plugin_notify (plugin, notification);
     }
 
-  /* Do not show visual notification for incoming-call notifications */
-  if (g_strcmp0 (category, "incoming-call") == 0)
-    return;
-
   /* Lookup category and handle special summary cases */
   group = g_hash_table_lookup (ie->priv->groups,
                                category);
+
+  /* Return if no notification window should be shown */
+  if (group && group->no_window)
+    return;
 
   summary = hd_notification_get_summary (notification);
   if (group && group->empty_summary &&
@@ -493,6 +495,21 @@ load_notification_groups (HDIncomingEvents *ie)
       group = g_new0 (HDIncomingEventGroup, 1);
 
       group->notifications = g_ptr_array_new ();
+
+      group->no_window = g_key_file_get_boolean (key_file,
+                                                 groups[i],
+                                                 NOTIFICATION_GROUP_KEY_NO_WINDOW,
+                                                 NULL);
+
+      /* We do not need mor information as no notification windows are shown */
+      if (group->no_window)
+        {
+          g_debug ("Add group %s", groups[i]);
+          g_hash_table_insert (ie->priv->groups,
+                               groups[i],
+                               group);
+          continue;
+        }
 
       group->destination = g_key_file_get_string (key_file,
                                                   groups[i],

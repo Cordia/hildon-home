@@ -1,5 +1,17 @@
 2009-02-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-incoming-events.c (NOTIFICATION_GROUP_KEY_NO_WINDOW,
+	  no_window, hd_incoming_events_notified, load_notification_groups):
+	  Add support for No-Window property in the notification groups
+	  configuration file. Fixes: NB#98574
+
+	* src/notification-groups.conf: Add No-Window options to incoming-call
+	and alarm-event notification.
+
+	* debian/changelog: Update.
+
+2009-02-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-bookmark-shortcut.c (LOAD_URL_METHOD): Use open_new_window
 	D-Bus method. Fixes: NB#97193
 
