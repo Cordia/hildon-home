@@ -94,10 +94,10 @@ static guint
 hd_notification_manager_next_id (HDNotificationManager *nm)
 {
   guint next_id;
-  gchar *sql;
+  char *sql;
   gint nrow = 0, ncol;
-  gchar **results;
-  gchar *error;
+  char **results;
+  char *error;
 
   g_mutex_lock (nm->priv->mutex);
 
@@ -107,14 +107,20 @@ hd_notification_manager_next_id (HDNotificationManager *nm)
 
       if (nm->priv->db)
         {
-          sql = sqlite3_mprintf ("SELECT id FROM notifications WHERE id=%d", next_id);
+          sql = sqlite3_mprintf ("SELECT id FROM notifications WHERE id=%d",
+                                 next_id);
 
+          error = NULL;
           sqlite3_get_table (nm->priv->db, sql,
                              &results, &nrow, &ncol, &error);
 
           sqlite3_free_table (results);
           sqlite3_free (sql); 
-          g_free (error);
+          if (error)
+            {
+              g_warning ("%s: SQL error: %s", __func__, error);
+              sqlite3_free (error);
+            }
         }
     }
   while (nrow > 0);
@@ -360,7 +366,8 @@ hd_notification_manager_db_create (HDNotificationManager *nm)
 }
 
 static void 
-hd_notification_manager_db_insert_hint (gpointer key, gpointer value, gpointer data)
+hd_notification_manager_db_insert_hint (gpointer key, gpointer value,
+                                        gpointer data)
 {
   HildonNotificationHintInfo *hinfo = (HildonNotificationHintInfo *) data;
   GValue *hvalue = (GValue *) value;
@@ -408,7 +415,7 @@ hd_notification_manager_db_insert_hint (gpointer key, gpointer value, gpointer d
   hinfo->result = hd_notification_manager_db_exec (hinfo->nm, sql);
 
   sqlite3_free (sql);
-
+  g_free (sql_value);
 }
 
 static gint 
@@ -1330,8 +1337,9 @@ hd_notification_manager_message_from_desc (HDNotificationManager *nm,
 
       if (expected_token != G_TOKEN_NONE)
         {
-          g_warning ("Invalid list of parameters for the notification D-Bus callback.");
-
+          g_warning ("Invalid list of parameters for the notification"
+                     " D-Bus callback.");
+          g_scanner_destroy (scanner);
           return NULL;
         }
 

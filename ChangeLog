@@ -1,3 +1,16 @@
+2009-02-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/hd-notification-manager.c (hd_notification_manager_next_id): Use
+	char instead of gchar for sqlite arguments. Free SQL error with
+	sqlite3_free instead of g_free (this fixes a double free found by
+	Coverity).
+	(hd_notification_manager_db_insert_hint): Free sql_value.
+	(hd_notification_manager_message_from_des): Free scanner in case of
+	invalid parameters.
+	* src/hd-bookmark-manager.c (hd_bookmark_manager_parse_bookmark_files): 
+	Free 'root' after getting it from get_bookmark_from_backup() and
+	get_root_bookmark().
+
 2009-02-04  Adam Endrodi <ext-adam.endrodi@nokia.com>
 
 	* src/hd-incoming-events.c:

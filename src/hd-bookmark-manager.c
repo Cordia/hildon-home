@@ -152,8 +152,10 @@ hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
     get_bookmark_from_backup(&root, MYBOOKMARKSFILEBACKUP);
 
   if (root != NULL)
-    hd_bookmark_manager_add_bookmark_item (manager,
-                                           root);
+  {
+    hd_bookmark_manager_add_bookmark_item (manager, root);
+    g_free (root);
+  }
   else
     g_warning ("Could not read users bookmarks from file");
 
@@ -162,8 +164,10 @@ hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
   get_root_bookmark (&root, OPERATORBOOKMARKS);
 
   if (root != NULL)
-    hd_bookmark_manager_add_bookmark_item (manager,
-                                           root);
+  {
+    hd_bookmark_manager_add_bookmark_item (manager, root);
+    g_free (root);
+  }
   else
     g_debug ("Could not read operator bookmarks from file");
 
@@ -181,7 +185,8 @@ hd_bookmark_manager_bookmark_files_changed (GnomeVFSMonitorHandle *handle,
   HDBookmarkManagerPrivate *priv = manager->priv;
 
   if (!priv->parse_thread_id)
-    priv->parse_thread_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
+    priv->parse_thread_id = gdk_threads_add_idle (
+                    (GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
                                                   user_data);
 }
 
