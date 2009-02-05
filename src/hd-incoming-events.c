@@ -66,10 +66,12 @@ typedef struct
 
 struct _HDIncomingEventsPrivate
 {
-  GQueue                *preview_queue;
-  GHashTable            *groups;
+  GQueue          *preview_queue;
+  GHashTable      *groups;
 
-  GPtrArray             *plugins;
+  GPtrArray       *plugins;
+
+  HDPluginManager *plugin_manager;
 };
 
 G_DEFINE_TYPE (HDIncomingEvents, hd_incoming_events, G_TYPE_OBJECT);
@@ -110,15 +112,14 @@ group_window_response (HDIncomingEventWindow *window,
 
   if (response_id == GTK_RESPONSE_OK)
     {
+      /* Call D-Bus callback if available else call default action on each notification */
       if (group->dbus_callback)
         {
-          g_debug ("Use D-Bus callback %s to open notifications.", group->dbus_callback);
           hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
                                                       group->dbus_callback);
         }
       else
         {
-          g_debug ("Invoke default action to open notifications.");
           for (i = 0; i < group->notifications->len; i++)
             {
               HDNotification *notification;
@@ -133,6 +134,7 @@ group_window_response (HDIncomingEventWindow *window,
         }
     }
 
+  /* Close all applications */
   for (i = 0; i < group->notifications->len; i++)
     {
       HDNotification *notification;
@@ -140,6 +142,7 @@ group_window_response (HDIncomingEventWindow *window,
       notification = g_ptr_array_index (group->notifications,
                                         i);
 
+      /* The group is removed all at once */
       g_signal_handlers_disconnect_by_func (notification, group_notification_closed, group);
 
       hd_notification_manager_close_notification (hd_notification_manager_get (),
@@ -160,6 +163,8 @@ group_update (HDIncomingEventGroup *group)
 
   if (!group->notifications->len)
     {
+      /* Last notification in this group was closed,
+       *  destroy window */
       if (GTK_IS_WIDGET (group->switcher_window))
         {
           gtk_widget_destroy (group->switcher_window);
@@ -168,6 +173,8 @@ group_update (HDIncomingEventGroup *group)
     }
   else
     {
+      /* At least one notification needs to be displayed,
+       * create a window if it does not exist yet */
       if (!GTK_IS_WIDGET (group->switcher_window))
         {
           group->switcher_window = hd_incoming_event_window_new (FALSE,
@@ -178,6 +185,7 @@ group_update (HDIncomingEventGroup *group)
                             group);
         }
 
+      /* Check if there are multiple notifications or just one */
       if (group->notifications->len > 1)
         {
           gint i;
@@ -187,6 +195,9 @@ group_update (HDIncomingEventGroup *group)
           gchar *summary;
           gchar *body;
 
+          /* Create a grouped notification */
+
+          /* Find the latest summary and time */
           i = group->notifications->len - 1;
           do
             {
@@ -235,6 +246,7 @@ group_update (HDIncomingEventGroup *group)
                                                             0);
           const gchar *summary = hd_notification_get_summary (notification);
 
+          /* Check if there is a special summary for this group */
           if (group->empty_summary && (!summary || !summary[0]))
             summary = group->empty_summary;
 
@@ -452,8 +464,45 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
 }
 
 static void
+hd_incoming_events_dispose (GObject *object)
+{
+  HDIncomingEventsPrivate *priv = HD_INCOMING_EVENTS (object)->priv;
+
+  if (priv->plugin_manager)
+    priv->plugin_manager = (g_object_unref (priv->plugin_manager), NULL);
+
+  G_OBJECT_CLASS (hd_incoming_events_parent_class)->dispose (object);
+}
+
+static void
+hd_incoming_events_finalize (GObject *object)
+{
+  HDIncomingEventsPrivate *priv = HD_INCOMING_EVENTS (object)->priv;
+
+  if (priv->groups)
+    priv->groups = (g_hash_table_destroy (priv->groups), NULL);
+
+  if (priv->preview_queue)
+    {
+      g_queue_foreach (priv->preview_queue, (GFunc) gtk_widget_destroy, NULL);
+      g_queue_free (priv->preview_queue);
+      priv->preview_queue = NULL;
+    }
+
+  if (priv->plugins)
+    priv->plugins = (g_ptr_array_free (priv->plugins, TRUE), NULL);
+
+  G_OBJECT_CLASS (hd_incoming_events_parent_class)->finalize (object);
+}
+
+static void
 hd_incoming_events_class_init (HDIncomingEventsClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->dispose = hd_incoming_events_dispose;
+  object_class->finalize = hd_incoming_events_finalize;
+
   g_type_class_add_private (klass, sizeof (HDIncomingEventsPrivate));
 }
 
@@ -592,23 +641,6 @@ load_key_error:
 }
 
 static void
-hd_incoming_events_init (HDIncomingEvents *ie)
-{
-  ie->priv = HD_INCOMING_EVENTS_GET_PRIVATE (ie);
-
-  ie->priv->groups = g_hash_table_new_full (g_str_hash,
-                                            g_str_equal,
-                                            (GDestroyNotify) g_free,
-                                            (GDestroyNotify) group_free);
-
-  ie->priv->preview_queue = g_queue_new ();
-
-  ie->priv->plugins = g_ptr_array_new ();
-
-  load_notification_groups (ie);
-}
-
-static void
 hd_incoming_events_plugin_added (HDPluginManager  *pm,
                                  GObject          *plugin,
                                  HDIncomingEvents *ie)
@@ -630,18 +662,56 @@ hd_incoming_events_plugin_removed (HDPluginManager  *pm,
     g_warning ("Plugin from type %s is no HDNotificationPlugin", G_OBJECT_TYPE_NAME (plugin));
 }
 
-HDIncomingEvents *
-hd_incoming_events_new (HDPluginManager *pm)
+static gboolean
+load_plugins_idle (gpointer data)
 {
-  HDIncomingEvents *ie = g_object_new (HD_TYPE_INCOMING_EVENTS, NULL);
+  /* Load the configuration of the plugin manager and load plugins */
+  hd_plugin_manager_run (HD_PLUGIN_MANAGER (data));
 
-  g_signal_connect (hd_notification_manager_get (), "notified",
-                    G_CALLBACK (hd_incoming_events_notified), ie);
+  return FALSE;
+}
 
-  g_signal_connect (pm, "plugin-added",
+static void
+hd_incoming_events_init (HDIncomingEvents *ie)
+{
+  HDIncomingEventsPrivate *priv;
+
+  priv = ie->priv = HD_INCOMING_EVENTS_GET_PRIVATE (ie);
+
+  priv->groups = g_hash_table_new_full (g_str_hash,
+                                        g_str_equal,
+                                        (GDestroyNotify) g_free,
+                                        (GDestroyNotify) group_free);
+
+  priv->preview_queue = g_queue_new ();
+
+  priv->plugins = g_ptr_array_new ();
+
+  priv->plugin_manager = hd_plugin_manager_new (hd_config_file_new_with_defaults ("notification.conf"));
+
+  /* Connect to plugin manager signals */
+  g_signal_connect (priv->plugin_manager, "plugin-added",
                     G_CALLBACK (hd_incoming_events_plugin_added), ie);
-  g_signal_connect (pm, "plugin-removed",
+  g_signal_connect (priv->plugin_manager, "plugin-removed",
                     G_CALLBACK (hd_incoming_events_plugin_removed), ie);
+
+  /* Load notification plugins when idle */
+  gdk_threads_add_idle (load_plugins_idle, priv->plugin_manager);
+
+  /* Connect to notification manager signals */
+  g_signal_connect_object (hd_notification_manager_get (), "notified",
+                           G_CALLBACK (hd_incoming_events_notified), ie, 0);
+
+  load_notification_groups (ie);
+}
+
+HDIncomingEvents *
+hd_incoming_events_get (void)
+{
+  static HDIncomingEvents *ie = NULL;
+  
+  if (G_UNLIKELY (ie))
+    ie = g_object_new (HD_TYPE_INCOMING_EVENTS, NULL);
 
   return ie;
 }

@@ -152,16 +152,14 @@ hd_hildon_home_dbus_class_init (HDHildonHomeDBusClass *class)
   g_type_class_add_private (class, sizeof (HDHildonHomeDBusPrivate));
 }
 
-
+/* Returns the singleton HDHildonHomeDBus instance. Should not be refed un unrefed */
 HDHildonHomeDBus *
 hd_hildon_home_dbus_get (void)
 {
   static HDHildonHomeDBus *home = NULL;
 
   if (G_UNLIKELY (home == NULL))
-    {
-      home = g_object_new (HD_TYPE_HILDON_HOME_DBUS, NULL);
-    }
+    home = g_object_new (HD_TYPE_HILDON_HOME_DBUS, NULL);
 
   return home;
 }
@@ -244,17 +242,6 @@ model_row_deleted_cb (GtkTreeModel *model,
     gtk_widget_hide (button);
 }
 
-static void
-menu_hide_cb (GtkWidget        *widget,
-              HDHildonHomeDBus *dbus)
-{
-  HDHildonHomeDBusPrivate *priv = dbus->priv;
-
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "GrabPointer",
-                              G_TYPE_INVALID);
-}
-
 void
 hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                                     guint             current_view)
@@ -262,11 +249,6 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
   HDHildonHomeDBusPrivate *priv = dbus->priv;
 
   g_debug ("hd_hildon_home_dbus_show_edit_menu (current_view: %u):", current_view);
-
-  /* Ungrab pointer in home */
-  dbus_g_proxy_call_no_reply (priv->hd_home_proxy,
-                              "UngrabPointer",
-                              G_TYPE_INVALID);
 
   /* Construct menu */
   if (!priv->menu)
@@ -281,8 +263,6 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
       GtkTreeIter iter;
 
       priv->menu = hildon_app_menu_new ();
-      g_signal_connect (priv->menu, "hide",
-                        G_CALLBACK (menu_hide_cb), dbus);
 
       button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_applets"));
       g_signal_connect_after (button, "clicked",
@@ -296,7 +276,9 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                         G_CALLBACK (model_row_inserted_cb), button);
       g_signal_connect (G_OBJECT (model), "row-deleted",
                         G_CALLBACK (model_row_deleted_cb), button);
-      if (!gtk_tree_model_get_iter_first (model, &iter))
+      if (gtk_tree_model_get_iter_first (model, &iter))
+        gtk_widget_show (button);
+      else
         gtk_widget_hide (button);
       g_object_unref (model);
 
@@ -312,7 +294,9 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                         G_CALLBACK (model_row_inserted_cb), button);
       g_signal_connect (G_OBJECT (model), "row-deleted",
                         G_CALLBACK (model_row_deleted_cb), button);
-      if (!gtk_tree_model_get_iter_first (model, &iter))
+      if (gtk_tree_model_get_iter_first (model, &iter))
+        gtk_widget_show (button);
+      else
         gtk_widget_hide (button);
       g_object_unref (model);
 
@@ -328,7 +312,9 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                         G_CALLBACK (model_row_inserted_cb), button);
       g_signal_connect (G_OBJECT (model), "row-deleted",
                         G_CALLBACK (model_row_deleted_cb), button);
-      if (!gtk_tree_model_get_iter_first (model, &iter))
+      if (gtk_tree_model_get_iter_first (model, &iter))
+        gtk_widget_show (button);
+      else
         gtk_widget_hide (button);
       g_object_unref (model);
 
@@ -337,18 +323,21 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                               G_CALLBACK (change_background_clicked_cb), dbus);
       hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
                               GTK_BUTTON (button));
+      gtk_widget_show (button);
 
       button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_contacts"));
       g_signal_connect_after (button, "clicked",
                               G_CALLBACK (select_contacts_clicked_cb), dbus);
       hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
                               GTK_BUTTON (button));
+      gtk_widget_show (button);
 
       button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_manage_views"));
       g_signal_connect_after (button, "clicked",
                               G_CALLBACK (manage_views_clicked_cb), dbus);
       hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
                               GTK_BUTTON (button));
+      gtk_widget_show (button);
 
       /* Set menu transient for root window */
       gtk_widget_realize (priv->menu);

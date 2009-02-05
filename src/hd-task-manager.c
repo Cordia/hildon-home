@@ -583,6 +583,7 @@ hd_task_manager_class_init (HDTaskManagerClass *klass)
   g_type_class_add_private (klass, sizeof (HDTaskManagerPrivate));
 }
 
+/* Returns the singleton HDTaskManager instance. Should not be refed or unrefed */
 HDTaskManager *
 hd_task_manager_get (void)
 {
@@ -697,6 +698,8 @@ hd_task_manager_get_icon (HDTaskManager *manager,
 
   return info->icon;
 }
+
+/* FIXME: Use hildon-desktop's HdAppMgr to launch applications */
 
 static void
 hd_task_manager_activate_service (const gchar *app)

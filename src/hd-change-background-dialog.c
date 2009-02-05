@@ -35,19 +35,6 @@
 
 #include "hd-change-background-dialog.h"
 
-/* Pixel sizes */
-#define CHANGE_BACKGROUND_DIALOG_WIDTH 342
-#define CHANGE_BACKGROUND_DIALOG_HEIGHT 80
-
-#define CHANGE_BACKGROUND_DIALOG_CLOSE  43
-#define CHANGE_BACKGROUND_DIALOG_ICON  24
-
-#define MARGIN_DEFAULT 8
-#define MARGIN_HALF 4
-
-/* Timeout in seconds */
-#define CHANGE_BACKGROUND_DIALOG_PREVIEW_TIMEOUT 4
-
 /* Add Image dialog */
 #define RESPONSE_ADD 1
 
@@ -121,7 +108,10 @@ hd_change_background_dialog_dispose (GObject *object)
 static void
 hd_change_background_dialog_finalize (GObject *object)
 {
-  /* HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG (object)->priv; */
+  HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG (object)->priv;
+
+  if (priv->custom_image)
+    priv->custom_image = (gtk_tree_path_free (priv->custom_image), NULL);
 
   G_OBJECT_CLASS (hd_change_background_dialog_parent_class)->finalize (object);
 }
@@ -147,27 +137,6 @@ hd_change_background_dialog_set_property (GObject      *object,
     }
 }
 
-static void
-hd_change_background_dialog_class_init (HDChangeBackgroundDialogClass *klass)
-{
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  object_class->dispose = hd_change_background_dialog_dispose;
-  object_class->finalize = hd_change_background_dialog_finalize;
-
-  object_class->set_property = hd_change_background_dialog_set_property;
-
-  g_object_class_install_property (object_class,
-                                   PROP_PROXY,
-                                   g_param_spec_object ("proxy",
-                                                        "Proxy",
-                                                        "D-Bus proxy to the hildon-desktop Home object",
-                                                        DBUS_TYPE_G_PROXY,
-                                                        G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
-
-  g_type_class_add_private (klass, sizeof (HDChangeBackgroundDialogPrivate));
-}
-
 static gchar *
 get_image_label_from_uri (const gchar *uri)
 {
@@ -186,13 +155,10 @@ get_image_label_from_uri (const gchar *uri)
 }
 
 static void
-response_cb (HDChangeBackgroundDialog *dialog,
-             gint             response_id,
-             gpointer         data)
+hd_change_background_dialog_response (GtkDialog *dialog,
+                                      gint       response_id)
 {
-  HDChangeBackgroundDialogPrivate *priv = dialog->priv;
-
-  g_debug ("response_cb called %d", response_id);
+  HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG (dialog)->priv;
 
   if (response_id == RESPONSE_ADD)
     {
@@ -200,10 +166,11 @@ response_cb (HDChangeBackgroundDialog *dialog,
       GtkFileFilter *filter;
       gchar *images_folder;
 
+      /* Create the Add Image dialog */
       add_image = hildon_file_chooser_dialog_new_with_properties (GTK_WINDOW (dialog),
                                                                   "action", GTK_FILE_CHOOSER_ACTION_OPEN,
-                                                                  "title", _("home_ti_add_image"),
-                                                                  "empty-text", _("home_li_no_images"),
+                                                                  "title", dgettext (GETTEXT_PACKAGE, "home_ti_add_image"),
+                                                                  "empty-text", dgettext (GETTEXT_PACKAGE, "home_li_no_images"),
                                                                   "open-button-text", dgettext ("hildon-libs", "wdgt_bd_done"),
                                                                   "select-multiple", FALSE,
                                                                   "selection-mode", HILDON_FILE_SELECTION_MODE_THUMBNAILS,
@@ -228,6 +195,7 @@ response_cb (HDChangeBackgroundDialog *dialog,
                                            images_folder);
       g_free (images_folder);
 
+      /* Show Add Image dialog */
       if (gtk_dialog_run (GTK_DIALOG (add_image)) == GTK_RESPONSE_OK)
         {
           /* An image was selected */
@@ -243,7 +211,9 @@ response_cb (HDChangeBackgroundDialog *dialog,
           else
             {
               gchar *filename = g_filename_from_uri (uri, NULL, NULL);
-                            
+
+              /* Replace the existing custom image or create a new row 
+               * if there is no image yet*/                            
               if (priv->custom_image)
                 {
                   gtk_tree_model_get_iter (priv->model, &iter, priv->custom_image);
@@ -361,6 +331,30 @@ response_cb (HDChangeBackgroundDialog *dialog,
 }
 
 static void
+hd_change_background_dialog_class_init (HDChangeBackgroundDialogClass *klass)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GtkDialogClass *dialog_class = GTK_DIALOG_CLASS (klass);
+
+  object_class->dispose = hd_change_background_dialog_dispose;
+  object_class->finalize = hd_change_background_dialog_finalize;
+
+  object_class->set_property = hd_change_background_dialog_set_property;
+
+  dialog_class->response = hd_change_background_dialog_response;
+
+  g_object_class_install_property (object_class,
+                                   PROP_PROXY,
+                                   g_param_spec_object ("proxy",
+                                                        "Proxy",
+                                                        "D-Bus proxy to the hildon-desktop Home object",
+                                                        DBUS_TYPE_G_PROXY,
+                                                        G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+
+  g_type_class_add_private (klass, sizeof (HDChangeBackgroundDialogPrivate));
+}
+
+static void
 hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog *dialog,
                                                 const gchar              *dirname)
 {
@@ -470,7 +464,7 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   dialog->priv = priv;
 
   /* Set dialog title */
-  gtk_window_set_title (GTK_WINDOW (dialog), _("home_ti_change_backgr"));
+  gtk_window_set_title (GTK_WINDOW (dialog), dgettext (GETTEXT_PACKAGE, "home_ti_change_backgr"));
 
   /* Add buttons */
   gtk_dialog_add_button (GTK_DIALOG (dialog), dgettext ("hildon-libs", "wdgt_bd_add"), RESPONSE_ADD);
@@ -478,7 +472,7 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
 
   gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
 
-  /* */
+  /* Create the touch selector */
   priv->selector = hildon_touch_selector_new ();
 
   priv->model = (GtkTreeModel *) gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_INT,
@@ -533,10 +527,6 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
 
   gtk_widget_show (priv->selector);
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), priv->selector);
-
-
-  g_signal_connect (G_OBJECT (dialog), "response",
-                    G_CALLBACK (response_cb), NULL);
 }
 
 GtkWidget *

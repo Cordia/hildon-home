@@ -24,33 +24,11 @@
 #include <config.h>
 #endif
 
-#include <string.h>
-
 #include <glib/gi18n.h>
 
 #include "hd-bookmark-manager.h"
 
 #include "hd-add-bookmark-dialog.h"
-
-/* Pixel sizes */
-#define ADD_BOOKMARK_DIALOG_WIDTH 342
-#define ADD_BOOKMARK_DIALOG_HEIGHT 80
-
-#define ADD_BOOKMARK_DIALOG_CLOSE  43
-#define ADD_BOOKMARK_DIALOG_ICON  24
-
-#define MARGIN_DEFAULT 8
-#define MARGIN_HALF 4
-
-/* Timeout in seconds */
-#define ADD_BOOKMARK_DIALOG_PREVIEW_TIMEOUT 4
-
-enum
-{
-  COL_NAME,
-  COL_DIALOG,
-  NUM_COLS
-};
 
 #define HD_ADD_BOOKMARK_DIALOG_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_ADD_BOOKMARK_DIALOG, HDAddBookmarkDialogPrivate))
@@ -63,56 +41,34 @@ struct _HDAddBookmarkDialogPrivate
 G_DEFINE_TYPE (HDAddBookmarkDialog, hd_add_bookmark_dialog, HILDON_TYPE_PICKER_DIALOG);
 
 static void
-hd_add_bookmark_dialog_dispose (GObject *object)
+hd_add_bookmark_dialog_response (GtkDialog *dialog,
+                                 gint       response_id)
 {
-  G_OBJECT_CLASS (hd_add_bookmark_dialog_parent_class)->dispose (object);
-}
-
-static void
-hd_add_bookmark_dialog_finalize (GObject *object)
-{
-  /* HDAddBookmarkDialogPrivate *priv = HD_ADD_BOOKMARK_DIALOG (object)->priv; */
-
-  G_OBJECT_CLASS (hd_add_bookmark_dialog_parent_class)->finalize (object);
-}
-
-static void
-hd_add_bookmark_dialog_class_init (HDAddBookmarkDialogClass *klass)
-{
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  object_class->dispose = hd_add_bookmark_dialog_dispose;
-  object_class->finalize = hd_add_bookmark_dialog_finalize;
-
-  g_type_class_add_private (klass, sizeof (HDAddBookmarkDialogPrivate));
-}
-
-static void
-response_cb (HDAddBookmarkDialog *dialog,
-             gint             response_id,
-             gpointer         data)
-{
-  HDAddBookmarkDialogPrivate *priv = dialog->priv;
-
-  g_signal_handlers_disconnect_by_func (dialog, response_cb, data);
-
-  g_debug ("response_cb called %d", response_id);
+  HDAddBookmarkDialogPrivate *priv = HD_ADD_BOOKMARK_DIALOG (dialog)->priv;
 
   /* Check if an item was selected */
   if (response_id == GTK_RESPONSE_OK)
     {
       GtkTreeIter iter;
 
-      g_debug ("New bookmark was selected");
-
       if (hildon_touch_selector_get_selected (HILDON_TOUCH_SELECTOR (priv->selector),
                                               0,
                                               &iter))
         {
           hd_bookmark_manager_install_bookmark (hd_bookmark_manager_get (),
-                                            &iter);
+                                                &iter);
         }
     }
+}
+
+static void
+hd_add_bookmark_dialog_class_init (HDAddBookmarkDialogClass *klass)
+{
+  GtkDialogClass *dialog_class = GTK_DIALOG_CLASS (klass);
+
+  dialog_class->response = hd_add_bookmark_dialog_response;
+
+  g_type_class_add_private (klass, sizeof (HDAddBookmarkDialogPrivate));
 }
 
 static void
@@ -120,20 +76,23 @@ hd_add_bookmark_dialog_init (HDAddBookmarkDialog *dialog)
 {
   HDAddBookmarkDialogPrivate *priv = HD_ADD_BOOKMARK_DIALOG_GET_PRIVATE (dialog);
   HildonTouchSelectorColumn *column;
+  GtkTreeModel *model;
   GtkCellRenderer *renderer;
 
   dialog->priv = priv;
 
   /* Set dialog title */
-  gtk_window_set_title (GTK_WINDOW (dialog), _("home_ti_select_bookmark"));
+  gtk_window_set_title (GTK_WINDOW (dialog), dgettext (GETTEXT_PACKAGE, "home_ti_select_bookmark"));
 
-  /* */
+  /* The selector */
   priv->selector = g_object_ref (hildon_touch_selector_new ());
 
-  /* One Column */
+  /* A Column with icon and label */
+  model = hd_bookmark_manager_get_model (hd_bookmark_manager_get ());
   column = hildon_touch_selector_append_column (HILDON_TOUCH_SELECTOR (priv->selector),
-                                                hd_bookmark_manager_get_model (hd_bookmark_manager_get ()),
+                                                model,
                                                 NULL);
+  g_object_unref (model);
 
   /* Add the icon renderer */
   renderer = gtk_cell_renderer_pixbuf_new ();
@@ -155,9 +114,6 @@ hd_add_bookmark_dialog_init (HDAddBookmarkDialog *dialog)
 
   hildon_picker_dialog_set_selector (HILDON_PICKER_DIALOG (dialog),
                                      HILDON_TOUCH_SELECTOR (priv->selector));
-
-  g_signal_connect (G_OBJECT (dialog), "response",
-                    G_CALLBACK (response_cb), NULL);
 }
 
 GtkWidget *

@@ -742,25 +742,36 @@ hd_notification_manager_init (HDNotificationManager *nm)
 }
 
 static void 
+hd_notification_manager_dispose (GObject *object)
+{
+  HDNotificationManagerPrivate *priv = HD_NOTIFICATION_MANAGER (object)->priv;
+
+  if (priv->connection)
+    priv->connection = (dbus_g_connection_unref (priv->connection), NULL);
+
+  G_OBJECT_CLASS (hd_notification_manager_parent_class)->dispose (object);
+}
+
+static void 
 hd_notification_manager_finalize (GObject *object)
 {
-  HDNotificationManager *nm = HD_NOTIFICATION_MANAGER (object);
+  HDNotificationManagerPrivate *priv = HD_NOTIFICATION_MANAGER (object)->priv;
 
-  if (nm->priv->mutex)
-    nm->priv->mutex = (g_mutex_free (nm->priv->mutex), NULL);
+  if (priv->mutex)
+    priv->mutex = (g_mutex_free (priv->mutex), NULL);
 
-  if (nm->priv->db)
+  if (priv->db)
     {
       sqlite3_stmt *stmt;
-      while ((stmt = sqlite3_next_stmt(nm->priv->db, 0)) != NULL) {
+      while ((stmt = sqlite3_next_stmt(priv->db, 0)) != NULL) {
           sqlite3_finalize (stmt);
       }
 
-      nm->priv->db = (sqlite3_close (nm->priv->db), NULL);
+      priv->db = (sqlite3_close (priv->db), NULL);
     }
 
-  if (nm->priv->notifications)
-    nm->priv->notifications = (g_hash_table_destroy (nm->priv->notifications), NULL);
+  if (priv->notifications)
+    priv->notifications = (g_hash_table_destroy (priv->notifications), NULL);
 
   G_OBJECT_CLASS (hd_notification_manager_parent_class)->finalize (object);
 }
@@ -770,6 +781,7 @@ hd_notification_manager_class_init (HDNotificationManagerClass *class)
 {
   GObjectClass *g_object_class = (GObjectClass *) class;
 
+  g_object_class->dispose = hd_notification_manager_dispose;
   g_object_class->finalize = hd_notification_manager_finalize;
 
   signals[NOTIFIED] =
@@ -854,15 +866,14 @@ hd_notification_manager_timeout (guint id)
   return FALSE;
 }
 
+/* Returns the singleton HDNotificationManager instance. Should not be refed or unrefed */
 HDNotificationManager *
 hd_notification_manager_get (void)
 {
   static HDNotificationManager *nm = NULL;
 
   if (G_UNLIKELY (nm == NULL))
-    {
-      nm = g_object_new (HD_TYPE_NOTIFICATION_MANAGER, NULL);
-    }
+    nm = g_object_new (HD_TYPE_NOTIFICATION_MANAGER, NULL);
 
   return nm;
 }

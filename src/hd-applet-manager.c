@@ -51,8 +51,6 @@ struct _HDAppletManagerPrivate
 
   GtkTreeModel *model;
 
-  GList *available_applets;
-
   GHashTable *displayed_applets;
   GHashTable *used_ids;
 
@@ -298,11 +296,51 @@ hd_applet_manager_init (HDAppletManager *manager)
 }
 
 static void
+hd_applet_manager_dispose (GObject *object)
+{
+  HDAppletManagerPrivate *priv = HD_APPLET_MANAGER (object)->priv;
+
+  if (priv->plugin_manager)
+    priv->plugin_manager = (g_object_unref (priv->plugin_manager), NULL);
+
+  if (priv->model)
+    priv->model = (g_object_unref (priv->model), NULL);
+
+  G_OBJECT_CLASS (hd_applet_manager_parent_class)->dispose (object);
+}
+
+static void
+hd_applet_manager_finalize (GObject *object)
+{
+  HDAppletManagerPrivate *priv = HD_APPLET_MANAGER (object)->priv;
+
+  if (priv->displayed_applets)
+    priv->displayed_applets = (g_hash_table_destroy (priv->displayed_applets), NULL);
+
+  if (priv->used_ids)
+    priv->used_ids = (g_hash_table_destroy (priv->used_ids), NULL);
+
+  if (priv->installed)
+    priv->installed = (g_hash_table_destroy (priv->installed), NULL);
+
+  if  (priv->applets_key_file)
+    priv->applets_key_file = (g_key_file_free (priv->applets_key_file), NULL);
+
+  G_OBJECT_CLASS (hd_applet_manager_parent_class)->finalize (object);
+}
+
+static void
 hd_applet_manager_class_init (HDAppletManagerClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->dispose = hd_applet_manager_dispose;
+  object_class->finalize = hd_applet_manager_finalize;
+
   g_type_class_add_private (klass, sizeof (HDAppletManagerPrivate));
 }
 
+/* Retuns the singleton HDAppletManager instance. Should not be refed or unrefed */
 HDAppletManager *
 hd_applet_manager_get (void)
 {
@@ -319,7 +357,7 @@ hd_applet_manager_get_model (HDAppletManager *manager)
 {
   HDAppletManagerPrivate *priv = manager->priv;
 
-  return g_object_ref (priv->model);
+  return priv->model ? g_object_ref (priv->model) : NULL;
 }
 
 static void

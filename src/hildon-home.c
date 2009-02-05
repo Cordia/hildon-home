@@ -65,21 +65,8 @@ signal_handler (int signal)
   {
     hd_stamp_file_finalize (HD_HOME_STAMP_FILE);
 
-    /* Close notifications db */
-    g_object_unref (hd_notification_manager_get ());
-
     exit (0);
   }
-}
-
-static gboolean
-load_plugins_idle (gpointer data)
-{
-
-  /* Load the configuration of the plugin manager and load plugins */
-  hd_plugin_manager_run (HD_PLUGIN_MANAGER (data));
-
-  return FALSE;
 }
 
 static void
@@ -112,9 +99,6 @@ load_operator_applet (void)
 int
 main (int argc, char **argv)
 {
-  HDPluginManager *notification_pm;
-  HDNotificationManager *nm;
-  HDSystemNotifications *sn;
   GConfClient *client;
   GError *error = NULL;
 
@@ -141,18 +125,13 @@ main (int argc, char **argv)
   /* Load operator applet */
   load_operator_applet ();
 
-  /* Initialize applet manager*/
+  /* Initialize applet manager */
   hd_applet_manager_get ();
 
   /* Intialize notifications */
-  notification_pm = hd_plugin_manager_new (hd_config_file_new_with_defaults ("notification.conf"));
-
-  nm = hd_notification_manager_get ();
-  sn = hd_system_notifications_get ();
-  hd_incoming_events_new (notification_pm);
-
-  /* Load notification plugins when idle */
-  gdk_threads_add_idle (load_plugins_idle, notification_pm);
+  hd_notification_manager_get ();
+  hd_system_notifications_get ();
+  hd_incoming_events_get ();
 
   /* Add shortcuts gconf dirs so hildon-home gets notifications about changes */
   client = gconf_client_get_default ();
@@ -182,8 +161,6 @@ main (int argc, char **argv)
 
   /* Start the main loop */
   gtk_main ();
-
-  g_object_unref (nm);
 
   return 0;
 }

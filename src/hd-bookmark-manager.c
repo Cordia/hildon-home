@@ -57,24 +57,13 @@
 
 struct _HDBookmarkManagerPrivate
 {
-  HDPluginConfiguration *plugin_configuration;
-
   GtkTreeModel *model;
-
-  GHashTable *available_bookmarks;
 
   GnomeVFSMonitorHandle *user_bookmarks_handle;
   GnomeVFSMonitorHandle *operator_bookmarks_handle;
 
   guint parse_thread_id;
 };
-
-typedef struct
-{
-  gchar *name;
-  gchar *icon;
-  gchar *url;
-} HDBookmarkInfo;
 
 G_DEFINE_TYPE (HDBookmarkManager, hd_bookmark_manager, G_TYPE_OBJECT);
 
@@ -83,8 +72,8 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
                                        BookmarkItem      *item)
 {
   HDBookmarkManagerPrivate *priv = manager->priv;
-  HDBookmarkInfo *info;
   GdkPixbuf *pixbuf = NULL;
+  gchar *name;
   gchar *icon_path = NULL;
 
   g_debug ("hd_bookmark_manager_add_bookmark_item");
@@ -103,16 +92,7 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
       return;
     }
 
-  /* Else add the bookmark info to our table */
-  info = g_slice_new0 (HDBookmarkInfo);
-
-  info->name = g_strndup (item->name, strlen (item->name) - BOOKMARK_EXTENSION_LEN);
-  info->icon = g_strdup (item->thumbnail_file);
-  info->url = g_strdup (item->url);
-
-  g_hash_table_insert (priv->available_bookmarks,
-                       info->url,
-                       info);
+  name = g_strndup (item->name, strlen (item->name) - BOOKMARK_EXTENSION_LEN);
 
   if (item->thumbnail_file)
     {
@@ -126,13 +106,16 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
 
   gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
                                      NULL, -1,
-                                     0, info->name,
+                                     0, name,
                                      1, icon_path,
-                                     2, info->url,
+                                     2, item->url,
                                      3, pixbuf,
                                      -1);
 
+  g_free (name);
   g_free (icon_path);
+  if (pixbuf)
+    g_object_unref (pixbuf);
 }
 
 static gboolean
@@ -185,8 +168,7 @@ hd_bookmark_manager_bookmark_files_changed (GnomeVFSMonitorHandle *handle,
   HDBookmarkManagerPrivate *priv = manager->priv;
 
   if (!priv->parse_thread_id)
-    priv->parse_thread_id = gdk_threads_add_idle (
-                    (GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
+    priv->parse_thread_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
                                                   user_data);
 }
 
@@ -242,9 +224,6 @@ hd_bookmark_manager_init (HDBookmarkManager *manager)
   manager->priv = HD_BOOKMARK_MANAGER_GET_PRIVATE (manager);
   priv = manager->priv;
 
-  priv->available_bookmarks = g_hash_table_new_full (g_str_hash, g_str_equal,
-                                                     g_free, NULL);
-
   priv->model = GTK_TREE_MODEL (gtk_list_store_new (4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, GDK_TYPE_PIXBUF));
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
                                         0,
@@ -253,11 +232,39 @@ hd_bookmark_manager_init (HDBookmarkManager *manager)
 }
 
 static void
+hd_bookmark_manager_dipose (GObject *object)
+{
+  HDBookmarkManagerPrivate *priv = HD_BOOKMARK_MANAGER (object)->priv;
+
+  if (priv->model)
+    priv->model = (g_object_unref (priv->model), NULL);
+
+  if (priv->user_bookmarks_handle)
+    priv->user_bookmarks_handle = (gnome_vfs_monitor_cancel (priv->user_bookmarks_handle), NULL);
+
+  if (priv->operator_bookmarks_handle)
+    priv->operator_bookmarks_handle = (gnome_vfs_monitor_cancel (priv->operator_bookmarks_handle), NULL);
+
+  if (priv->parse_thread_id)
+    {
+      g_source_remove (priv->parse_thread_id);
+      priv->parse_thread_id = 0;
+    }
+
+  G_OBJECT_CLASS (hd_bookmark_manager_parent_class)->dispose (object);
+}
+
+static void
 hd_bookmark_manager_class_init (HDBookmarkManagerClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->dispose = hd_bookmark_manager_dipose;
+
   g_type_class_add_private (klass, sizeof (HDBookmarkManagerPrivate));
 }
 
+/* Retuns the singleton HDBookmarkManager instance. Should not be refed or unrefed */
 HDBookmarkManager *
 hd_bookmark_manager_get (void)
 {

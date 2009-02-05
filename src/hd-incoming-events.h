@@ -53,7 +53,7 @@ struct _HDIncomingEventsClass
 
 GType             hd_incoming_events_get_type (void);
 
-HDIncomingEvents *hd_incoming_events_new      (HDPluginManager *pm);
+HDIncomingEvents *hd_incoming_events_get      (void);
 
 G_END_DECLS
 

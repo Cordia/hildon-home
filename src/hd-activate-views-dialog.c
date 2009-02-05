@@ -35,22 +35,6 @@
 
 #include "hd-activate-views-dialog.h"
 
-/* Pixel sizes */
-#define ACTIVATE_VIEWS_DIALOG_WIDTH 342
-#define ACTIVATE_VIEWS_DIALOG_HEIGHT 80
-
-#define ACTIVATE_VIEWS_DIALOG_CLOSE  43
-#define ACTIVATE_VIEWS_DIALOG_ICON  24
-
-#define MARGIN_DEFAULT 8
-#define MARGIN_HALF 4
-
-/* Timeout in seconds */
-#define ACTIVATE_VIEWS_DIALOG_PREVIEW_TIMEOUT 4
-
-/* Add Image dialog */
-#define RESPONSE_ADD 1
-
 /* Background gconf key */
 #define GCONF_BACKGROUND_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/bg-image", i)
 
@@ -95,32 +79,10 @@ hd_activate_views_dialog_dispose (GObject *object)
 }
 
 static void
-hd_activate_views_dialog_finalize (GObject *object)
+hd_activate_views_dialog_response (GtkDialog *dialog,
+                                   gint       response_id)
 {
-  /* HDActivateViewsDialogPrivate *priv = HD_ACTIVATE_VIEWS_DIALOG (object)->priv; */
-
-  G_OBJECT_CLASS (hd_activate_views_dialog_parent_class)->finalize (object);
-}
-
-static void
-hd_activate_views_dialog_class_init (HDActivateViewsDialogClass *klass)
-{
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  object_class->dispose = hd_activate_views_dialog_dispose;
-  object_class->finalize = hd_activate_views_dialog_finalize;
-
-  g_type_class_add_private (klass, sizeof (HDActivateViewsDialogPrivate));
-}
-
-static void
-response_cb (HDActivateViewsDialog *dialog,
-             gint             response_id,
-             gpointer         data)
-{
-  HDActivateViewsDialogPrivate *priv = dialog->priv;
-
-  g_debug ("response_cb called %d", response_id);
+  HDActivateViewsDialogPrivate *priv = HD_ACTIVATE_VIEWS_DIALOG (dialog)->priv;
 
   if (response_id == GTK_RESPONSE_ACCEPT)
     {
@@ -165,6 +127,19 @@ response_cb (HDActivateViewsDialog *dialog,
 }
 
 static void
+hd_activate_views_dialog_class_init (HDActivateViewsDialogClass *klass)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GtkDialogClass *dialog_class = GTK_DIALOG_CLASS (klass);
+
+  object_class->dispose = hd_activate_views_dialog_dispose;
+
+  dialog_class->response = hd_activate_views_dialog_response;
+
+  g_type_class_add_private (klass, sizeof (HDActivateViewsDialogPrivate));
+}
+
+static void
 hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
 {
   HDActivateViewsDialogPrivate *priv = HD_ACTIVATE_VIEWS_DIALOG_GET_PRIVATE (dialog);
@@ -179,7 +154,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   dialog->priv = priv;
 
   /* Set dialog title */
-  gtk_window_set_title (GTK_WINDOW (dialog), _("home_ti_manage_views"));
+  gtk_window_set_title (GTK_WINDOW (dialog), dgettext (GETTEXT_PACKAGE, "home_ti_manage_views"));
 
   /* Add buttons */
   gtk_dialog_add_button (GTK_DIALOG (dialog), dgettext ("hildon-libs", "wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
@@ -253,6 +228,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
       GtkTreeIter iter;
       GtkTreePath *path = NULL;
 
+      /* Get the background image to create a thumbnail */
       key = GCONF_BACKGROUND_KEY (i);
       bg_image = gconf_client_get_string (priv->gconf_client,
                                           key,
@@ -324,9 +300,6 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox),
 /*                     priv->icon_view); */
                     pannable);
-
-  g_signal_connect (G_OBJECT (dialog), "response",
-                    G_CALLBACK (response_cb), NULL);
 }
 
 GtkWidget *

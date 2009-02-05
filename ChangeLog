@@ -1,3 +1,45 @@
+2009-02-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Code cleanup.
+
+	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_response,
+	  hd_activate_views_dialog_class_init, hd_activate_views_dialog_init):
+	* src/hd-add-applet-dialog.c (HD_ADD_APPLET_DIALOG_GET_PRIVATE,
+	  _HDAddAppletDialogPrivate, selector, hd_add_applet_dialog_response,
+	  hd_add_applet_dialog_class_init, hd_add_applet_dialog_init):
+	* src/hd-add-bookmark-dialog.c (hd_add_bookmark_dialog_response,
+	  hd_add_bookmark_dialog_class_init, hd_add_bookmark_dialog_init):
+	* src/hd-add-task-dialog.c (HD_ADD_TASK_DIALOG_GET_PRIVATE,
+	  _HDAddTaskDialogPrivate, selector, hd_add_task_dialog_response,
+	  hd_add_task_dialog_class_init, hd_add_task_dialog_init):
+	* src/hd-applet-manager.c (hd_applet_manager_dispose,
+	  hd_applet_manager_finalize, hd_applet_manager_class_init,
+	  hd_applet_manager_get_model):
+	* src/hd-bookmark-manager.c (model, user_bookmarks_handle,
+	  operator_bookmarks_handle, parse_thread_id,
+	  hd_bookmark_manager_add_bookmark_item,
+	  hd_bookmark_manager_bookmark_files_changed,
+	  hd_bookmark_manager_dipose, hd_bookmark_manager_class_init):
+	* src/hd-change-background-dialog.c
+	  (hd_change_background_dialog_finalize,
+	  hd_change_background_dialog_response,
+	  hd_change_background_dialog_class_init,
+	  hd_change_background_dialog_init):
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_class_init,
+	  hd_hildon_home_dbus_get, hd_hildon_home_dbus_show_edit_menu):
+	* src/hd-incoming-events.c (preview_queue, groups, plugins,
+	  plugin_manager, group_window_response, group_update,
+	  hd_incoming_events_dispose, hd_incoming_events_finalize,
+	  hd_incoming_events_class_init, hd_incoming_events_plugin_removed,
+	  load_plugins_idle, hd_incoming_events_init, hd_incoming_events_get):
+	* src/hd-incoming-events.h (parent):
+	* src/hd-notification-manager.c (hd_notification_manager_dispose,
+	  hd_notification_manager_finalize, hd_notification_manager_class_init,
+	  hd_notification_manager_timeout, hd_notification_manager_get):
+	* src/hd-task-manager.c (hd_task_manager_class_init,
+	  hd_task_manager_get_icon):
+	* src/hildon-home.c (signal_handler, main):
+
 2009-02-05  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/hd-notification-manager.c (hd_notification_manager_next_id): Use
