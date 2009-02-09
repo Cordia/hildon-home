@@ -1,3 +1,18 @@
+2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* Makefile.am:
+	* debian/hildon-home.install:
+	* hildon-home.schemas (deleted): Do not install default .schema file.
+	Fixes: NB#101137
+
+	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_init): Use
+	  backgrounds from theme if there is no GConf key.
+
+	* src/hd-task-manager.c (hd_task_manager_get_label,
+	  hd_task_manager_get_icon): Do not warn.
+
+	* debian/changelog: Update.
+
 2009-02-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Code cleanup.

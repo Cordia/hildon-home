@@ -668,7 +668,7 @@ hd_task_manager_get_label (HDTaskManager *manager,
   /* Return NULL if task is not available */
   if (!info)
     {
-      g_warning ("Could not get label for %s", desktop_id);
+/*      g_warning ("Could not get label for %s", desktop_id); */
       return NULL;
     }
 
@@ -692,7 +692,7 @@ hd_task_manager_get_icon (HDTaskManager *manager,
   /* Return NULL if task is not available */
   if (!info)
     {
-      g_warning ("Could not get label for %s", desktop_id);
+/*      g_warning ("Could not get label for %s", desktop_id); */
       return NULL;
     }
 

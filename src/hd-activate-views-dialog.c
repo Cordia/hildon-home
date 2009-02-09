@@ -38,6 +38,12 @@
 /* Background gconf key */
 #define GCONF_BACKGROUND_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/bg-image", i)
 
+#define CURRENT_THEME_DIR "/etc/hildon/theme"
+#define BACKGROUNDS_DESKTOP_FILE CURRENT_THEME_DIR "/backgrounds/theme_bg.desktop"
+#define DEFAULT_THEME_DIR "/usr/share/themes/default"
+#define BACKGROUNDS_DEFAULT_DESKTOP_FILE DEFAULT_THEME_DIR "/backgrounds/theme_bg.desktop"
+#define BACKGROUNDS_DESKTOP_KEY_FILE "X-File%u"
+
 #define HD_MAX_HOME_VIEWS 4
 #define HD_GCONF_KEY_ACTIVE_VIEWS "/apps/osso/hildon-desktop/views/active"
 
@@ -149,6 +155,8 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   GSList *list = NULL;
   gboolean active_views[HD_MAX_HOME_VIEWS] = { 0,};
   gboolean none_active = TRUE;
+  GKeyFile *current_theme_backgrounds = NULL;
+  GKeyFile *default_theme_backgrounds = NULL;
   GError *error = NULL;
 
   dialog->priv = priv;
@@ -228,7 +236,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
       GtkTreeIter iter;
       GtkTreePath *path = NULL;
 
-      /* Get the background image to create a thumbnail */
+      /* Try to get the background image from GConf */
       key = GCONF_BACKGROUND_KEY (i);
       bg_image = gconf_client_get_string (priv->gconf_client,
                                           key,
@@ -242,7 +250,48 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
           g_error_free (error);
           error = NULL;
         }
-      else
+
+      if (!bg_image)
+        {
+          gchar *desktop_key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, i);
+
+          /* Try to get background from current theme */
+          if (!current_theme_backgrounds)
+            {
+              current_theme_backgrounds = g_key_file_new ();
+              g_key_file_load_from_file (current_theme_backgrounds,
+                                         BACKGROUNDS_DESKTOP_FILE,
+                                         G_KEY_FILE_NONE,
+                                         NULL);
+            }
+
+          bg_image = g_key_file_get_string (current_theme_backgrounds,
+                                            G_KEY_FILE_DESKTOP_GROUP,
+                                            desktop_key,
+                                            NULL);
+
+          /* Try to get background from default theme */
+          if (!bg_image)
+            {
+              if (!default_theme_backgrounds)
+                {
+                  default_theme_backgrounds = g_key_file_new ();
+                  g_key_file_load_from_file (default_theme_backgrounds,
+                                             BACKGROUNDS_DEFAULT_DESKTOP_FILE,
+                                             G_KEY_FILE_NONE,
+                                             NULL);
+                }
+
+              bg_image = g_key_file_get_string (default_theme_backgrounds,
+                                                G_KEY_FILE_DESKTOP_GROUP,
+                                                desktop_key,
+                                                NULL);
+            }
+
+          g_free (desktop_key);
+        }
+
+      if (bg_image)
         pixbuf = gdk_pixbuf_new_from_file_at_scale (bg_image, 125, 75, TRUE, &error);
 
       if (error)
@@ -251,7 +300,10 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
                      i, bg_image, error->message);
           g_error_free (error);
           error = NULL;
+        }
 
+      if (!pixbuf)
+        {
           pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB,
                                    TRUE,
                                    8,
@@ -300,6 +352,11 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox),
 /*                     priv->icon_view); */
                     pannable);
+
+  if (current_theme_backgrounds)
+    g_key_file_free (current_theme_backgrounds);
+  if (default_theme_backgrounds)
+    g_key_file_free (default_theme_backgrounds);
 }
 
 GtkWidget *

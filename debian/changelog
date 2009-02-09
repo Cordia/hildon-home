@@ -5,6 +5,7 @@ hildon-home (0.3.10~unreleased) unstable; urgency=low
     configuration file. Use that option for the incoming-call and alarm-event
     category. Fixes: NB#98574
   * Fix memory leaks and a double-free discovered by Coverity.
+  * Do not install default .schema file. Fixes: NB#101137
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  4 Feb 2009 15:02:37 +0100
 
