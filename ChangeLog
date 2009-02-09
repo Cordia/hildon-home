@@ -1,5 +1,9 @@
 2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Add some more fixed bugs.
+
+2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* Makefile.am:
 	* debian/hildon-home.install:
 	* hildon-home.schemas (deleted): Do not install default .schema file.
