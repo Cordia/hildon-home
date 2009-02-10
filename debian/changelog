@@ -1,4 +1,4 @@
-hildon-home (0.3.10~unreleased) unstable; urgency=low
+hildon-home (0.3.10) unstable; urgency=low
 
   * Open bookmark shortcuts in new browser window. Fixes: NB#97193
   * Add support for No-Window property in the notification groups
@@ -7,7 +7,7 @@ hildon-home (0.3.10~unreleased) unstable; urgency=low
   * Fix memory leaks and a double-free discovered by Coverity.
   * Do not install default .schema file. Fixes: NB#101137, NB#96479, NB#96529
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  4 Feb 2009 15:02:37 +0100
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Feb 2009 15:44:21 +0200
 
 hildon-home (0.3.9) unstable; urgency=low
 

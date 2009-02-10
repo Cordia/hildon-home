@@ -1,3 +1,8 @@
+2009-02-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.10
+	* configure.ac: 0.3.10
+
 2009-02-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Add some more fixed bugs.
