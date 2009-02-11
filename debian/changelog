@@ -1,3 +1,9 @@
+hildon-home (0.3.12~unreleased) unstable; urgency=low
+
+  * unreleased
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:19:38 +0200
+
 hildon-home (0.3.11) unstable; urgency=low
 
   Adam Endrodi <ext-adam.endrodi@nokia.com>
