@@ -710,7 +710,7 @@ hd_incoming_events_get (void)
 {
   static HDIncomingEvents *ie = NULL;
   
-  if (G_UNLIKELY (ie))
+  if (G_UNLIKELY (!ie))
     ie = g_object_new (HD_TYPE_INCOMING_EVENTS, NULL);
 
   return ie;
