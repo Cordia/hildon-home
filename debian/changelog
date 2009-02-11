@@ -1,3 +1,12 @@
+hildon-home (0.3.11) unstable; urgency=low
+
+  Adam Endrodi <ext-adam.endrodi@nokia.com>
+  * src/hd-incoming-events.c (hd_incoming_events_get):
+    Typo fix that prevented the HdIncomingEvents singleton from ever
+    being created.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:11:37 +0200
+
 hildon-home (0.3.10) unstable; urgency=low
 
   * Open bookmark shortcuts in new browser window. Fixes: NB#97193
