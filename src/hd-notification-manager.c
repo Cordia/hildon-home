@@ -246,7 +246,7 @@ hd_notification_manager_load_row (void *data,
   hint = g_value_init (hint, G_TYPE_UCHAR);
   g_value_set_uchar (hint, TRUE);
 
-  g_hash_table_insert (hints, "persistent", hint);
+  g_hash_table_insert (hints, g_strdup("persistent"), hint);
 
   sql = sqlite3_mprintf ("SELECT * FROM hints WHERE nid=%d", id);
 
@@ -275,10 +275,12 @@ hd_notification_manager_load_row (void *data,
                        GUINT_TO_POINTER (id),
                        notification);
 
+  g_signal_emit (nm, signals[NOTIFIED], 0, notification, TRUE);
+
   return 0;
 }
 
-static void 
+void 
 hd_notification_manager_db_load (HDNotificationManager *nm)
 {
   gchar *error;
@@ -723,10 +725,6 @@ hd_notification_manager_init (HDNotificationManager *nm)
               {
                 g_warning ("Can't create database: %s", sqlite3_errmsg (nm->priv->db));
               }
-            else
-              {
-                hd_notification_manager_db_load (nm);
-              }
         }
     }
   else
@@ -790,9 +788,9 @@ hd_notification_manager_class_init (HDNotificationManagerClass *class)
                   G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (HDNotificationManagerClass, notified),
                   NULL, NULL,
-                  g_cclosure_marshal_VOID__OBJECT,
-                  G_TYPE_NONE, 1,
-                  HD_TYPE_NOTIFICATION);
+                  hd_cclosure_marshal_VOID__OBJECT_BOOLEAN,
+                  G_TYPE_NONE, 2,
+                  HD_TYPE_NOTIFICATION, G_TYPE_BOOLEAN);
 
   g_type_class_add_private (class, sizeof (HDNotificationManagerPrivate));
 }
@@ -1000,7 +998,7 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                            GUINT_TO_POINTER (id),
                            notification);
 
-      g_signal_emit (nm, signals[NOTIFIED], 0, notification);
+      g_signal_emit (nm, signals[NOTIFIED], 0, notification, FALSE);
 
       if (persistent && nm->priv->db)
         {

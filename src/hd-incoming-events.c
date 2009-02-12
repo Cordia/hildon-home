@@ -284,6 +284,46 @@ switcher_window_response (HDIncomingEventWindow     *window,
     }
 }
 
+static void
+add_switcher_notification (HDIncomingEvents         *ie,
+                           HDNotification           *notification)
+{
+  HDIncomingEventGroup *group;
+
+  group = g_hash_table_lookup (ie->priv->groups,
+                               hd_notification_get_category (notification));
+  g_debug ("group %p, for category %s", group, hd_notification_get_category (notification));
+
+  if (group)
+    {
+      g_ptr_array_add (group->notifications,
+                       notification);
+      group_update (group);
+      g_signal_connect_swapped (notification, "closed",
+                                G_CALLBACK (group_notification_closed), group);
+    }
+  else
+    {
+      GtkWidget *switcher_window;
+
+      switcher_window = hd_incoming_event_window_new (FALSE,
+                                                      NULL,
+                                                      hd_notification_get_summary (notification),
+                                                      hd_notification_get_body (notification),
+                                                      hd_notification_get_time (notification),
+                                                      hd_notification_get_icon (notification));
+
+      g_signal_connect (switcher_window, "response",
+                        G_CALLBACK (switcher_window_response),
+                        notification);
+      g_signal_connect_object (notification, "closed",
+                               G_CALLBACK (gtk_widget_destroy), switcher_window,
+                               G_CONNECT_SWAPPED);
+
+      gtk_widget_show (switcher_window);
+    }
+}
+
 typedef struct
 {
   HDIncomingEvents *ie;
@@ -312,42 +352,7 @@ preview_window_response (HDIncomingEventWindow     *window,
                                                   NULL);
     }
   else if (response_id == GTK_RESPONSE_DELETE_EVENT)
-    {
-      HDIncomingEventGroup *group;
-
-      group = g_hash_table_lookup (ie->priv->groups,
-                                   hd_notification_get_category (notification));
-      g_debug ("group %p, for category %s", group, hd_notification_get_category (notification));
-
-      if (group)
-        {
-          g_ptr_array_add (group->notifications,
-                           notification);
-          group_update (group);
-          g_signal_connect_swapped (notification, "closed",
-                                    G_CALLBACK (group_notification_closed), group);
-        }
-      else
-        {
-          GtkWidget *switcher_window;
-
-          switcher_window = hd_incoming_event_window_new (FALSE,
-                                                          NULL,
-                                                          hd_notification_get_summary (notification),
-                                                          hd_notification_get_body (notification),
-                                                          hd_notification_get_time (notification),
-                                                          hd_notification_get_icon (notification));
-
-          g_signal_connect (switcher_window, "response",
-                            G_CALLBACK (switcher_window_response),
-                            notification);
-          g_signal_connect_object (notification, "closed",
-                                   G_CALLBACK (gtk_widget_destroy), switcher_window,
-                                   G_CONNECT_SWAPPED);
-
-          gtk_widget_show (switcher_window);
-        }
-    }
+    add_switcher_notification (ie, notification);
 
   gtk_widget_destroy (GTK_WIDGET (window));
 }
@@ -379,6 +384,7 @@ preview_window_destroy (GtkWidget        *widget,
 static void
 hd_incoming_events_notified (HDNotificationManager  *nm,
                              HDNotification         *notification,
+                             gboolean                replayed_event,
                              HDIncomingEvents       *ie)
 {
   HDIncomingEventsPrivate *priv = ie->priv;
@@ -397,6 +403,12 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   /* Ignore internal system.note. notifications */
   if (g_str_has_prefix (category, "system.note."))
     return;
+
+  if (replayed_event)
+    {
+      add_switcher_notification (ie, notification);
+      return;
+    }
 
   /* Call plugins */
   for (i = 0; i < priv->plugins->len; i++)

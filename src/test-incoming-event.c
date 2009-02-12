@@ -46,11 +46,12 @@ main (int argc, char **argv)
   GtkWidget *window;
 
   gtk_init (&argc, &argv);
+  hildon_init ();
 
   /* Demo notification window */
   window = hd_incoming_event_window_new (FALSE,
                                          "Osso_calculator",
-                                         "Email Sender",
+                                         "Email Sender Freaked Out Badly",
                                          "Email Subject",
                                          12220784,
                                          "qgn_list_messagin");

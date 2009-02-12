@@ -68,6 +68,8 @@ GType                  hd_notification_manager_get_type              (void);
 
 HDNotificationManager *hd_notification_manager_get                   (void);
 
+void                  hd_notification_manager_db_load                (HDNotificationManager *nm);
+
 gboolean               hd_notification_manager_notify                (HDNotificationManager *nm,
                                                                       const gchar           *app_name,
                                                                       guint                  id,

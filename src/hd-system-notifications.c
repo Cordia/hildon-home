@@ -167,12 +167,14 @@ create_note_dialog (const gchar  *summary,
 static void
 system_notifications_notified (HDNotificationManager *nm,
                                HDNotification        *notification,
+                               gboolean               replayed_event,
                                HDSystemNotifications *sn)
 {
   GtkWidget *dialog = NULL;
   const gchar *category;
 
   g_return_if_fail (HD_IS_SYSTEM_NOTIFICATIONS (sn));
+  g_return_if_fail (!replayed_event);
 
   /* Get category string */
   category = hd_notification_get_category (notification);

@@ -1,3 +1,30 @@
+2009-02-12  Adam Endrodi <ext-adam.endrodi@nokia.com>
+
+	Replay persistent notifications when starting up.
+	NB#99955
+
+	* src/hildon-home.c:
+	  Load the persistent notifications after initialization complete.
+	* src/hd-marshal.list
+	* src/hd-notification-manager.h:
+	  Export hd_notification_manager_db_load() for hildon-home.c.
+	* src/hd-notification-manager.c:
+	  Emit "notified" when a persistent notification is loaded.
+	  Changed the signature of the "notify" signal to allow for
+	  distinguishing notifications being just loaded from the database.
+	* src/hd-incoming-events.c:
+	  Do not show preview for replayed notifications nor distribute them
+	  among the notification plugins.
+	  Added add_switcher_notification() for common code.
+	  Fixed a crasher caused by not duplicating the key when we add
+	  the "persistent" hint to a HDNotification.
+	* src/hd-system-notifications.c:
+	  Ignore replayed notifications as system notifications cannot be
+	  persistently stored.
+	* src/test-incoming-event.c:
+	  Use hildon_init() and a longer summery text to see
+	  if it's properly clipped in tasw.
+
 2009-02-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.11

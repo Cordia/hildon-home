@@ -132,6 +132,7 @@ main (int argc, char **argv)
   hd_notification_manager_get ();
   hd_system_notifications_get ();
   hd_incoming_events_get ();
+  hd_notification_manager_db_load (hd_notification_manager_get ());
 
   /* Add shortcuts gconf dirs so hildon-home gets notifications about changes */
   client = gconf_client_get_default ();
