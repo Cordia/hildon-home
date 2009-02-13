@@ -1,3 +1,9 @@
+2009-02-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-bookmark-shortcut.c: Use RGBA window, update to new theme.
+
+	* src/hd-task-shortcut.c: Use RGBA window.
+
 2009-02-12  Adam Endrodi <ext-adam.endrodi@nokia.com>
 
 	Replay persistent notifications when starting up.

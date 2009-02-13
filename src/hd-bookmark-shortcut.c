@@ -34,21 +34,23 @@
 #include "hd-bookmark-shortcut.h"
 
 /* Size from Home layout guide 1.2 */
-#define SHORTCUT_WIDTH 182 /* 176 */
-#define SHORTCUT_HEIGHT 154 /* 146 */
+#define SHORTCUT_WIDTH 176
+#define SHORTCUT_HEIGHT 146
 
-#define THUMBNAIL_WIDTH 166 /* 160 */
-#define THUMBNAIL_HEIGHT 100 /* 96 */
+#define THUMBNAIL_WIDTH 160
+#define THUMBNAIL_HEIGHT 96
 
-#define THUMBNAIL_BORDER HILDON_MARGIN_HALF
-
-#define BORDER_WIDTH HILDON_MARGIN_DEFAULT
+#define BORDER_WIDTH_LEFT 8.5
+#define BORDER_WIDTH_TOP 6
 
 #define LABEL_WIDTH SHORTCUT_WIDTH - (2 * HILDON_MARGIN_DEFAULT) - (2 * HILDON_MARGIN_HALF)
 #define LABEL_FONT "SmallSystemFont"
 #define LABEL_COLOR "ReversedSecondaryTextColor"
 
-#define BG_IMAGE_FILE "/usr/share/themes/default/images/WebShortcutAppletBackground.png"
+#define IMAGES_DIR                   "/etc/hildon/theme/images/"
+#define BACKGROUND_IMAGE_FILE        IMAGES_DIR "WebShortcutAppletBackground.png"
+#define BACKGROUND_ACTIVE_IMAGE_FILE IMAGES_DIR "WebShortcutAppletBackgroundActive.png"
+#define THUMBNAIL_MASK_FILE          IMAGES_DIR "WebShortCutAppletThumbnailMask.png"
 
 /* D-Bus method/interface to load URL in browser */
 #define BROWSER_INTERFACE   "com.nokia.osso_browser"
@@ -68,7 +70,6 @@
 struct _HDBookmarkShortcutPrivate
 {
   GtkWidget *label;
-  GtkWidget *icon;
 
   gboolean button_pressed;
 
@@ -77,7 +78,10 @@ struct _HDBookmarkShortcutPrivate
   GConfClient *gconf_client;
 
   GdkPixbuf *thumbnail_icon;
+
   GdkPixbuf *bg_image;
+  GdkPixbuf *bg_active;
+  GdkPixbuf *thumb_mask;
 };
 
 G_DEFINE_TYPE (HDBookmarkShortcut, hd_bookmark_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
@@ -185,6 +189,12 @@ hd_bookmark_shortcut_dispose (GObject *object)
   if (priv->bg_image)
     priv->bg_image = (g_object_unref (priv->bg_image), NULL);
 
+  if (priv->bg_active)
+    priv->bg_active = (g_object_unref (priv->bg_active), NULL);
+
+  if (priv->thumb_mask)
+    priv->thumb_mask = (g_object_unref (priv->thumb_mask), NULL);
+
   if (priv->thumbnail_icon)
     priv->thumbnail_icon = (g_object_unref (priv->thumbnail_icon), NULL);
 
@@ -280,46 +290,12 @@ hd_bookmark_shortcut_realize (GtkWidget *widget)
 
   screen = gtk_widget_get_screen (widget);
   gtk_widget_set_colormap (widget,
-                           gdk_screen_get_rgb_colormap (screen));
+                           gdk_screen_get_rgba_colormap (screen));
 
   gtk_widget_set_app_paintable (widget,
                                 TRUE);
 
   GTK_WIDGET_CLASS (hd_bookmark_shortcut_parent_class)->realize (widget);
-}
-
-static void
-rounded_rectangle (cairo_t *cr,
-                   double   x,
-                   double   y,
-                   double   w,
-                   double   h,
-                   double   r)
-{
-        /*   A----BQ
-         *  H      C
-         *  |      |
-         *  G      D
-         *   F----E
-         */
-
-        cairo_move_to  (cr, x + r,     y);          /* Move to A */
-        cairo_line_to  (cr, x + w - r, y);          /* Straight line to B */
-        cairo_curve_to (cr, x + w,     y,           /* Curve to C, */
-                            x + w,     y,           /* control points are both at Q */
-                            x + w,     y + r);
-        cairo_line_to  (cr, x + w,     y + h - r);  /* Move to D */
-        cairo_curve_to (cr, x + w,     y + h,       /* Curve to E */
-                            x + w,     y + h,
-                            x + w - r, y + h);
-        cairo_line_to  (cr, x + r,     y + h);      /* Line to F */
-        cairo_curve_to (cr, x,         y + h,       /* Curve to G */
-                            x,         y + h,
-                            x,         y + h - r);
-        cairo_line_to  (cr, x,         y + r);      /* Line to H */
-        cairo_curve_to (cr, x,         y,
-                            x,         y,
-                            x + r,     y);          /* Curve to A */
 }
 
 static gboolean
@@ -328,42 +304,54 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
 {
   HDBookmarkShortcutPrivate *priv = HD_BOOKMARK_SHORTCUT (widget)->priv;
   cairo_t *cr;
+  cairo_surface_t *mask = NULL;
+  GdkPixbuf *bg;
 
   cr = gdk_cairo_create (GDK_DRAWABLE (widget->window));
   gdk_cairo_region (cr, event->region);
   cairo_clip (cr);
 
+  if (priv->button_pressed)
+    bg = priv->bg_active;
+  else
+    bg = priv->bg_image;
+
+  if (priv->thumb_mask)
+    {
+      gint w, h;
+      cairo_t *cr_mask;
+
+      w = gdk_pixbuf_get_width (priv->thumb_mask);
+      h = gdk_pixbuf_get_height (priv->thumb_mask);
+      mask = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
+      cr_mask = cairo_create (mask);
+      gdk_cairo_set_source_pixbuf (cr_mask, priv->thumb_mask, 0.0, 0.0);
+      cairo_paint (cr_mask);
+
+      cairo_destroy (cr_mask);
+    }
+
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
 
-  if (priv->bg_image)
+  if (bg)
     {
-      gdk_cairo_set_source_pixbuf (cr, priv->bg_image, 0.0, 0.0);
+      gdk_cairo_set_source_pixbuf (cr, bg, 0.0, 0.0);
       cairo_paint (cr);
     }
-  else
-    {
-      cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
-      cairo_paint (cr);
 
-      cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
-      rounded_rectangle (cr, 0, 0,
-                         SHORTCUT_WIDTH, SHORTCUT_HEIGHT,
-                         BORDER_WIDTH * 2);
-      cairo_fill (cr);
-    }
-
-  /* Display thumbmail icon */
   if (priv->thumbnail_icon)
     {
-      cairo_new_path (cr);
-      cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-      gdk_cairo_set_source_pixbuf (cr, priv->thumbnail_icon, BORDER_WIDTH, BORDER_WIDTH + THUMBNAIL_BORDER * 2);
-      rounded_rectangle (cr, BORDER_WIDTH, BORDER_WIDTH + THUMBNAIL_BORDER * 2,
-                         THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT,
-                         BORDER_WIDTH * 1.5);
-      cairo_fill (cr);
+      gdk_cairo_set_source_pixbuf (cr,
+                                   priv->thumbnail_icon,
+                                   BORDER_WIDTH_LEFT, BORDER_WIDTH_TOP);
+      if (mask)
+        cairo_mask_surface (cr,
+                            mask,
+                            BORDER_WIDTH_LEFT, BORDER_WIDTH_TOP);
     }
 
+  if (mask)
+    cairo_surface_destroy (mask);
   cairo_destroy (cr);
 
   return GTK_WIDGET_CLASS (hd_bookmark_shortcut_parent_class)->expose_event (widget,
@@ -408,6 +396,8 @@ button_press_event_cb (GtkWidget      *widget,
     {
       priv->button_pressed = TRUE;
 
+      gtk_widget_queue_draw (widget);
+
       return TRUE;
     }
 
@@ -426,6 +416,8 @@ button_release_event_cb (GtkWidget      *widget,
     {
       priv->button_pressed = FALSE;
 
+      gtk_widget_queue_draw (widget);
+
       hd_bookmark_shortcut_activate (shortcut, NULL);
       return TRUE;
     }
@@ -441,6 +433,8 @@ leave_notify_event_cb (GtkWidget        *widget,
   HDBookmarkShortcutPrivate *priv = shortcut->priv;
 
   priv->button_pressed = FALSE;
+
+  gtk_widget_queue_draw (widget);
 
   return FALSE;
 }
@@ -521,7 +515,7 @@ static void
 hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
 {
   HDBookmarkShortcutPrivate *priv;
-  GtkWidget *vbox, *alignment, *label_alignment;
+  GtkWidget *alignment;
 
   priv = HD_BOOKMARK_SHORTCUT_GET_PRIVATE (applet);
   applet->priv = priv;
@@ -537,16 +531,11 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   g_signal_connect (applet, "leave-notify-event",
                     G_CALLBACK (leave_notify_event_cb), applet);
 
-  vbox = gtk_vbox_new (FALSE, 0);
-  gtk_widget_show (vbox);
-
   alignment = gtk_alignment_new (0.5, 0.5, 0.0, 0.0);
+  gtk_alignment_set_padding (GTK_ALIGNMENT (alignment),
+                             104, 8,
+                             8, 8);
   gtk_widget_show (alignment);
-  gtk_widget_set_size_request (alignment, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT + 2 * THUMBNAIL_BORDER);
-
-  label_alignment = gtk_alignment_new (0.5, 0.5, 0.0, 0.0);
-  gtk_alignment_set_padding (GTK_ALIGNMENT (label_alignment), 0, 0, HILDON_MARGIN_HALF, HILDON_MARGIN_HALF);
-  gtk_widget_show (label_alignment);
 
   priv->label = gtk_label_new (NULL);
   gtk_widget_set_name (priv->label, "HDBookmarkShortcut-Label");
@@ -555,23 +544,17 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   hildon_helper_set_logical_font (priv->label, LABEL_FONT);
   hildon_helper_set_logical_color (priv->label, GTK_RC_FG, GTK_STATE_NORMAL, LABEL_COLOR);
 
-  priv->icon = gtk_alignment_new (0.5, 0.5, 0.0, 0.0); /* gtk_image_new (); */
-  gtk_widget_show (priv->icon);
-  /*  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), 64); */
-  gtk_widget_set_size_request (priv->icon, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT + 2 * THUMBNAIL_BORDER);
-
-  gtk_container_add (GTK_CONTAINER (applet), vbox);
-  gtk_box_pack_start (GTK_BOX (vbox), alignment, FALSE, FALSE, 0);
-  gtk_container_add (GTK_CONTAINER (alignment), priv->icon);
-  gtk_box_pack_start (GTK_BOX (vbox), label_alignment, TRUE, TRUE, 0);
-  gtk_container_add (GTK_CONTAINER (label_alignment), priv->label);
+  gtk_container_add (GTK_CONTAINER (applet), alignment);
+  gtk_container_add (GTK_CONTAINER (alignment), priv->label);
 
   gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
-  gtk_container_set_border_width (GTK_CONTAINER (applet), BORDER_WIDTH);
+/*  gtk_container_set_border_width (GTK_CONTAINER (applet), BORDER_WIDTH_LEFT); */
   g_signal_connect (applet, "delete-event",
                     G_CALLBACK (delete_event_cb), applet);
 
-  priv->bg_image = gdk_pixbuf_new_from_file (BG_IMAGE_FILE, NULL);
+  priv->bg_image = gdk_pixbuf_new_from_file (BACKGROUND_IMAGE_FILE, NULL);
+  priv->bg_active = gdk_pixbuf_new_from_file (BACKGROUND_ACTIVE_IMAGE_FILE, NULL);
+  priv->thumb_mask = gdk_pixbuf_new_from_file (THUMBNAIL_MASK_FILE, NULL);
 
   priv->gconf_client = gconf_client_get_default ();
 }
