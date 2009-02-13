@@ -5,7 +5,7 @@ hildon-home (0.3.12) unstable; urgency=low
         * src/hd-task-shortcut.c: Use RGBA window.
 
   Adam Endrodi <ext-adam.endrodi@nokia.com>:
-        * Replay persistent notifications when starting up. Fixes: NB#99955
+        * Replay persistent notifications when starting up.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:19:38 +0200
 
