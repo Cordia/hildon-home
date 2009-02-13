@@ -1,3 +1,8 @@
+2009-02-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_expose_event):
+	Paint the frame in front of the thumbnail.
+
 2009-02-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.12

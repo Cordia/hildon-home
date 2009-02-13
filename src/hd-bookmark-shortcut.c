@@ -40,7 +40,7 @@
 #define THUMBNAIL_WIDTH 160
 #define THUMBNAIL_HEIGHT 96
 
-#define BORDER_WIDTH_LEFT 8.5
+#define BORDER_WIDTH_LEFT 8
 #define BORDER_WIDTH_TOP 6
 
 #define LABEL_WIDTH SHORTCUT_WIDTH - (2 * HILDON_MARGIN_DEFAULT) - (2 * HILDON_MARGIN_HALF)
@@ -333,11 +333,8 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
 
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
 
-  if (bg)
-    {
-      gdk_cairo_set_source_pixbuf (cr, bg, 0.0, 0.0);
-      cairo_paint (cr);
-    }
+  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
+  cairo_paint (cr);
 
   if (priv->thumbnail_icon)
     {
@@ -348,6 +345,14 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
         cairo_mask_surface (cr,
                             mask,
                             BORDER_WIDTH_LEFT, BORDER_WIDTH_TOP);
+    }
+
+  cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+
+  if (bg)
+    {
+      gdk_cairo_set_source_pixbuf (cr, bg, 0.0, 0.0);
+      cairo_paint (cr);
     }
 
   if (mask)
