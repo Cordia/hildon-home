@@ -1,3 +1,8 @@
+2009-02-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-incoming-events.c (group_update): Fix extended notifications
+	support in task switcher notifications. Fixes: NB#99742
+
 2009-02-13  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_expose_event):

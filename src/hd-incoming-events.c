@@ -244,16 +244,30 @@ group_update (HDIncomingEventGroup *group)
         {
           HDNotification *notification = g_ptr_array_index (group->notifications,
                                                             0);
-          const gchar *summary = hd_notification_get_summary (notification);
-
+          const gchar *summary, *body, *icon;
+          
           /* Check if there is a special summary for this group */
+          summary = hd_notification_get_summary (notification);
           if (group->empty_summary && (!summary || !summary[0]))
             summary = group->empty_summary;
 
+          body = hd_notification_get_body (notification);
+          if (group->preview_summary)
+            {
+              body = summary;
+              summary = group->preview_summary;
+            }
+
+          icon = hd_notification_get_icon (notification);
+          if (!icon || !icon[0])
+            {
+              icon = group->icon;
+            }
+
           g_object_set (group->switcher_window,
                         "title", summary,
-                        "message", hd_notification_get_body (notification),
-                        "icon", hd_notification_get_icon (notification),
+                        "message", body,
+                        "icon", icon,
                         "time", (gint64) hd_notification_get_time (notification),
                         NULL);
         }

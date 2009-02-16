@@ -3,6 +3,8 @@ hildon-home (0.3.12) unstable; urgency=low
   Jan Arne Petersen  <jpetersen@openismus.com>
         * src/hd-bookmark-shortcut.c: Use RGBA window, update to new theme.
         * src/hd-task-shortcut.c: Use RGBA window.
+        * Fix extended notifications support in task switcher notifications.
+          Fixes: NB#99742
 
   Adam Endrodi <ext-adam.endrodi@nokia.com>:
         * Replay persistent notifications when starting up.
