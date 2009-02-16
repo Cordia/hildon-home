@@ -1,5 +1,11 @@
 2009-02-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog:
+	* debian/rules: Start hildon-home as #20 instead of #22. Fixes:
+	NB#101216
+
+2009-02-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-incoming-events.c (group_update): Fix extended notifications
 	support in task switcher notifications. Fixes: NB#99742
 

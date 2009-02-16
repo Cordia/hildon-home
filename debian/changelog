@@ -5,6 +5,7 @@ hildon-home (0.3.12) unstable; urgency=low
         * src/hd-task-shortcut.c: Use RGBA window.
         * Fix extended notifications support in task switcher notifications.
           Fixes: NB#99742
+        * Start hildon-home as #20 instead of #22. Fixes: NB#101216
 
   Adam Endrodi <ext-adam.endrodi@nokia.com>:
         * Replay persistent notifications when starting up.

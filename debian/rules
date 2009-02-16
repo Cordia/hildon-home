@@ -7,4 +7,4 @@ makebuilddir::
 	AUTOGEN_SUBDIR_MODE=1 NOCONFIGURE=yes ./autogen.sh
 
 binary-install/hildon-home::
-	dh_installxsession -u 'post 22'
+	dh_installxsession -u 'post 20'
