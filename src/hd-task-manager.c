@@ -43,18 +43,13 @@
 #define TASK_SHORTCUTS_GCONF_KEY "/apps/osso/hildon-home/task-shortcuts"
 
 /* Task .desktop file keys */
-#define HD_KEY_FILE_DESKTOP_KEY_SERVICE "X-Osso-Service"
 #define HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN "X-Text-Domain"
 
-/* Launch tasks */
-#define SERVICE_NAME_LEN        255
-#define PATH_NAME_LEN           255
-#define INTERFACE_NAME_LEN      255
-#define TMP_NAME_LEN            255
+/* App mgr D-Bus interface to launch tasks */
+#define APP_MGR_DBUS_NAME "com.nokia.HildonDesktop.AppMgr"
+#define APP_MGR_DBUS_PATH "/com/nokia/HildonDesktop/AppMgr"
 
-#define OSSO_BUS_ROOT          "com.nokia"
-#define OSSO_BUS_ROOT_PATH     "/com/nokia"
-#define OSSO_BUS_TOP           "top_application"
+#define APP_MGR_LAUNCH_APPLICATION "LaunchApplication"
 
 struct _HDTaskManagerPrivate
 {
@@ -69,15 +64,14 @@ struct _HDTaskManagerPrivate
   GHashTable *monitors;
 
   GConfClient *gconf_client;
+
+  DBusGProxy *app_mgr_proxy;
 };
 
 typedef struct
 {
   gchar *label;
   gchar *icon;
-
-  gchar *exec;
-  gchar *service;
 
   GtkTreeRowReference *row;
 } HDTaskInfo;
@@ -108,9 +102,6 @@ hd_task_info_free (HDTaskInfo *info)
 
   g_free (info->label);
   g_free (info->icon);
-
-  g_free (info->exec);
-  g_free (info->service);
 
   if (info->row)
     gtk_tree_row_reference_free (info->row);
@@ -192,8 +183,6 @@ hd_task_manager_load_desktop_file (const gchar *filename)
     {
       g_free (info->label);
       g_free (info->icon);
-      g_free (info->exec);
-      g_free (info->service);
     }
 
   /* Translate name */
@@ -219,16 +208,6 @@ hd_task_manager_load_desktop_file (const gchar *filename)
                error->message);
       g_error_free (error);
     }
-
-  info->exec = g_key_file_get_string (desktop_file,
-                                      G_KEY_FILE_DESKTOP_GROUP,
-                                      G_KEY_FILE_DESKTOP_KEY_EXEC,
-                                      NULL);
-  info->service = g_key_file_get_string (desktop_file,
-                                         G_KEY_FILE_DESKTOP_GROUP,
-                                         HD_KEY_FILE_DESKTOP_KEY_SERVICE,
-                                         NULL);
-
 
   /* Load icon for list */
   if (info->icon)
@@ -541,6 +520,9 @@ hd_task_manager_dispose (GObject *obj)
   if (priv->model)
     priv->model = (g_object_unref (priv->model), NULL);
 
+  if (priv->app_mgr_proxy)
+    priv->app_mgr_proxy = (g_object_unref (priv->app_mgr_proxy), NULL);
+
   G_OBJECT_CLASS (hd_task_manager_parent_class)->dispose (obj);
 }
 
@@ -699,165 +681,62 @@ hd_task_manager_get_icon (HDTaskManager *manager,
   return info->icon;
 }
 
-/* FIXME: Use hildon-desktop's HdAppMgr to launch applications */
-
-static void
-hd_task_manager_activate_service (const gchar *app)
+static DBusGProxy *
+hd_task_manager_get_app_mgr_proxy (HDTaskManager *manager)
 {
-  gchar service[SERVICE_NAME_LEN], path[PATH_NAME_LEN],
-        interface[INTERFACE_NAME_LEN], tmp[TMP_NAME_LEN];
-  DBusMessage *msg = NULL;
-  DBusError error;
-  DBusConnection *conn;
+  HDTaskManagerPrivate *priv = manager->priv;
 
-  g_debug ("%s: app=%s\n", __FUNCTION__, app);
+  /* Get app mgr proxy if not there yet */
+  if (!priv->app_mgr_proxy)
+    {
+      DBusGConnection *connection;
+      GError *error = NULL;
 
-  /* If we have full service name we will use it */
-  if (g_strrstr(app, "."))
-  {
-    g_snprintf(service, SERVICE_NAME_LEN, "%s", app);
-    g_snprintf(interface, INTERFACE_NAME_LEN, "%s", service);
-    g_snprintf(tmp, TMP_NAME_LEN, "%s", app);
-    g_snprintf(path, PATH_NAME_LEN, "/%s", g_strdelimit(tmp, ".", '/'));
-  }
-  else /* use com.nokia prefix */
-  {
-    g_snprintf(service, SERVICE_NAME_LEN, "%s.%s", OSSO_BUS_ROOT, app);
-    g_snprintf(path, PATH_NAME_LEN, "%s/%s", OSSO_BUS_ROOT_PATH, app);
-    g_snprintf(interface, INTERFACE_NAME_LEN, "%s", service);
-  }
+      /* Connect to D-Bus */
+      connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 
-  dbus_error_init (&error);
-  conn = dbus_bus_get (DBUS_BUS_SESSION, &error);
-  if (dbus_error_is_set (&error))
-  {
-    g_warning ("could not start: %s: %s", service, error.message);
-    dbus_error_free (&error);
-    return;
-  }
+      if (error)
+        {
+          g_warning ("%s. Could not connect to session bus. %s",
+                     __FUNCTION__,
+                     error->message);
+          g_error_free (error);
+          return NULL;
+        }
 
-  msg = dbus_message_new_method_call (service, path, interface, OSSO_BUS_TOP);
-  if (msg == NULL)
-  {
-    g_warning ("failed to create message");
-    return;
-  }
+      priv->app_mgr_proxy = dbus_g_proxy_new_for_name (connection,
+                                                       APP_MGR_DBUS_NAME,
+                                                       APP_MGR_DBUS_PATH,
+                                                       APP_MGR_DBUS_NAME);
+    }
 
-  if (!dbus_connection_send (conn, msg, NULL))
-    g_warning ("dbus_connection_send failed");
-
-  dbus_message_unref (msg);
+  return priv->app_mgr_proxy;
 }
 
 void
 hd_task_manager_launch_task (HDTaskManager *manager,
                              const gchar   *desktop_id)
 {
-  HDTaskManagerPrivate *priv = manager->priv;
-  HDTaskInfo *info;
-  gboolean res = FALSE;
+  DBusGProxy *app_mgr_proxy;
 
   g_return_if_fail (HD_IS_TASK_MANAGER (manager));
   g_return_if_fail (desktop_id);
 
-  /* Lookup task */
-  info = g_hash_table_lookup (priv->available_tasks,
-                              desktop_id);
+  app_mgr_proxy = hd_task_manager_get_app_mgr_proxy (manager);
 
-  /* Return false if task is not available */
-  if (!info)
+  if (app_mgr_proxy)
     {
-      g_warning ("Could not launch %s", desktop_id);
-      return;
+      /* App mgr takes the id without the .desktop suffix */
+      gchar *id = g_strndup (desktop_id, strlen (desktop_id) - strlen (".desktop"));
+
+      dbus_g_proxy_call_no_reply (app_mgr_proxy,
+                                  APP_MGR_LAUNCH_APPLICATION,
+                                  G_TYPE_STRING,
+                                  id,
+                                  G_TYPE_INVALID,
+                                  G_TYPE_INVALID);
+
+      g_free (id);
     }
-
-  if (info->service)
-    {
-      g_debug ("Activating %s: `%s'", info->label, info->service);
-
-      /* launch the application, or if it's already running
-       * move it to the top
-       */
-      hd_task_manager_activate_service (info->service);
-      return;
-    }
-
-#if 0
-  if (hd_wm_is_lowmem_situation ())
-    {
-      if (!tn_close_application_dialog (CAD_ACTION_OPENING))
-        {
-          g_set_error (...);
-          return FALSE;
-        }
-    }
-#endif
-
-  if (info->exec)
-    {
-      gchar *space = strchr (info->exec, ' ');
-      gchar *exec;
-      gint argc;
-      gchar **argv = NULL;
-      GPid child_pid;
-      GError *error = NULL;
-
-      g_debug ("Executing %s: `%s'", info->label, info->exec);
-
-      if (space)
-        {
-          gchar *cmd = g_strndup (info->exec, space - info->exec);
-          gchar *exc = g_find_program_in_path (cmd);
-
-          exec = g_strconcat (exc, space, NULL);
-
-          g_free (cmd);
-          g_free (exc);
-        }
-      else
-        exec = g_find_program_in_path (info->exec);
-
-      if (!g_shell_parse_argv (exec, &argc, &argv, &error))
-        {
-          g_warning ("Could not parse argv. %s", error->message);
-          g_error_free (error);
-          
-          g_free (exec);
-          if (argv)
-            g_strfreev (argv);
-
-          return;
-        }
-
-      res = g_spawn_async (NULL,
-                           argv, NULL,
-                           0,
-                           NULL, NULL,
-                           &child_pid,
-                           &error);
-      if (error)
-        {
-          g_warning ("Could not spawn. %s", error->message);
-          g_error_free (error);
-        }
-
-      g_free (exec);
-
-      if (argv)
-        g_strfreev (argv);
-
-      return;
-    }
-  else
-    {
-#if 0
-      g_set_error (...);
-#endif
-      return;
-    }
-
-  g_assert_not_reached ();
-
-  return;
 }
 

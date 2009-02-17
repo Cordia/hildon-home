@@ -1,3 +1,13 @@
+2009-02-17  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Use the hildon-desktop AppMgr interface to launch applications. Fixes:
+	NB#90450
+
+	* src/hd-task-manager.c (hd_task_manager_dispose): Unref D-Bus AppMgr
+	  proxy.
+	  (hd_task_manager_get_app_mgr_proxy): Connects to D-Bus AppMgr proxy.
+	  (hd_task_manager_launch_task): Use AppMgr to launch the task.
+
 2009-02-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog:
