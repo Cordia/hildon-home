@@ -71,6 +71,16 @@ static void hd_applet_manager_install_applet_from_desktop_file (HDAppletManager 
 G_DEFINE_TYPE (HDAppletManager, hd_applet_manager, G_TYPE_OBJECT);
 
 static void
+hd_plugin_info_free (HDPluginInfo *info)
+{
+  if (!info)
+    return;
+
+  g_free (info->name);
+  g_slice_free (HDPluginInfo, info);
+}
+
+static void
 items_configuration_loaded_cb (HDPluginConfiguration *configuration,
                                GKeyFile              *key_file,
                                HDAppletManager       *manager)
@@ -276,7 +286,8 @@ hd_applet_manager_init (HDAppletManager *manager)
 
   priv->displayed_applets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   priv->used_ids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
-  priv->installed = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  priv->installed = g_hash_table_new_full (g_str_hash, g_str_equal,
+                                           g_free, (GDestroyNotify) hd_plugin_info_free);
 
   priv->model = GTK_TREE_MODEL (gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING));
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),

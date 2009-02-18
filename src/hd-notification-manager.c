@@ -1382,6 +1382,7 @@ hd_notification_manager_call_action (HDNotificationManager *nm,
       dbus_connection_send (dbus_g_connection_get_connection (nm->priv->connection), 
                             message, 
                             NULL);
+      dbus_message_unref (message);
     }
 
   if (hd_notification_get_sender (notification) != NULL)
@@ -1441,5 +1442,6 @@ hd_notification_manager_call_dbus_callback (HDNotificationManager *nm,
       dbus_connection_send (dbus_g_connection_get_connection (nm->priv->connection), 
                             message, 
                             NULL);
+      dbus_message_unref (message);
     }
 }

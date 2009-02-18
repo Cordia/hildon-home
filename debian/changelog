@@ -7,6 +7,8 @@ hildon-home (0.3.13~unreleased) unstable; urgency=low
         * Use the hildon-desktop AppMgr interface to launch applications.
           Fixes: NB#90450
         * Fix Coverity findings. Fixes: NB#102259
+        * Fix some leaks. Fixes: NB#102295, NB#102298, NB#102302, NB#102304,
+          NB#102296
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:19:38 +0200
 

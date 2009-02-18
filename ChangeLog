@@ -1,5 +1,20 @@
 2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-applet-manager.c (hd_plugin_info_free,
+	  hd_applet_manager_init): Do not leak plugin infos. Fixes: NB#102295
+	* src/hd-change-background-dialog.c
+	  (hd_change_background_dialog_append_backgrounds): Do not leak
+	  strings from key file. Fixes: NB#102298
+	* src/hd-incoming-events.c (load_notification_groups): Do not leak
+	  key_file and groups_file in error cases. Fixes: NB#102302
+	* src/hd-notification-manager.c (hd_notification_manager_call_action,
+	  hd_notification_manager_call_dbus_callback): Do not leak D-Bus
+	  messages. Fixes: NB#102304
+	* src/hd-task-manager.c (hd_task_manager_load_desktop_file): Do not
+	  leak desktop_id. Fixes: NB#102296
+
+2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-applet-manager.c (items_configuration_loaded_cb): Fix
 	missing error argument (Coverity). Fixes: NB#102259
 

@@ -448,6 +448,11 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog *dialog
       g_key_file_free (keyfile);
       g_free (type);
       g_free (name);
+      g_free (image);
+      g_free (image_1);
+      g_free (image_2);
+      g_free (image_3);
+      g_free (image_4);
     }
   g_dir_close (dir);
 }

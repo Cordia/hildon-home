@@ -176,7 +176,7 @@ hd_task_manager_load_desktop_file (const gchar *filename)
       info = g_slice_new0 (HDTaskInfo);
 
       g_hash_table_insert (priv->available_tasks,
-                           desktop_id,
+                           g_strdup (desktop_id),
                            info);
     }
   else
@@ -273,6 +273,7 @@ cleanup:
   g_free (type);
   g_free (translation_domain);
   g_free (name);
+  g_free (desktop_id);
   if (pixbuf)
     g_object_unref (pixbuf);
 

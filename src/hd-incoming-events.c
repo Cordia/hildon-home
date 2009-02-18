@@ -549,6 +549,7 @@ load_notification_groups (HDIncomingEvents *ie)
   if (!key_file)
     {
       g_warning ("Could not load notifications group file");
+      g_object_unref (groups_file);
       return;
     }
 
@@ -559,6 +560,8 @@ load_notification_groups (HDIncomingEvents *ie)
   if (groups == NULL)
     {
       g_warning ("Notification groups file is empty");
+      g_object_unref (groups_file);
+      g_key_file_free (key_file);
       return;
     }
 
