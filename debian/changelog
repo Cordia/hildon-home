@@ -6,6 +6,7 @@ hildon-home (0.3.13~unreleased) unstable; urgency=low
         * Start hildon-home as #20 instead of #22. Fixes: NB#101216
         * Use the hildon-desktop AppMgr interface to launch applications.
           Fixes: NB#90450
+        * Fix Coverity findings. Fixes: NB#102259
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:19:38 +0200
 

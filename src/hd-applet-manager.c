@@ -141,9 +141,9 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
           name = g_key_file_get_string (key_file,
                                         G_KEY_FILE_DESKTOP_GROUP,
                                         G_KEY_FILE_DESKTOP_KEY_NAME,
-                                        NULL);
+                                        &error);
 
-          if (!name)
+          if (error)
             {
               g_warning ("Could not read plugin .desktop file %s. %s",
                          plugins[i],

@@ -1,3 +1,8 @@
+2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-applet-manager.c (items_configuration_loaded_cb): Fix
+	missing error argument (Coverity). Fixes: NB#102259
+
 2009-02-17  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Use the hildon-desktop AppMgr interface to launch applications. Fixes:
