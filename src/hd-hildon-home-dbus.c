@@ -52,6 +52,7 @@ struct _HDHildonHomeDBusPrivate
   DBusGConnection *connection;
 
   DBusGProxy      *hd_home_proxy;
+  DBusGProxy      *contact_proxy;
 
   GtkWidget       *menu;
 };
@@ -61,6 +62,10 @@ struct _HDHildonHomeDBusPrivate
 
 #define HD_HILDON_DESKTOP_HOME_DBUS_NAME  "com.nokia.HildonDesktop.Home" 
 #define HD_HILDON_DESKTOP_HOME_DBUS_PATH  "/com/nokia/HildonDesktop/Home"
+
+#define CONTACT_DBUS_NAME "com.nokia.osso_addressbook"
+#define CONTACT_DBUS_PATH "/"
+#define CONTACT_DBUS_ADD_SHORTCUT "add_shortcut"
 
 G_DEFINE_TYPE (HDHildonHomeDBus, hd_hildon_home_dbus, G_TYPE_OBJECT);
 
@@ -120,6 +125,10 @@ hd_hildon_home_dbus_init (HDHildonHomeDBus *dbus)
                                                          HD_HILDON_DESKTOP_HOME_DBUS_NAME,
                                                          HD_HILDON_DESKTOP_HOME_DBUS_PATH,
                                                          HD_HILDON_DESKTOP_HOME_DBUS_NAME);
+  dbus->priv->contact_proxy = dbus_g_proxy_new_for_name (dbus->priv->connection,
+                                                         CONTACT_DBUS_NAME,
+                                                         CONTACT_DBUS_PATH,
+                                                         CONTACT_DBUS_NAME);
 }
 
 static void 
@@ -131,6 +140,12 @@ hd_hildon_home_dbus_dispose (GObject *object)
     {
       g_object_unref (priv->hd_home_proxy);
       priv->hd_home_proxy = NULL;
+    }
+
+  if (priv->contact_proxy)
+    {
+      g_object_unref (priv->contact_proxy);
+      priv->contact_proxy = NULL;
     }
 
   if (priv->menu)
@@ -208,7 +223,12 @@ static void
 select_contacts_clicked_cb (GtkButton        *button,
                             HDHildonHomeDBus *dbus)
 {
-  g_debug ("select_contacts_clicked_cb: NOT IMPLEMENTED YET");
+  HDHildonHomeDBusPrivate *priv = dbus->priv;
+
+  dbus_g_proxy_call_no_reply (priv->contact_proxy,
+                              CONTACT_DBUS_ADD_SHORTCUT,
+                              G_TYPE_INVALID,
+                              G_TYPE_INVALID);
 }
 
 static void

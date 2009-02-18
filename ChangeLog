@@ -1,5 +1,11 @@
 2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_init,
+	hd_hildon_home_dbus_dispose, select_contacts_clicked_cb): Add call to
+	com.nokia.osso_addressbook.add_shortcut. Fixes: NB#102323
+
+2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-applet-manager.c (hd_plugin_info_free,
 	  hd_applet_manager_init): Do not leak plugin infos. Fixes: NB#102295
 	* src/hd-change-background-dialog.c

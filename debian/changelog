@@ -9,6 +9,8 @@ hildon-home (0.3.13~unreleased) unstable; urgency=low
         * Fix Coverity findings. Fixes: NB#102259
         * Fix some leaks. Fixes: NB#102295, NB#102298, NB#102302, NB#102304,
           NB#102296
+        * Add call to com.nokia.osso_addressbook.add_shortcut. Fixes:
+          NB#102323
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:19:38 +0200
 
