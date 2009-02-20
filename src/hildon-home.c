@@ -36,6 +36,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#include "hd-backgrounds.h"
 #include "hd-notification-manager.h"
 #include "hd-system-notifications.h"
 #include "hd-incoming-events.h"
@@ -121,6 +122,9 @@ main (int argc, char **argv)
   signal (SIGTERM, signal_handler);
 
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
+
+  /* Backgrounds */
+  hd_backgrounds_startup (hd_backgrounds_get ());
 
   /* Load operator applet */
   load_operator_applet ();

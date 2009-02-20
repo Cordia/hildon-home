@@ -50,6 +50,10 @@ hildon_home_SOURCES = \
 	hd-add-task-dialog.h		\
 	hd-applet-manager.c		\
 	hd-applet-manager.h		\
+	hd-background-helper.c		\
+	hd-background-helper.h		\
+	hd-backgrounds.c		\
+	hd-backgrounds.h		\
 	hd-bookmark-shortcut.c		\
 	hd-bookmark-shortcut.h		\
 	hd-change-background-dialog.c	\

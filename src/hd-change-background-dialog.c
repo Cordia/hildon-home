@@ -33,6 +33,8 @@
 
 #include <gconf/gconf-client.h>
 
+#include "hd-backgrounds.h"
+
 #include "hd-change-background-dialog.h"
 
 /* Add Image dialog */
@@ -256,8 +258,6 @@ hd_change_background_dialog_response (GtkDialog *dialog,
           gchar *image[5];
           guint i;
           guint current_view;
-          GConfClient *client;
-          gchar *key;
           const gchar *value;
           GError *error = NULL;
 
@@ -293,33 +293,19 @@ hd_change_background_dialog_response (GtkDialog *dialog,
           /* ID is from 0 to 3 */
           current_view++;
 
-          /* GConf client, key, value */
-          client = gconf_client_get_default ();
-
-          key = GCONF_BACKGROUND_KEY (current_view);
 
           if (image[current_view])
             value = image[current_view];
           else
             value = image[0];
 
-          /* Set GConf key/value */
-          gconf_client_set_string (client,
-                                   key,
-                                   value,
-                                   &error);
-          if (error)
-            {
-              g_warning ("Could not set background image for view %u, '%s'. %s",
-                         current_view, key, error->message);
-              g_error_free (error);
-            }
+          hd_backgrounds_set_background (hd_backgrounds_get (),
+                                         current_view,
+                                         value);
 
           /* free memory */
           for (i = 0; i < 5; i++)
             g_free (image[i]);
-          g_object_unref (client);
-          g_free (key);
         }
 
       gtk_widget_destroy (GTK_WIDGET (dialog));

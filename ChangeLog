@@ -1,3 +1,24 @@
+2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Implement background image caching. Fixes: NB#96528, NB#96532,
+	NB#97364, NB#100499.
+
+	* src/Makefile.am: Add new files.
+	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_init): Use
+	  cached images as thumbnails.
+	* src/hd-change-background-dialog.c
+	  (hd_change_background_dialog_response): Call into HDBackgrounds to
+	  update background.
+	* src/hildon-home.c (main): Create HDBackgrounds instance
+	* src/hd-backgrounds.c (added):
+	* src/hd-backgrounds.h (added): HDBackgrounds cached backgrounds
+	  manager.
+	* src/hd-background-helper.c (added):
+	* src/hd-background-helper.h (added): Async functions to create cached
+	  images.
+
+	* debian/changelog: Update.
+
 2009-02-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_init,

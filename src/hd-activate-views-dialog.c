@@ -230,77 +230,25 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   /* Append views */
   for (i = 1; i <= HD_MAX_HOME_VIEWS; i++)
     {
-      gchar *key;
       gchar *bg_image;
-      GdkPixbuf *pixbuf = NULL;
+      GdkPixbuf *pixbuf;
       GtkTreeIter iter;
-      GtkTreePath *path = NULL;
+      GtkTreePath *path;
 
-      /* Try to get the background image from GConf */
-      key = GCONF_BACKGROUND_KEY (i);
-      bg_image = gconf_client_get_string (priv->gconf_client,
-                                          key,
-                                          &error);
-      g_free (key);
+      bg_image = g_strdup_printf ("%s/.backgrounds/background-%u.png",
+                                  g_get_home_dir (),
+                                  i);
 
-      if (error)
-        {
-          g_warning ("Could not get background image for view %u, '%s'. %s",
-                     i, key, error->message);
-          g_error_free (error);
-          error = NULL;
-        }
-
-      if (!bg_image)
-        {
-          gchar *desktop_key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, i);
-
-          /* Try to get background from current theme */
-          if (!current_theme_backgrounds)
-            {
-              current_theme_backgrounds = g_key_file_new ();
-              g_key_file_load_from_file (current_theme_backgrounds,
-                                         BACKGROUNDS_DESKTOP_FILE,
-                                         G_KEY_FILE_NONE,
-                                         NULL);
-            }
-
-          bg_image = g_key_file_get_string (current_theme_backgrounds,
-                                            G_KEY_FILE_DESKTOP_GROUP,
-                                            desktop_key,
-                                            NULL);
-
-          /* Try to get background from default theme */
-          if (!bg_image)
-            {
-              if (!default_theme_backgrounds)
-                {
-                  default_theme_backgrounds = g_key_file_new ();
-                  g_key_file_load_from_file (default_theme_backgrounds,
-                                             BACKGROUNDS_DEFAULT_DESKTOP_FILE,
-                                             G_KEY_FILE_NONE,
-                                             NULL);
-                }
-
-              bg_image = g_key_file_get_string (default_theme_backgrounds,
-                                                G_KEY_FILE_DESKTOP_GROUP,
-                                                desktop_key,
-                                                NULL);
-            }
-
-          g_free (desktop_key);
-        }
-
-      if (bg_image)
-        pixbuf = gdk_pixbuf_new_from_file_at_scale (bg_image, 125, 75, TRUE, &error);
+      pixbuf = gdk_pixbuf_new_from_file_at_scale (bg_image, 125, 75, TRUE, &error);
 
       if (error)
         {
           g_warning ("Could not get background image for view %u, '%s'. %s",
                      i, bg_image, error->message);
-          g_error_free (error);
-          error = NULL;
+          g_clear_error (&error);
         }
+
+      g_free (bg_image);
 
       if (!pixbuf)
         {

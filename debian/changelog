@@ -11,6 +11,8 @@ hildon-home (0.3.13~unreleased) unstable; urgency=low
           NB#102296
         * Add call to com.nokia.osso_addressbook.add_shortcut. Fixes:
           NB#102323
+        * Implement background image caching. Fixes: NB#96528, NB#96532,
+          NB#97364, NB#100499
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:19:38 +0200
 
