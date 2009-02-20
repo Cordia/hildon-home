@@ -235,9 +235,9 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                   -1);
 
               hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
-                                                                        0,
-                                                                        &iter,
-                                                                        TRUE);
+                                                 0,
+                                                 &iter,
+                                                 TRUE);
 
               g_free (uri);
               g_free (filename);
@@ -399,25 +399,25 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog *dialog
                                       KEY_FILE_BACKGROUND_KEY_ORDER,
                                       NULL);
       image = g_key_file_get_string (keyfile,
-                                      G_KEY_FILE_DESKTOP_GROUP,
-                                      KEY_FILE_BACKGROUND_KEY_FILE,
-                                      NULL);
+                                     G_KEY_FILE_DESKTOP_GROUP,
+                                     KEY_FILE_BACKGROUND_KEY_FILE,
+                                     NULL);
       image_1 = g_key_file_get_string (keyfile,
-                                        G_KEY_FILE_DESKTOP_GROUP,
-                                        KEY_FILE_BACKGROUND_KEY_FILE_1,
-                                        NULL);
+                                       G_KEY_FILE_DESKTOP_GROUP,
+                                       KEY_FILE_BACKGROUND_KEY_FILE_1,
+                                       NULL);
       image_2 = g_key_file_get_string (keyfile,
-                                        G_KEY_FILE_DESKTOP_GROUP,
-                                        KEY_FILE_BACKGROUND_KEY_FILE_2,
-                                        NULL);
+                                       G_KEY_FILE_DESKTOP_GROUP,
+                                       KEY_FILE_BACKGROUND_KEY_FILE_2,
+                                       NULL);
       image_3 = g_key_file_get_string (keyfile,
-                                        G_KEY_FILE_DESKTOP_GROUP,
-                                        KEY_FILE_BACKGROUND_KEY_FILE_3,
-                                        NULL);
+                                       G_KEY_FILE_DESKTOP_GROUP,
+                                       KEY_FILE_BACKGROUND_KEY_FILE_3,
+                                       NULL);
       image_4 = g_key_file_get_string (keyfile,
-                                        G_KEY_FILE_DESKTOP_GROUP,
-                                        KEY_FILE_BACKGROUND_KEY_FILE_4,
-                                        NULL);
+                                       G_KEY_FILE_DESKTOP_GROUP,
+                                       KEY_FILE_BACKGROUND_KEY_FILE_4,
+                                       NULL);
 
       gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
                                          NULL,
@@ -442,7 +442,7 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog *dialog
     }
   g_dir_close (dir);
 }
- 
+
 static void
 hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
 {
@@ -497,7 +497,7 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   /* Append backgrounds from background dir */
   hd_change_background_dialog_append_backgrounds (dialog,
                                                   DIR_BACKGROUNDS);
- 
+
   /* Sort by order */
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
                                         COL_ORDER,
