@@ -105,15 +105,15 @@ system_notification_dialog_response (GtkWidget      *widget,
 static gboolean
 hd_desktop_pulsate_progress_bar (gpointer user_data)
 {
-  if (GTK_IS_PROGRESS_BAR (user_data)) 
-    {
-      gtk_progress_bar_pulse (GTK_PROGRESS_BAR (user_data));
-      return TRUE;
-    }
-  else
-    {
-      return FALSE;
-    }
+  gtk_progress_bar_pulse (GTK_PROGRESS_BAR (user_data));
+  return TRUE;
+}
+
+static void
+note_destroy_cb (GtkObject *note,
+                 gpointer   user_data)
+{
+  g_source_remove (GPOINTER_TO_UINT (user_data));
 }
 
 static GtkWidget *
@@ -130,6 +130,7 @@ create_note_dialog (const gchar  *summary,
   if (dialog_type == 4)
     {
       GtkWidget *progressbar;
+      guint timeout_id;
 
       progressbar = gtk_progress_bar_new ();
 
@@ -139,7 +140,10 @@ create_note_dialog (const gchar  *summary,
                                                        body,
                                                        GTK_PROGRESS_BAR (progressbar));
 
-      g_timeout_add (100, hd_desktop_pulsate_progress_bar, progressbar);
+      timeout_id = gdk_threads_add_timeout (100, hd_desktop_pulsate_progress_bar, progressbar);
+      g_signal_connect (note, "destroy",
+                        G_CALLBACK (note_destroy_cb),
+                        GUINT_TO_POINTER (timeout_id));
     }
   else
     {
