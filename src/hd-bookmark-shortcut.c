@@ -37,8 +37,8 @@
 #define SHORTCUT_WIDTH 176
 #define SHORTCUT_HEIGHT 146
 
-#define THUMBNAIL_WIDTH 160
-#define THUMBNAIL_HEIGHT 96
+#define THUMBNAIL_WIDTH 160.0
+#define THUMBNAIL_HEIGHT 96.0
 
 #define BORDER_WIDTH_LEFT 8
 #define BORDER_WIDTH_TOP 6
@@ -77,11 +77,11 @@ struct _HDBookmarkShortcutPrivate
 
   GConfClient *gconf_client;
 
-  GdkPixbuf *thumbnail_icon;
+  cairo_surface_t *thumbnail_icon;
 
-  GdkPixbuf *bg_image;
-  GdkPixbuf *bg_active;
-  GdkPixbuf *thumb_mask;
+  cairo_surface_t *bg_image;
+  cairo_surface_t *bg_active;
+  cairo_surface_t *thumb_mask;
 };
 
 G_DEFINE_TYPE (HDBookmarkShortcut, hd_bookmark_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
@@ -121,7 +121,7 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
 
   /* Get icon path from GConf */
   if (priv->thumbnail_icon)
-    priv->thumbnail_icon = (g_object_unref (priv->thumbnail_icon), NULL);
+    priv->thumbnail_icon = (cairo_surface_destroy (priv->thumbnail_icon), NULL);
 
   key = g_strdup_printf (BOOKMARKS_GCONF_KEY_ICON, plugin_id);
   value = gconf_client_get_string (priv->gconf_client,
@@ -140,7 +140,7 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
   else
     {
       /* Set icon */
-      priv->thumbnail_icon = gdk_pixbuf_new_from_file_at_size (value, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, NULL);
+      priv->thumbnail_icon = cairo_image_surface_create_from_png (value);
     }
 
   /* Free memory */
@@ -187,16 +187,16 @@ hd_bookmark_shortcut_dispose (GObject *object)
     priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
 
   if (priv->bg_image)
-    priv->bg_image = (g_object_unref (priv->bg_image), NULL);
+    priv->bg_image = (cairo_surface_destroy (priv->bg_image), NULL);
 
   if (priv->bg_active)
-    priv->bg_active = (g_object_unref (priv->bg_active), NULL);
+    priv->bg_active = (cairo_surface_destroy (priv->bg_active), NULL);
 
   if (priv->thumb_mask)
-    priv->thumb_mask = (g_object_unref (priv->thumb_mask), NULL);
+    priv->thumb_mask = (cairo_surface_destroy (priv->thumb_mask), NULL);
 
   if (priv->thumbnail_icon)
-    priv->thumbnail_icon = (g_object_unref (priv->thumbnail_icon), NULL);
+    priv->thumbnail_icon = (cairo_surface_destroy (priv->thumbnail_icon), NULL);
 
   /* Chain up */
   G_OBJECT_CLASS (hd_bookmark_shortcut_parent_class)->dispose (object);
@@ -304,8 +304,7 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
 {
   HDBookmarkShortcutPrivate *priv = HD_BOOKMARK_SHORTCUT (widget)->priv;
   cairo_t *cr;
-  cairo_surface_t *mask = NULL;
-  GdkPixbuf *bg;
+  cairo_surface_t *bg;
 
   cr = gdk_cairo_create (GDK_DRAWABLE (widget->window));
   gdk_cairo_region (cr, event->region);
@@ -316,21 +315,6 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
   else
     bg = priv->bg_image;
 
-  if (priv->thumb_mask)
-    {
-      gint w, h;
-      cairo_t *cr_mask;
-
-      w = gdk_pixbuf_get_width (priv->thumb_mask);
-      h = gdk_pixbuf_get_height (priv->thumb_mask);
-      mask = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
-      cr_mask = cairo_create (mask);
-      gdk_cairo_set_source_pixbuf (cr_mask, priv->thumb_mask, 0.0, 0.0);
-      cairo_paint (cr_mask);
-
-      cairo_destroy (cr_mask);
-    }
-
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
 
   cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
@@ -338,25 +322,35 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
 
   if (priv->thumbnail_icon)
     {
-      gdk_cairo_set_source_pixbuf (cr,
-                                   priv->thumbnail_icon,
-                                   BORDER_WIDTH_LEFT, BORDER_WIDTH_TOP);
-      if (mask)
+      int w, h;
+
+      w = cairo_image_surface_get_width (priv->thumbnail_icon);
+      h = cairo_image_surface_get_height (priv->thumbnail_icon);
+
+      cairo_save (cr);
+      cairo_scale (cr, THUMBNAIL_WIDTH/w, THUMBNAIL_HEIGHT/h);
+
+      cairo_set_source_surface (cr,
+                                priv->thumbnail_icon,
+                                BORDER_WIDTH_LEFT*w/THUMBNAIL_WIDTH,
+                                BORDER_WIDTH_TOP*h/THUMBNAIL_HEIGHT);
+      if (priv->thumb_mask)
         cairo_mask_surface (cr,
-                            mask,
-                            BORDER_WIDTH_LEFT, BORDER_WIDTH_TOP);
+                            priv->thumb_mask,
+                            BORDER_WIDTH_LEFT*w/THUMBNAIL_WIDTH,
+                            BORDER_WIDTH_TOP*h/THUMBNAIL_HEIGHT);
+
+      cairo_restore (cr);
     }
 
   cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
   if (bg)
     {
-      gdk_cairo_set_source_pixbuf (cr, bg, 0.0, 0.0);
+      cairo_set_source_surface (cr, bg, 0.0, 0.0);
       cairo_paint (cr);
     }
 
-  if (mask)
-    cairo_surface_destroy (mask);
   cairo_destroy (cr);
 
   return GTK_WIDGET_CLASS (hd_bookmark_shortcut_parent_class)->expose_event (widget,
@@ -557,9 +551,9 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   g_signal_connect (applet, "delete-event",
                     G_CALLBACK (delete_event_cb), applet);
 
-  priv->bg_image = gdk_pixbuf_new_from_file (BACKGROUND_IMAGE_FILE, NULL);
-  priv->bg_active = gdk_pixbuf_new_from_file (BACKGROUND_ACTIVE_IMAGE_FILE, NULL);
-  priv->thumb_mask = gdk_pixbuf_new_from_file (THUMBNAIL_MASK_FILE, NULL);
+  priv->bg_image = cairo_image_surface_create_from_png (BACKGROUND_IMAGE_FILE);
+  priv->bg_active = cairo_image_surface_create_from_png (BACKGROUND_ACTIVE_IMAGE_FILE);
+  priv->thumb_mask = cairo_image_surface_create_from_png (THUMBNAIL_MASK_FILE);
 
   priv->gconf_client = gconf_client_get_default ();
 }

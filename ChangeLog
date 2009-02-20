@@ -1,5 +1,12 @@
 2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_update_from_gconf,
+	  hd_bookmark_shortcut_dispose, hd_bookmark_shortcut_expose_event,
+	  hd_bookmark_shortcut_init): Use cairo surfaces for the images
+	  instead of GdkPixbufs. Fixes: NB#102307
+
+2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* debian/changelog: Update.
 
 	* src/hd-system-notifications.c (hd_desktop_pulsate_progress_bar,
