@@ -1,5 +1,14 @@
 2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-activate-views-dialog.c (only_selected,
+	  hd_activate_views_dialog_dispose, selection_changed_cb,
+	  hd_activate_views_dialog_init): Do not allow to uncheck all active
+	  views. Fixes: NB#102427
+
+	* debian/changelog: Update.
+
+2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_update_from_gconf,
 	  hd_bookmark_shortcut_dispose, hd_bookmark_shortcut_expose_event,
 	  hd_bookmark_shortcut_init): Use cairo surfaces for the images

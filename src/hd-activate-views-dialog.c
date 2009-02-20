@@ -65,6 +65,8 @@ struct _HDActivateViewsDialogPrivate
 
   GtkWidget    *icon_view;
 
+  GtkTreePath  *only_selected;
+
   GConfClient  *gconf_client;
 };
 
@@ -80,6 +82,9 @@ hd_activate_views_dialog_dispose (GObject *object)
 
   if (priv->gconf_client)
     priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
+
+  if (priv->only_selected)
+    priv->only_selected = (gtk_tree_path_free (priv->only_selected), NULL);
 
   G_OBJECT_CLASS (hd_activate_views_dialog_parent_class)->dispose (object);
 }
@@ -133,6 +138,35 @@ hd_activate_views_dialog_response (GtkDialog *dialog,
 }
 
 static void
+selection_changed_cb (GtkIconView           *icon_view,
+                      HDActivateViewsDialog *dialog)
+{
+  HDActivateViewsDialogPrivate *priv = dialog->priv;
+  GList *selected;
+
+  /* Select at least one item and/or store the only selected item */
+  selected = gtk_icon_view_get_selected_items (icon_view);
+
+  g_debug ("%s, %p", __FUNCTION__, selected);
+  if (selected)
+    {
+      if (priv->only_selected)
+        priv->only_selected = (gtk_tree_path_free (priv->only_selected), NULL);
+
+      if (selected->next)
+        g_list_foreach (selected, (GFunc) gtk_tree_path_free, NULL);
+      else
+        priv->only_selected = selected->data;
+    }
+  else
+    {
+      gtk_icon_view_select_path (icon_view,
+                                 priv->only_selected);
+    }
+  g_list_free (selected);
+}
+
+static void
 hd_activate_views_dialog_class_init (HDActivateViewsDialogClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -157,6 +191,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gboolean none_active = TRUE;
   GKeyFile *current_theme_backgrounds = NULL;
   GKeyFile *default_theme_backgrounds = NULL;
+  GList *selected;
   GError *error = NULL;
 
   dialog->priv = priv;
@@ -284,6 +319,31 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
       if (path)
         gtk_tree_path_free (path);
     }
+
+  g_signal_connect (priv->icon_view, "selection-changed",
+                    G_CALLBACK (selection_changed_cb), dialog);
+
+  /* Select at least one item and/or store the only selected item */
+  selected = gtk_icon_view_get_selected_items (GTK_ICON_VIEW (priv->icon_view));
+  if (selected)
+    {
+      if (selected->next)
+        {
+          priv->only_selected = NULL;
+          g_list_foreach (selected, (GFunc) gtk_tree_path_free, NULL);
+        }
+      else
+        {
+          priv->only_selected = selected->data;
+        }
+    }
+  else
+    {
+      priv->only_selected = gtk_tree_path_new_first ();
+      gtk_icon_view_select_path (GTK_ICON_VIEW (priv->icon_view),
+                                 priv->only_selected);
+    }
+  g_list_free (selected);
 
   gtk_widget_show (priv->icon_view);
 
