@@ -110,8 +110,8 @@ hd_desktop_pulsate_progress_bar (gpointer user_data)
 }
 
 static void
-note_destroy_cb (GtkObject *note,
-                 gpointer   user_data)
+progressbar_destroy_cb (GtkObject *progressbar,
+                        gpointer   user_data)
 {
   g_source_remove (GPOINTER_TO_UINT (user_data));
 }
@@ -141,8 +141,8 @@ create_note_dialog (const gchar  *summary,
                                                        GTK_PROGRESS_BAR (progressbar));
 
       timeout_id = gdk_threads_add_timeout (100, hd_desktop_pulsate_progress_bar, progressbar);
-      g_signal_connect (note, "destroy",
-                        G_CALLBACK (note_destroy_cb),
+      g_signal_connect (progressbar, "destroy",
+                        G_CALLBACK (progressbar_destroy_cb),
                         GUINT_TO_POINTER (timeout_id));
     }
   else

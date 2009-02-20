@@ -13,6 +13,8 @@ hildon-home (0.3.13~unreleased) unstable; urgency=low
           NB#102323
         * Implement background image caching. Fixes: NB#96528, NB#96532,
           NB#97364, NB#100499
+        * Fix Potential crash in hd-system-notifications.c (progress bar
+          pulsing). Fixes: NB#102472
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:19:38 +0200
 

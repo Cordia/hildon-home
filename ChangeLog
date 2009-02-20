@@ -1,5 +1,14 @@
 2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Update.
+
+	* src/hd-system-notifications.c (hd_desktop_pulsate_progress_bar,
+	  progressbar_destroy_cb, create_note_dialog): Fix Potential crash in
+	  hd-system-notifications.c (progress bar pulsing). Remove source on
+	  destroy of the progress bar. Fixes: NB#102472
+
+2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Implement background image caching. Fixes: NB#96528, NB#96532,
 	NB#97364, NB#100499.
 
