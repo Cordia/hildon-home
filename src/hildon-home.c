@@ -107,7 +107,9 @@ main (int argc, char **argv)
   bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
   textdomain (GETTEXT_PACKAGE);
 
-  g_thread_init (NULL);
+  /* Initialize threads */
+  if (!g_thread_supported ())
+    g_thread_init (NULL);
 
   /* Initialize Gtk+ */
   gtk_init (&argc, &argv);
@@ -146,7 +148,9 @@ main (int argc, char **argv)
                         &error);
   if (error)
     {
-      g_warning ("Could not add gconf watch for dir " HD_GCONF_DIR_HILDON_HOME ". %s", error->message);
+      g_warning ("Could not add gconf watch for dir %s. %s",
+                 HD_GCONF_DIR_HILDON_HOME,
+                 error->message);
       g_error_free (error);
     }
   g_object_unref (client);

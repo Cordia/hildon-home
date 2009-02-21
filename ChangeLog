@@ -1,3 +1,19 @@
+2009-02-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Make hildon-home maemo-launched. Fixes: NB#101032
+
+	* configure.ac: Add support for --enable-maemo-launcher flag.
+
+	* debian/rules: Add support for maemo launcher.
+	
+	* debian/control: Add maemo-launcher-dev build-dep.
+
+	* src/Makefile.am: Add maemo launcher CFLAGS/LDFLAGS.
+
+	* src/hildon-home.c: Add g_thread_supported() check.
+
+	* debian/changelog: Update.
+
 2009-02-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-activate-views-dialog.c (only_selected,

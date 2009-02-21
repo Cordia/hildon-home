@@ -3,8 +3,13 @@ include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/class/gnome.mk
 
+ifeq (,$(findstring nolauncher,$(DEB_BUILD_OPTIONS)))
+DEB_CONFIGURE_EXTRA_FLAGS = --enable-maemo-launcher
+endif
+
 makebuilddir::
 	AUTOGEN_SUBDIR_MODE=1 NOCONFIGURE=yes ./autogen.sh
 
 binary-install/hildon-home::
 	dh_installxsession -u 'post 20'
+	dh_maemolauncher

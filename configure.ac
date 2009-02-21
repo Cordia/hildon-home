@@ -110,6 +110,22 @@ AC_SUBST(hildonnotificationdesktopentrydir)
 hildondesktoplibdir=`pkg-config libhildondesktop-1 --variable=hildondesktoplibdir`
 AC_SUBST(hildondesktoplibdir)
 
+# Maemolauncher
+AC_ARG_ENABLE([maemo-launcher],
+              [AS_HELP_STRING([--enable-maemo-launcher],
+                              [build with maemo-launcher support])],
+                              [case "${enableval}" in
+                               yes) maemo_launcher=true ;;
+                               no)  maemo_launcher=false ;;
+                               *) AC_MSG_ERROR([bad value ${enableval} for --enable-maemo-launcher]) ;; esac], [maemo_launcher=false])
+
+if test x$maemo_launcher = xtrue
+then
+	PKG_CHECK_MODULES(MAEMO_LAUNCHER, [maemo-launcher-app])
+	AC_SUBST(MAEMO_LAUNCHER_CFLAGS)
+	AC_SUBST(MAEMO_LAUNCHER_LIBS)
+fi
+
 AC_OUTPUT([
 Makefile
 com.nokia.HildonHome.service

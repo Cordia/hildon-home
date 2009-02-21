@@ -10,7 +10,8 @@ hildon_home_CFLAGS = \
 	$(HILDON_HOME_CFLAGS)							\
 	-DHD_DESKTOP_CONFIG_PATH=\"$(hildondesktopconfdir)\"			\
 	-D_XOPEN_SOURCE=500							\
-	-DHD_APPLICATIONS_DIR=\"$(datadir)/applications/hildon\"
+	-DHD_APPLICATIONS_DIR=\"$(datadir)/applications/hildon\"		\
+	$(MAEMO_LAUNCHER_CFLAGS)
 
 BUILT_SOURCES =				\
 	hd-hildon-home-dbus-glue.h	\
@@ -77,8 +78,8 @@ hildon_home_SOURCES = \
 	hildon-home.c
 
 hildon_home_LDFLAGS = \
-	-rdynamic			\
-	$(HILDON_HOME_LIBS)
+	$(HILDON_HOME_LIBS)		\
+	$(MAEMO_LAUNCHER_LIBS)
 
 noinst_PROGRAMS = test-incoming-event
 
