@@ -294,13 +294,15 @@ create_cached_background (HDBackgrounds *backgrounds,
                           guint          view,
                           const gchar   *uri,
                           gboolean       display_note,
-                          gboolean       store_to_gconf)
+                          gboolean       write_to_gconf)
 {
   HDBackgroundsPrivate *priv = backgrounds->priv;
   HDBackgroundData *data = g_new0 (HDBackgroundData, 1);
 
   data->uri = g_strdup (uri);
   data->view = view;
+
+  data->write_to_gconf = write_to_gconf;
 
   data->cancellable = g_cancellable_new ();
   if (display_note)

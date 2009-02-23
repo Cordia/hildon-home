@@ -1,3 +1,8 @@
+2009-02-23  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-backgrounds.c (create_cached_background): Fix writing changed
+	background to GConf.
+
 2009-02-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.13
