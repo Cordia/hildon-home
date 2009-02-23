@@ -1,4 +1,4 @@
-hildon-home (0.3.13~unreleased) unstable; urgency=low
+hildon-home (0.3.13) unstable; urgency=low
 
   Jan Arne Petersen  <jpetersen@openismus.com>
         * Fix extended notifications support in task switcher notifications.
@@ -19,7 +19,7 @@ hildon-home (0.3.13~unreleased) unstable; urgency=low
         * Do not allow to uncheck all active views. Fixes: NB#102427
         * Make hildon-home maemo-launched. Fixes: NB#101032
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 11 Feb 2009 09:19:38 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Feb 2009 12:12:57 +0200
 
 hildon-home (0.3.12) unstable; urgency=low
 

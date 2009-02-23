@@ -1,3 +1,8 @@
+2009-02-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.13
+	* configure.ac: 0.3.13
+
 2009-02-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Make hildon-home maemo-launched. Fixes: NB#101032
