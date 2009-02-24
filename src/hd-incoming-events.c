@@ -31,6 +31,9 @@
 
 #include <hildon/hildon.h>
 
+#include <dbus/dbus-glib-bindings.h>
+#include <mce/dbus-names.h>
+
 #include "hd-incoming-event-window.h"
 #include "hd-notification-manager.h"
 
@@ -72,6 +75,8 @@ struct _HDIncomingEventsPrivate
   GPtrArray       *plugins;
 
   HDPluginManager *plugin_manager;
+
+  DBusGProxy      *mce_proxy;
 };
 
 G_DEFINE_TYPE (HDIncomingEvents, hd_incoming_events, G_TYPE_OBJECT);
@@ -388,6 +393,11 @@ preview_window_destroy (GtkWidget        *widget,
       if (GTK_IS_WIDGET (next_preview))
         {
           gtk_widget_show (next_preview);
+
+          /* Send dbus request to mce to turn display backlight on */
+          if (priv->mce_proxy)
+            dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
+                                        G_TYPE_INVALID, G_TYPE_INVALID);
           break;
         }
       else
@@ -483,7 +493,12 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
 
   /* Show window when queue is empty */
   if (g_queue_is_empty (priv->preview_queue))
-    gtk_widget_show (preview_window); 
+    gtk_widget_show (preview_window);
+
+  /* Send dbus request to mce to turn display backlight on */
+  if (priv->mce_proxy)
+    dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
+                                G_TYPE_INVALID, G_TYPE_INVALID);
 
   /* Push window on queue */
   g_queue_push_tail (priv->preview_queue, preview_window);
@@ -496,6 +511,9 @@ hd_incoming_events_dispose (GObject *object)
 
   if (priv->plugin_manager)
     priv->plugin_manager = (g_object_unref (priv->plugin_manager), NULL);
+
+  if (priv->mce_proxy)
+    priv->mce_proxy = (g_object_unref (priv->mce_proxy), NULL);
 
   G_OBJECT_CLASS (hd_incoming_events_parent_class)->dispose (object);
 }
@@ -704,6 +722,8 @@ static void
 hd_incoming_events_init (HDIncomingEvents *ie)
 {
   HDIncomingEventsPrivate *priv;
+  DBusGConnection *connection;
+  GError *error = NULL;
 
   priv = ie->priv = HD_INCOMING_EVENTS_GET_PRIVATE (ie);
 
@@ -732,6 +752,22 @@ hd_incoming_events_init (HDIncomingEvents *ie)
                            G_CALLBACK (hd_incoming_events_notified), ie, 0);
 
   load_notification_groups (ie);
+
+  /* Get D-Bus proxy for mce calls */
+  connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
+
+  if (error)
+    {
+      g_warning ("Could not connect to System D-Bus. %s", error->message);
+      g_error_free (error);
+    }
+  else
+    {
+      priv->mce_proxy = dbus_g_proxy_new_for_name (connection,
+                                                   MCE_SERVICE,
+                                                   MCE_REQUEST_PATH,
+                                                   MCE_REQUEST_IF);
+    }
 }
 
 HDIncomingEvents *

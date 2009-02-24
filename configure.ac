@@ -1,4 +1,4 @@
-AC_INIT([hildon-home], [0.3.13])
+AC_INIT([hildon-home], [0.3.14])
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(config.h)
@@ -73,7 +73,8 @@ PKG_CHECK_MODULES(HILDON_HOME,
                    libhildondesktop-1	>= 2.1.10	dnl
 		   gnome-vfs-2.0	>= 2.8.3	dnl
 		   sqlite3				dnl
-		   osso-bookmark-engine])
+		   osso-bookmark-engine			dnl
+		   mce])
 
 AC_SUBST(HILDON_HOME_LIBS)
 AC_SUBST(HILDON_HOME_CFLAGS)

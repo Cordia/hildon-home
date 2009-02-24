@@ -1,5 +1,15 @@
 2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* configure.ac:
+	* debian/control: Add mce-dev dependency.
+
+	* src/hd-incoming-events.c: On incoming events request mce to turn
+	display backlight on. Fixes: NB#100745
+
+	* debian/changelog: Update.
+
+2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-system-notifications.c (destroy_dialog,
 	  hd_system_notifications_dispose,
 	  hd_system_notifications_class_init): Free queue on dispose. Fixes:
