@@ -43,7 +43,10 @@
 #define BORDER_WIDTH_LEFT 8
 #define BORDER_WIDTH_TOP 6
 
-#define LABEL_WIDTH SHORTCUT_WIDTH - (2 * HILDON_MARGIN_DEFAULT) - (2 * HILDON_MARGIN_HALF)
+#define LABEL_WIDTH (SHORTCUT_WIDTH -                   \
+                     (2 * HILDON_MARGIN_DEFAULT) -      \
+                     (2 * HILDON_MARGIN_HALF))
+
 #define LABEL_FONT "SmallSystemFont"
 #define LABEL_COLOR "ReversedSecondaryTextColor"
 
@@ -108,8 +111,7 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
       g_warning ("Could not read label value from GConf for bookmark shortcut %s. %s",
                  plugin_id,
                  error->message);
-      g_error_free (error);
-      error = NULL;
+      g_clear_error (&error);
     }
 
   /* Set label */
@@ -134,8 +136,7 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
       g_warning ("Could not read icon path from GConf for bookmark shortcut %s. %s",
                  plugin_id,
                  error->message);
-      g_error_free (error);
-      error = NULL;
+      g_clear_error (&error);
     }
   else
     {
@@ -160,8 +161,7 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
       g_warning ("Could not read URL from GConf for bookmark shortcut %s. %s",
                  plugin_id,
                  error->message);
-      g_error_free (error);
-      error = NULL;
+      g_clear_error (&error);
     }
 
   /* Free memory */
@@ -462,8 +462,7 @@ delete_event_cb (GtkWidget          *widget,
       g_warning ("Could not unset label value in GConf for bookmark shortcut %s. %s",
                  plugin_id,
                  error->message);
-      g_error_free (error);
-      error = NULL;
+      g_clear_error (&error);
     }
 
   g_free (key);
@@ -480,8 +479,7 @@ delete_event_cb (GtkWidget          *widget,
       g_warning ("Could not unset icon path in GConf for bookmark shortcut %s. %s",
                  plugin_id,
                  error->message);
-      g_error_free (error);
-      error = NULL;
+      g_clear_error (&error);
     }
 
   /* Free memory */
@@ -499,8 +497,7 @@ delete_event_cb (GtkWidget          *widget,
       g_warning ("Could not unset URL in GConf for bookmark shortcut %s. %s",
                  plugin_id,
                  error->message);
-      g_error_free (error);
-      error = NULL;
+      g_clear_error (&error);
     }
 
   /* Free memory */

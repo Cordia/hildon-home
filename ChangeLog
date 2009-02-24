@@ -1,3 +1,19 @@
+2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#102470
+
+	* src/hd-bookmark-manager.c (parse_idle_id,
+	  hd_bookmark_manager_parse_bookmark_files,
+	  hd_bookmark_manager_bookmark_files_changed,
+	  hd_bookmark_manager_monitor_bookmark_files,
+	  hd_bookmark_manager_dipose): Rename parse_thread_id to
+	  parse_idle_id.
+	* src/hd-bookmark-shortcut.c (LABEL_WIDTH): Enclose in parentheses.
+	  (hd_bookmark_shortcut_update_from_gconf, delete_event_cb): Use
+	  g_clear_error.
+
+	* debian/changelog: Update.
+
 2009-02-23  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-backgrounds.c (create_cached_background): Fix writing changed

@@ -1,5 +1,5 @@
 /*
- * This file is part of hildon-desktop
+ * This file is part of hildon-home
  *
  * Copyright (C) 2008 Nokia Corporation.
  *
@@ -62,7 +62,7 @@ struct _HDBookmarkManagerPrivate
   GnomeVFSMonitorHandle *user_bookmarks_handle;
   GnomeVFSMonitorHandle *operator_bookmarks_handle;
 
-  guint parse_thread_id;
+  guint parse_idle_id;
 };
 
 G_DEFINE_TYPE (HDBookmarkManager, hd_bookmark_manager, G_TYPE_OBJECT);
@@ -125,7 +125,7 @@ hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
   BookmarkItem *root = NULL;
 
   /* Unset the thread id so the files are parsed again if there is a change */
-  priv->parse_thread_id = 0;
+  priv->parse_idle_id = 0;
 
   /* Clear all entries from the model */
   gtk_list_store_clear (GTK_LIST_STORE (priv->model));
@@ -167,9 +167,9 @@ hd_bookmark_manager_bookmark_files_changed (GnomeVFSMonitorHandle *handle,
   HDBookmarkManager *manager = HD_BOOKMARK_MANAGER (user_data);
   HDBookmarkManagerPrivate *priv = manager->priv;
 
-  if (!priv->parse_thread_id)
-    priv->parse_thread_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
-                                                  user_data);
+  if (!priv->parse_idle_id)
+    priv->parse_idle_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
+                                                user_data);
 }
 
 static void
@@ -208,8 +208,8 @@ hd_bookmark_manager_monitor_bookmark_files (HDBookmarkManager *manager)
   if (result != GNOME_VFS_OK)
     g_debug ("Could not add monitor for operator bookmark file. %s", gnome_vfs_result_to_string (result));
 
-  priv->parse_thread_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
-                                                manager);
+  priv->parse_idle_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
+                                              manager);
 
   g_free (user_bookmarks);
   g_free (operator_bookmarks);
@@ -245,10 +245,10 @@ hd_bookmark_manager_dipose (GObject *object)
   if (priv->operator_bookmarks_handle)
     priv->operator_bookmarks_handle = (gnome_vfs_monitor_cancel (priv->operator_bookmarks_handle), NULL);
 
-  if (priv->parse_thread_id)
+  if (priv->parse_idle_id)
     {
-      g_source_remove (priv->parse_thread_id);
-      priv->parse_thread_id = 0;
+      g_source_remove (priv->parse_idle_id);
+      priv->parse_idle_id = 0;
     }
 
   G_OBJECT_CLASS (hd_bookmark_manager_parent_class)->dispose (object);
