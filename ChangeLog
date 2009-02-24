@@ -1,5 +1,14 @@
 2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-system-notifications.c (destroy_dialog,
+	  hd_system_notifications_dispose,
+	  hd_system_notifications_class_init): Free queue on dispose. Fixes:
+	  NB#102456
+
+	* debian/changelog: Update.
+
+2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#102470
 
 	* src/hd-bookmark-manager.c (parse_idle_id,

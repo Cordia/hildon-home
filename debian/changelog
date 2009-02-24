@@ -1,6 +1,7 @@
 hildon-home (0.3.14~unreleased) unstable; urgency=low
 
   * Trivial code improvements. Fixes: NB#102470
+  * Fix Small leak in hd-system-notifications.c. Fixes: NB#102456
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Feb 2009 13:54:16 +0200
 

@@ -223,8 +223,33 @@ system_notifications_notified (HDNotificationManager *nm,
 }
 
 static void
+destroy_dialog (GtkWidget *dialog, HDSystemNotifications *sn)
+{
+  g_signal_handlers_disconnect_by_func (dialog, show_next_system_dialog, sn);
+  gtk_widget_destroy (dialog);
+}
+
+static void
+hd_system_notifications_dispose (GObject *object)
+{
+  HDSystemNotificationsPrivate *priv = HD_SYSTEM_NOTIFICATIONS (object)->priv;
+
+  if (priv->dialog_queue)
+    {
+      g_queue_foreach (priv->dialog_queue, (GFunc) destroy_dialog, object);
+      priv->dialog_queue = (g_queue_free (priv->dialog_queue), NULL);
+    }
+
+  G_OBJECT_CLASS (hd_system_notifications_parent_class)->dispose (object);
+}
+
+static void
 hd_system_notifications_class_init (HDSystemNotificationsClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->dispose = hd_system_notifications_dispose;
+
   g_type_class_add_private (klass, sizeof (HDSystemNotificationsPrivate));
 }
 
