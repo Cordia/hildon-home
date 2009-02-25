@@ -1,3 +1,11 @@
+2009-02-25  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/notification-groups.conf: Add D-Bus call to com.nokia.modest
+	/com/nokia/modest com.nokia.modest OpenDefaultInbox for multiple mail
+	messages. Fixes: NB#103001
+
+	* debian/changelog: Update.
+
 2009-02-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* configure.ac:
