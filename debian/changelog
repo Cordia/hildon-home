@@ -7,6 +7,8 @@ hildon-home (0.3.14~unreleased) unstable; urgency=low
   * Add D-Bus call to com.nokia.modest /com/nokia/modest com.nokia.modest
     OpenDefaultInbox for multiple mail messages. Fixes: NB#103001
   * Respect NoDisplay key in applications desktop files. Fixes: NB#103423
+  * Disable g_debug output by default. It can be enabled via --enable-debug.
+    Fixes: NB#103304
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Feb 2009 13:54:16 +0200
 

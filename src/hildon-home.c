@@ -57,6 +57,13 @@
 #define HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS HD_GCONF_DIR_HILDON_HOME "/task-shortcuts"
 #define HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS HD_GCONF_DIR_HILDON_HOME "/bookmark-shortcuts"
 
+static gboolean enable_debug = FALSE;
+static GOptionEntry entries[] =
+{
+  { "enable-debug", 'd', 0, G_OPTION_ARG_NONE, &enable_debug, "Enable debug output", NULL },
+  { NULL }
+};
+
 /* signal handler, hildon-desktop sends SIGTERM to all tracked applications
  * when it receives SIGTEM itselgf */
 static void
@@ -97,6 +104,21 @@ load_operator_applet (void)
   g_type_module_unuse (module);
 }
 
+/* Log handler which ignores debug output */
+static void
+log_ignore_debug_handler (const gchar *log_domain,
+                          GLogLevelFlags log_level,
+                          const gchar *message,
+                          gpointer unused_data)
+{
+  if (enable_debug || 
+      log_level != G_LOG_LEVEL_DEBUG)
+    g_log_default_handler (log_domain,
+                           log_level,
+                           message,
+                           unused_data);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -111,8 +133,15 @@ main (int argc, char **argv)
   if (!g_thread_supported ())
     g_thread_init (NULL);
 
+  /* Ignore debug output */
+  g_log_set_default_handler (log_ignore_debug_handler, NULL);
+
   /* Initialize Gtk+ */
-  gtk_init (&argc, &argv);
+  gtk_init_with_args (&argc, &argv,
+                      "Manage widgets, notifications and layout mode dialogs",
+                      entries,
+                      NULL,
+                      NULL);
 
   /* Initialize Hildon */
   hildon_init ();

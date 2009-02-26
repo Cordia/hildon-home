@@ -1,5 +1,13 @@
 2009-02-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hildon-home.c (enable_debug, entries, load_operator_applet,
+	  log_ignore_debug_handler, main): Disable g_debug output by default.
+	  It can be enabled via --enable-debug. Fixes: NB#103304
+
+	* debian/changelog: Update.
+
+2009-02-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-task-manager.c (hd_task_manager_load_desktop_file): Respect
 	NoDisplay key. Fixes: NB#103423
 
