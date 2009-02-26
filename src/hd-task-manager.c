@@ -147,6 +147,15 @@ hd_task_manager_load_desktop_file (const gchar *filename)
       goto cleanup;
     }
 
+  /* Test if it should not displayed */
+  if (g_key_file_get_boolean (desktop_file,
+                              G_KEY_FILE_DESKTOP_GROUP,
+                              G_KEY_FILE_DESKTOP_KEY_NO_DISPLAY,
+                              NULL))
+    {
+      goto cleanup;
+    }
+
   /* Get translation domain if set, so Name can be translated */
   translation_domain = g_key_file_get_string (desktop_file,
                                               G_KEY_FILE_DESKTOP_GROUP,

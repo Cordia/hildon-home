@@ -1,3 +1,10 @@
+2009-02-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-task-manager.c (hd_task_manager_load_desktop_file): Respect
+	NoDisplay key. Fixes: NB#103423
+
+	* debian/changelog: Update.
+
 2009-02-25  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/notification-groups.conf: Add D-Bus call to com.nokia.modest
