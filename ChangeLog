@@ -1,3 +1,17 @@
+2009-02-27  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-add-applet-dialog.c (hd_add_applet_dialog_init):
+	* src/hd-change-background-dialog.c (hd_change_background_dialog_init):
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu):
+	  Update logical strings and menu layout to next Home UI spec.
+
+	* src/hd-incoming-events.c (group_free, group_window_response,
+	  load_notification_groups):
+	* src/notification-groups.conf: Add support for three states for email
+	  notifications. Fixes: NB#103001
+
+	* debian/changelog: Update.
+
 2009-02-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hildon-home.c (enable_debug, entries, load_operator_applet,

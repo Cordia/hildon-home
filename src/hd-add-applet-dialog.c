@@ -80,7 +80,7 @@ hd_add_applet_dialog_init (HDAddAppletDialog *dialog)
   dialog->priv = priv;
 
   /* Set dialog title */
-  gtk_window_set_title (GTK_WINDOW (dialog), dgettext (GETTEXT_PACKAGE, "home_ti_select_applets"));
+  gtk_window_set_title (GTK_WINDOW (dialog), dgettext (GETTEXT_PACKAGE, "home_ti_select_widgets"));
 
   /* Create touch selector */
   priv->selector = hildon_touch_selector_new ();

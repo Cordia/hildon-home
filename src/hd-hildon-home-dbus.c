@@ -284,24 +284,6 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
 
       priv->menu = hildon_app_menu_new ();
 
-      button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_applets"));
-      g_signal_connect_after (button, "clicked",
-                              G_CALLBACK (select_applets_clicked_cb), dbus);
-      hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
-                              GTK_BUTTON (button));
-
-      applet_manager = hd_applet_manager_get ();
-      model = hd_applet_manager_get_model (applet_manager);
-      g_signal_connect (G_OBJECT (model), "row-inserted",
-                        G_CALLBACK (model_row_inserted_cb), button);
-      g_signal_connect (G_OBJECT (model), "row-deleted",
-                        G_CALLBACK (model_row_deleted_cb), button);
-      if (gtk_tree_model_get_iter_first (model, &iter))
-        gtk_widget_show (button);
-      else
-        gtk_widget_hide (button);
-      g_object_unref (model);
-
       button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_shortcuts"));
       g_signal_connect_after (button, "clicked",
                               G_CALLBACK (select_shortcuts_clicked_cb), dbus);
@@ -319,6 +301,13 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
       else
         gtk_widget_hide (button);
       g_object_unref (model);
+
+      button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_contacts"));
+      g_signal_connect_after (button, "clicked",
+                              G_CALLBACK (select_contacts_clicked_cb), dbus);
+      hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
+                              GTK_BUTTON (button));
+      gtk_widget_show (button);
 
       button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_bookmarks"));
       g_signal_connect_after (button, "clicked",
@@ -338,16 +327,27 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
         gtk_widget_hide (button);
       g_object_unref (model);
 
+      button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_widgets"));
+      g_signal_connect_after (button, "clicked",
+                              G_CALLBACK (select_applets_clicked_cb), dbus);
+      hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
+                              GTK_BUTTON (button));
+
+      applet_manager = hd_applet_manager_get ();
+      model = hd_applet_manager_get_model (applet_manager);
+      g_signal_connect (G_OBJECT (model), "row-inserted",
+                        G_CALLBACK (model_row_inserted_cb), button);
+      g_signal_connect (G_OBJECT (model), "row-deleted",
+                        G_CALLBACK (model_row_deleted_cb), button);
+      if (gtk_tree_model_get_iter_first (model, &iter))
+        gtk_widget_show (button);
+      else
+        gtk_widget_hide (button);
+      g_object_unref (model);
+
       button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_change_background"));
       g_signal_connect_after (button, "clicked",
                               G_CALLBACK (change_background_clicked_cb), dbus);
-      hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
-                              GTK_BUTTON (button));
-      gtk_widget_show (button);
-
-      button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_contacts"));
-      g_signal_connect_after (button, "clicked",
-                              G_CALLBACK (select_contacts_clicked_cb), dbus);
       hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
                               GTK_BUTTON (button));
       gtk_widget_show (button);

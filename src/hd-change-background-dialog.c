@@ -455,7 +455,7 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   dialog->priv = priv;
 
   /* Set dialog title */
-  gtk_window_set_title (GTK_WINDOW (dialog), dgettext (GETTEXT_PACKAGE, "home_ti_change_backgr"));
+  gtk_window_set_title (GTK_WINDOW (dialog), dgettext ("maemo-af-desktop", "home_ti_change_backgr"));
 
   /* Add buttons */
   gtk_dialog_add_button (GTK_DIALOG (dialog), dgettext ("hildon-libs", "wdgt_bd_add"), RESPONSE_ADD);

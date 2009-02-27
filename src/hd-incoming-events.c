@@ -52,6 +52,9 @@
 #define NOTIFICATION_GROUP_KEY_TEXT_DOMAIN "Text-Domain"
 #define NOTIFICATION_GROUP_KEY_NO_WINDOW "No-Window"
 
+#define NOTIFICATION_GROUP_KEY_ACCOUNT_CALL "Account-Call"
+#define NOTIFICATION_GROUP_KEY_ACCOUNT_HINT "Account-Hint"
+
 typedef struct
 {
   gchar *destination;
@@ -62,6 +65,8 @@ typedef struct
   gchar *empty_summary;
   gchar *preview_summary;
   gchar *text_domain;
+  gchar *account_hint;
+  gchar *account_call;
   GtkWidget *switcher_window;
   GPtrArray *notifications;
   gboolean no_window : 1;
@@ -92,6 +97,8 @@ group_free (HDIncomingEventGroup *group)
   g_free (group->empty_summary);
   g_free (group->preview_summary);
   g_free (group->text_domain);
+  g_free (group->account_call);
+  g_free (group->account_hint);
   if (GTK_IS_WIDGET (group->switcher_window))
     gtk_widget_destroy (group->switcher_window);
   g_ptr_array_free (group->notifications, TRUE);
@@ -117,9 +124,60 @@ group_window_response (HDIncomingEventWindow *window,
 
   if (response_id == GTK_RESPONSE_OK)
     {
-      /* Call D-Bus callback if available else call default action on each notification */
+      if (group->account_call && group->account_hint)
+        {
+          const gchar *cmp_account = NULL;
+
+          /* If account call is available, check if the account hint is the same for
+           * each notification, if yes call the account call with the account hint
+           * as argument
+           */
+
+          for (i = 0; i < group->notifications->len; i++)
+            {
+              HDNotification *notification;
+              GValue *value;
+
+              notification = g_ptr_array_index (group->notifications,
+                                                i);
+              value = hd_notification_get_hint (notification,
+                                                group->account_hint);
+
+              if (!G_VALUE_HOLDS (value, G_TYPE_STRING))
+                {
+                  cmp_account = NULL;
+                  break;
+                }
+              else
+                {
+                  const char *account = g_value_get_string (value);
+
+                  if (cmp_account == NULL)
+                    cmp_account = account;
+                  else if (g_strcmp0 (cmp_account, account))
+                    {
+                      cmp_account = NULL;
+                      break;
+                    }
+                }
+            }
+
+          if (cmp_account)
+            {
+              gchar *dbus_call = g_strdup_printf ("%s string:%s",
+                                                  group->account_call,
+                                                  cmp_account);
+              hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
+                                                          dbus_call);
+              g_free (dbus_call);
+
+              goto close_all;
+            }
+        }
+
       if (group->dbus_callback)
         {
+          /* Call D-Bus callback if available else call default action on each notification */
           hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
                                                       group->dbus_callback);
         }
@@ -138,6 +196,8 @@ group_window_response (HDIncomingEventWindow *window,
             }
         }
     }
+
+close_all:
 
   /* Close all applications */
   for (i = 0; i < group->notifications->len; i++)
@@ -668,6 +728,16 @@ load_notification_groups (HDIncomingEvents *ie)
                                                     groups[i],
                                                     NOTIFICATION_GROUP_KEY_DBUS_CALL,
                                                     NULL);
+
+      group->account_hint = g_key_file_get_string (key_file,
+                                                   groups[i],
+                                                   NOTIFICATION_GROUP_KEY_ACCOUNT_HINT,
+                                                   NULL);
+ 
+      group->account_call = g_key_file_get_string (key_file,
+                                                   groups[i],
+                                                   NOTIFICATION_GROUP_KEY_ACCOUNT_CALL,
+                                                   NULL);
 
       g_debug ("Add group %s", groups[i]);
       g_hash_table_insert (ie->priv->groups,
