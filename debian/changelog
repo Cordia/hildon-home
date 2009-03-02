@@ -1,15 +1,15 @@
-hildon-home (0.3.14~unreleased) unstable; urgency=low
+hildon-home (0.3.14) unstable; urgency=low
 
   * Trivial code improvements. Fixes: NB#102470
   * Fix Small leak in hd-system-notifications.c. Fixes: NB#102456
-  * On incoming events request mce to turn display backlight on. Fixes:
-    NB#100745
+  * On incoming events request mce to turn display backlight on.
+    Fixes: NB#100745
   * Support three states for multiple email messages. Fixes: NB#103001
   * Respect NoDisplay key in applications desktop files. Fixes: NB#103423
   * Disable g_debug output by default. It can be enabled via --enable-debug.
     Fixes: NB#103304
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Feb 2009 13:54:16 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 02 Mar 2009 12:19:21 +0200
 
 hildon-home (0.3.13) unstable; urgency=low
 

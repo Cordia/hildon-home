@@ -1,3 +1,7 @@
+2009-03-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.14
+
 2009-02-27  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-add-applet-dialog.c (hd_add_applet_dialog_init):
