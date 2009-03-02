@@ -557,8 +557,13 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
 
   /* Send dbus request to mce to turn display backlight on */
   if (priv->mce_proxy)
-    dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
-                                G_TYPE_INVALID, G_TYPE_INVALID);
+    {
+      g_debug ("%s. Call %s",
+               __FUNCTION__,
+               MCE_DISPLAY_ON_REQ);
+      dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
+                                  G_TYPE_INVALID, G_TYPE_INVALID);
+    }
 
   /* Push window on queue */
   g_queue_push_tail (priv->preview_queue, preview_window);
@@ -837,6 +842,7 @@ hd_incoming_events_init (HDIncomingEvents *ie)
                                                    MCE_SERVICE,
                                                    MCE_REQUEST_PATH,
                                                    MCE_REQUEST_IF);
+      g_debug ("%s. Got mce Proxy", __FUNCTION__);
     }
 }
 

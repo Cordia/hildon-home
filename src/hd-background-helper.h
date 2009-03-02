@@ -46,15 +46,15 @@ gboolean   hd_background_helper_save_pixbuf_finish (GFile                *file,
                                                     GAsyncResult         *res,
                                                     GError              **error);
 
-void       hd_background_helper_check_cache_async  (GFile                *file,
-                                                    guint                 view,
-                                                    int                   io_priority,
-                                                    GCancellable         *cancellable,
-                                                    GAsyncReadyCallback   callback,
-                                                    gpointer              user_data);
-gboolean   hd_background_helper_check_cache_finish (GFile                *file,
-                                                    GAsyncResult         *res,
-                                                    GError              **error);
+void       hd_background_helper_save_pvr_texture_async  (GFile                *file,
+                                                         GdkPixbuf            *pixbuf,
+                                                         int                   io_priority,
+                                                         GCancellable         *cancellable,
+                                                         GAsyncReadyCallback   callback,
+                                                         gpointer              user_data);
+gboolean   hd_background_helper_save_pvr_texture_finish (GFile                *file,
+                                                         GAsyncResult         *res,
+                                                         GError              **error);
 
 G_END_DECLS
 

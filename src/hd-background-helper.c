@@ -23,6 +23,8 @@
 #include <config.h>
 #endif
 
+#include <libhildondesktop/hd-pvr-texture.h>
+
 #include "hd-background-helper.h"
 
 #define SCREEN_WIDTH 800
@@ -352,32 +354,88 @@ hd_background_helper_save_pixbuf_finish (GFile         *file,
   return !g_simple_async_result_propagate_error (simple, error);
 }
 
+static void
+save_pvr_texture_async_thread (GSimpleAsyncResult *res,
+                               GObject            *object,
+                               GCancellable       *cancellable)
+{
+  GdkPixbuf *pixbuf = NULL;
+  gchar *path, *tmp_file;
+  gboolean result;
+
+  /* Get Pixbuf */
+  pixbuf = g_simple_async_result_get_op_res_gpointer (res);
+  g_simple_async_result_set_op_res_gpointer (res, NULL, NULL);
+
+  if (!pixbuf)
+    {
+      g_simple_async_result_set_error (res,
+                                       GDK_PIXBUF_ERROR,
+                                       GDK_PIXBUF_ERROR_FAILED,
+                                       "Cannot store a NULL pixbuf");
+      goto cleanup;
+    }
+
+  path = g_file_get_path (G_FILE (object));
+  tmp_file = g_strdup_printf ("%s.tmp", path);
+
+  result = hd_pvr_texture_save (tmp_file, pixbuf);
+  if (result)
+    rename (tmp_file, path);
+
+  g_free (path);
+  g_free (tmp_file);
+
+  g_simple_async_result_set_op_res_gboolean (res,
+                                             result);
+
+cleanup:
+  if (pixbuf)
+    g_object_unref (pixbuf);
+}
+
 void
-hd_background_helper_check_cache_async  (GFile                *file,
-                                         guint                 view,
-                                         int                   io_priority,
-                                         GCancellable         *cancellable,
-                                         GAsyncReadyCallback   callback,
-                                         gpointer              user_data)
+hd_background_helper_save_pvr_texture_async  (GFile               *file,
+                                              GdkPixbuf           *pixbuf,
+                                              int                  io_priority,
+                                              GCancellable        *cancellable,
+                                              GAsyncReadyCallback  callback,
+                                              gpointer             user_data)
 {
   GSimpleAsyncResult *res;
 
   res = g_simple_async_result_new (G_OBJECT (file),
                                    callback,
                                    user_data,
-                                   hd_background_helper_check_cache_async);
-  /* FIXME implement */
+                                   hd_background_helper_save_pvr_texture_async);
 
-  g_simple_async_result_complete (res);
-/*  callback (G_OBJECT (file), G_ASYNC_RESULT (res), user_data); */
+  if (pixbuf)
+    g_simple_async_result_set_op_res_gpointer (res,
+                                               g_object_ref (pixbuf),
+                                               g_object_unref);
+
+  g_simple_async_result_set_handle_cancellation (res, TRUE);
+
+  g_simple_async_result_run_in_thread (res,
+                                       save_pvr_texture_async_thread,
+                                       io_priority,
+                                       cancellable);
+  g_object_unref (res); 
 }
 
 gboolean
-hd_background_helper_check_cache_finish (GFile                *file,
-                                         GAsyncResult         *res,
-                                         GError              **error)
+hd_background_helper_save_pvr_texture_finish (GFile         *file,
+                                              GAsyncResult  *result,
+                                              GError       **error)
 {
-  /* FIXME implement */
+  GSimpleAsyncResult *simple;
 
-  return FALSE;
+  g_return_val_if_fail (is_valid_result (result,
+                                         G_OBJECT (file),
+                                         hd_background_helper_save_pvr_texture_async),
+                        FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  return !g_simple_async_result_propagate_error (simple, error);
 }

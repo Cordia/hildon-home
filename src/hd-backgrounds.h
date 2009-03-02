@@ -59,6 +59,9 @@ void           hd_backgrounds_set_background (HDBackgrounds *backgrounds,
                                               guint          view,
                                               const gchar   *uri);
 
+const gchar *  hd_backgrounds_get_background (HDBackgrounds *backgrounds,
+                                              guint          view);
+
 G_END_DECLS
 
 #endif /* __HD_BACKGROUNDS_H__ */

@@ -199,12 +199,12 @@ system_notifications_notified (HDNotificationManager *nm,
                                    hd_notification_get_dialog_type (notification),
                                    hd_notification_get_actions (notification));
 
-      g_signal_connect (G_OBJECT (dialog),
+      g_signal_connect (dialog,
                         "response",
                         G_CALLBACK (system_notification_dialog_response),
                         notification);
 
-      g_signal_connect_swapped (G_OBJECT (dialog),
+      g_signal_connect_swapped (dialog,
                                 "destroy",
                                 G_CALLBACK (show_next_system_dialog),
                                 sn);

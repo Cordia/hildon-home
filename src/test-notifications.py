@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
 # iface.Notify ('test-send.py', '0', 'qgn_list_messagin', 'Jan Arne Petersen', 'Subject', ['default', 'default'], { 'category': 'email' }, 0)
 
-	gobject.timeout_add(100, emit_notification, iface)
+	gobject.timeout_add(1000, emit_notification, iface)
 
 	loop = gobject.MainLoop()
 	loop.run()

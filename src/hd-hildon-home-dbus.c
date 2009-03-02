@@ -292,9 +292,9 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
 
       task_manager = hd_task_manager_get ();
       model = hd_task_manager_get_model (task_manager);
-      g_signal_connect (G_OBJECT (model), "row-inserted",
+      g_signal_connect (model, "row-inserted",
                         G_CALLBACK (model_row_inserted_cb), button);
-      g_signal_connect (G_OBJECT (model), "row-deleted",
+      g_signal_connect (model, "row-deleted",
                         G_CALLBACK (model_row_deleted_cb), button);
       if (gtk_tree_model_get_iter_first (model, &iter))
         gtk_widget_show (button);
@@ -317,9 +317,9 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
 
       bookmark_manager = hd_bookmark_manager_get ();
       model = hd_bookmark_manager_get_model (bookmark_manager);
-      g_signal_connect (G_OBJECT (model), "row-inserted",
+      g_signal_connect (model, "row-inserted",
                         G_CALLBACK (model_row_inserted_cb), button);
-      g_signal_connect (G_OBJECT (model), "row-deleted",
+      g_signal_connect (model, "row-deleted",
                         G_CALLBACK (model_row_deleted_cb), button);
       if (gtk_tree_model_get_iter_first (model, &iter))
         gtk_widget_show (button);
@@ -335,9 +335,9 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
 
       applet_manager = hd_applet_manager_get ();
       model = hd_applet_manager_get_model (applet_manager);
-      g_signal_connect (G_OBJECT (model), "row-inserted",
+      g_signal_connect (model, "row-inserted",
                         G_CALLBACK (model_row_inserted_cb), button);
-      g_signal_connect (G_OBJECT (model), "row-deleted",
+      g_signal_connect (model, "row-deleted",
                         G_CALLBACK (model_row_deleted_cb), button);
       if (gtk_tree_model_get_iter_first (model, &iter))
         gtk_widget_show (button);

@@ -1,3 +1,29 @@
+2009-03-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* configure.ac:
+	* debian/control: Require new libhildondesktop.
+
+	* src/hd-background-helper.c (save_pvr_texture_async_thread,
+	  hd_background_helper_save_pvr_texture_async,
+	  hd_background_helper_save_pvr_texture_finish):
+	* src/hd-background-helper.h: Add helper function to save as pvr
+	  texture.
+
+	* src/hd-backgrounds.c:
+	* src/hd-backgrounds.h: Save cached backgrounds as pvr texture. Save
+	  cache info file and recreate cached backgrounds only when required.
+
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu):
+	  Remove unneeded casts.
+	* src/hd-incoming-events.c (hd_incoming_events_notified,
+	  hd_incoming_events_init): Add debug output.
+
+	* src/hd-system-notifications.c (system_notifications_notified):
+	  Remove unneeded casts.
+
+	* src/test-notifications.py (action_invoked_handler): Increase
+	  timeout.
+
 2009-03-02  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.14
