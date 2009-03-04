@@ -126,6 +126,20 @@ group_window_response (HDIncomingEventWindow *window,
 
   if (response_id == GTK_RESPONSE_OK)
     {
+      if (group->notifications->len == 1)
+        {
+          /* Always call default action if it is only one un-grouped notification */
+          HDNotification *notification;
+
+          notification = g_ptr_array_index (group->notifications,
+                                            0);
+
+          hd_notification_manager_call_action (hd_notification_manager_get (),
+                                               notification,
+                                               "default");
+          goto close_all;
+        }
+
       if (group->account_call && group->account_hint)
         {
           const gchar *cmp_account = NULL;

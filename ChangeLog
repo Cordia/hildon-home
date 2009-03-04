@@ -1,5 +1,10 @@
 2009-03-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-incoming-events.c (group_window_response): Fix un-grouped
+	  notification case.
+
+2009-03-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-background-helper.c (save_thumbnail_async_thread,
 	  hd_background_helper_save_thumbnail_async,
 	  hd_background_helper_save_thumbnail_finish,
