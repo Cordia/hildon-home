@@ -1,3 +1,29 @@
+2009-03-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-background-helper.c (save_thumbnail_async_thread,
+	  hd_background_helper_save_thumbnail_async,
+	  hd_background_helper_save_thumbnail_finish,
+	  save_pvr_texture_async_thread):
+	* src/hd-background-helper.h (__HD_BACKGROUND_HELPER_H__):
+	* src/hd-backgrounds.c (bg_image, cache_info_contents,
+	  save_cached_background_cb, load_cache_info_cb,
+	  hd_backgrounds_dipose): Use updates save function from
+	  libhildondesktop.
+
+	* src/hd-incoming-events.c (NOTIFICATION_GROUP_KEY_ACCOUNT_CALL,
+	  NOTIFICATION_GROUP_KEY_ACCOUNT_HINT,
+	  NOTIFICATION_GROUP_KEY_LED_PATTERN, pattern, group_free,
+	  preview_window_destroy, hd_incoming_events_set_led_pattern,
+	  close_led_notification, hd_incoming_events_notified,
+	  load_notification_groups):
+	* src/notification-groups.conf: Implement LED pattern support (based
+	on a patch by naba.kumar@nokia.com). Fixes: NB#93936
+
+	* src/test-notifications.py (action_invoked_handler): Increase
+	timeout.
+
+	* debian/changelog: Update.
+
 2009-03-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* configure.ac:

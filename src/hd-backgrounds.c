@@ -80,7 +80,8 @@ struct _HDBackgroundsPrivate
   HDBackgroundData *current_data;
 
   guint bg_image_notify[4];
-  gchar *bg_image[5];
+  gchar *bg_image[4];
+  gchar *cache_info_contents;
 
   GMutex *mutex;
   GQueue *queue;
@@ -186,7 +187,8 @@ save_cached_background_cb (GFile         *file,
       gchar *cache_info_filename;
       GFile *cache_info_file;
       guint view = priv->current_data->view;
-      gchar *contents;
+      GString *buffer;
+      guint i;
 
       g_free (priv->bg_image[view - 1]);
       priv->bg_image[view - 1] = priv->current_data->uri;
@@ -195,10 +197,18 @@ save_cached_background_cb (GFile         *file,
                                             g_get_home_dir ());
       cache_info_file = g_file_new_for_path (cache_info_filename);
 
-      contents = g_strjoinv ("\n", priv->bg_image);
+      g_free (priv->cache_info_contents);
+      buffer = g_string_sized_new (512);
+      for (i = 0; i < 4; i++)
+        {
+          g_string_append (buffer, priv->bg_image[i] ? priv->bg_image[i] : "");
+          g_string_append_c (buffer, '\n');
+        }
+      priv->cache_info_contents = g_string_free (buffer, FALSE);
+
       g_file_replace_contents_async (cache_info_file,
-                                     contents,
-                                     strlen (contents),
+                                     priv->cache_info_contents,
+                                     strlen (priv->cache_info_contents),
                                      NULL,
                                      FALSE,
                                      G_FILE_CREATE_NONE,
@@ -206,7 +216,7 @@ save_cached_background_cb (GFile         *file,
                                      (GAsyncReadyCallback) replace_cache_info_cb,
                                      backgrounds);
 
-      g_free (contents);
+/*      g_free (contents); */
       g_free (cache_info_filename);
       g_object_unref (cache_info_file);
     }
@@ -488,18 +498,18 @@ load_cache_info_cb (GFile         *file,
                                    &contents, NULL, NULL,
                                    &error))
     {
-      gchar **cache_info = g_strsplit (contents,
-                                       "\n",
-                                       0);
+      gchar **cache_info;
+
+      for (i = 0; i < 4; i++)
+        priv->bg_image[i] = (g_free (priv->bg_image[i]), NULL);
+
+      cache_info = g_strsplit (contents, "\n", 0);
       if (cache_info)
         {
           for (i = 0; i < 4 && cache_info[i]; i++)
-            {
-              priv->bg_image[i] = g_strdup (cache_info[i]);
-            }
+            priv->bg_image[i] = g_strdup (cache_info[i]);
           g_strfreev (cache_info);
         }
-
       g_free (contents);
     }
   else if (error)
@@ -654,6 +664,9 @@ hd_backgrounds_dipose (GObject *object)
         }
       priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
     }
+
+  if (priv->cache_info_contents)
+    priv->cache_info_contents = (g_free (priv->cache_info_contents), NULL);
 
   if (priv->mutex)
     priv->mutex = (g_mutex_free (priv->mutex), NULL);

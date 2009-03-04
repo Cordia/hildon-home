@@ -227,7 +227,7 @@ hd_background_helper_read_pixbuf_finish (GFile         *file,
 }
 
 static void
-save_pixbuf_async_thread (GSimpleAsyncResult *res,
+save_thumbnail_async_thread (GSimpleAsyncResult *res,
                           GObject            *object,
                           GCancellable       *cancellable)
 {
@@ -309,7 +309,7 @@ cleanup:
 }
 
 void
-hd_background_helper_save_pixbuf_async  (GFile               *file,
+hd_background_helper_save_thumbnail_async  (GFile               *file,
                                          GdkPixbuf           *pixbuf,
                                          int                  io_priority,
                                          GCancellable        *cancellable,
@@ -321,7 +321,7 @@ hd_background_helper_save_pixbuf_async  (GFile               *file,
   res = g_simple_async_result_new (G_OBJECT (file),
                                    callback,
                                    user_data,
-                                   hd_background_helper_save_pixbuf_async);
+                                   hd_background_helper_save_thumbnail_async);
 
   if (pixbuf)
     g_simple_async_result_set_op_res_gpointer (res,
@@ -331,14 +331,14 @@ hd_background_helper_save_pixbuf_async  (GFile               *file,
   g_simple_async_result_set_handle_cancellation (res, TRUE);
 
   g_simple_async_result_run_in_thread (res,
-                                       save_pixbuf_async_thread,
+                                       save_thumbnail_async_thread,
                                        io_priority,
                                        cancellable);
   g_object_unref (res); 
 }
 
 gboolean
-hd_background_helper_save_pixbuf_finish (GFile         *file,
+hd_background_helper_save_thumbnail_finish (GFile         *file,
                                          GAsyncResult  *result,
                                          GError       **error)
 {
@@ -346,7 +346,7 @@ hd_background_helper_save_pixbuf_finish (GFile         *file,
 
   g_return_val_if_fail (is_valid_result (result,
                                          G_OBJECT (file),
-                                         hd_background_helper_save_pixbuf_async),
+                                         hd_background_helper_save_thumbnail_async),
                         FALSE);
 
   simple = G_SIMPLE_ASYNC_RESULT (result);
@@ -360,8 +360,8 @@ save_pvr_texture_async_thread (GSimpleAsyncResult *res,
                                GCancellable       *cancellable)
 {
   GdkPixbuf *pixbuf = NULL;
-  gchar *path, *tmp_file;
-  gboolean result;
+  gchar *path;
+  GError *error = NULL;
 
   /* Get Pixbuf */
   pixbuf = g_simple_async_result_get_op_res_gpointer (res);
@@ -377,17 +377,20 @@ save_pvr_texture_async_thread (GSimpleAsyncResult *res,
     }
 
   path = g_file_get_path (G_FILE (object));
-  tmp_file = g_strdup_printf ("%s.tmp", path);
 
-  result = hd_pvr_texture_save (tmp_file, pixbuf);
-  if (result)
-    rename (tmp_file, path);
+  if (hd_pvr_texture_save (path, pixbuf, &error))
+    {
+      g_simple_async_result_set_op_res_gboolean (res,
+                                                 TRUE);
+    }
+  else
+    {
+      g_simple_async_result_set_from_error (res,
+                                            error);
+      g_error_free (error);
+    }
 
   g_free (path);
-  g_free (tmp_file);
-
-  g_simple_async_result_set_op_res_gboolean (res,
-                                             result);
 
 cleanup:
   if (pixbuf)

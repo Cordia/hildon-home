@@ -51,9 +51,9 @@
 #define NOTIFICATION_GROUP_KEY_DBUS_CALL "D-Bus-Call"
 #define NOTIFICATION_GROUP_KEY_TEXT_DOMAIN "Text-Domain"
 #define NOTIFICATION_GROUP_KEY_NO_WINDOW "No-Window"
-
 #define NOTIFICATION_GROUP_KEY_ACCOUNT_CALL "Account-Call"
 #define NOTIFICATION_GROUP_KEY_ACCOUNT_HINT "Account-Hint"
+#define NOTIFICATION_GROUP_KEY_LED_PATTERN "LED-Pattern"
 
 typedef struct
 {
@@ -67,6 +67,7 @@ typedef struct
   gchar *text_domain;
   gchar *account_hint;
   gchar *account_call;
+  gchar *pattern;
   GtkWidget *switcher_window;
   GPtrArray *notifications;
   gboolean no_window : 1;
@@ -99,6 +100,7 @@ group_free (HDIncomingEventGroup *group)
   g_free (group->text_domain);
   g_free (group->account_call);
   g_free (group->account_hint);
+  g_free (group->pattern);
   if (GTK_IS_WIDGET (group->switcher_window))
     gtk_widget_destroy (group->switcher_window);
   g_ptr_array_free (group->notifications, TRUE);
@@ -463,7 +465,40 @@ preview_window_destroy (GtkWidget        *widget,
       else
         g_queue_pop_head (priv->preview_queue);
     }
-}                       
+}
+
+/* Function to set/reset mce led pattern */
+static void
+hd_incoming_events_set_led_pattern (HDIncomingEvents *ie,
+                                    const gchar      *pattern,
+                                    gboolean          activate)
+{
+  HDIncomingEventsPrivate *priv = ie->priv;
+
+  if (activate)
+    g_debug("Activate LED pattern : %s\n", pattern);
+  else
+    g_debug("Deactivate LED pattern : %s\n", pattern);
+
+  /* Just make a method call as per args to activate/deactivate
+   * given led pattern without looking for any reply(We don't have a reply) */
+  dbus_g_proxy_call_no_reply (priv->mce_proxy,
+                              (activate) ? MCE_ACTIVATE_LED_PATTERN :
+                              MCE_DEACTIVATE_LED_PATTERN,
+                              G_TYPE_STRING,
+                              pattern,
+                              G_TYPE_INVALID,
+                              G_TYPE_INVALID);
+}
+
+static void 
+close_led_notification (HDNotification *notification,
+                        const gchar    *pattern)
+{
+  hd_incoming_events_set_led_pattern (hd_incoming_events_get (),
+                                      pattern,
+                                      FALSE);
+}
 
 static void
 hd_incoming_events_notified (HDNotificationManager  *nm,
@@ -477,13 +512,13 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   PreviewWindowResponseInfo *preview_window_response_info;
   guint i;
   HDIncomingEventGroup *group;
-  const gchar *summary, *body, *icon;
+  GValue *p;
+  const gchar *summary, *body, *icon, *pattern = NULL;
 
   g_return_if_fail (HD_IS_INCOMING_EVENTS (ie));
 
   /* Get category string */
   category = hd_notification_get_category (notification);
-
   /* Ignore internal system.note. notifications */
   if (g_str_has_prefix (category, "system.note."))
     return;
@@ -505,6 +540,27 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   /* Lookup category and handle special summary cases */
   group = g_hash_table_lookup (ie->priv->groups,
                                category);
+
+  /* Lets see if we have any led event for this category */
+  p = hd_notification_get_hint (notification, "led-pattern");
+  if (G_VALUE_HOLDS_STRING (p))
+    pattern = g_value_get_string (p);
+  if (!pattern)
+    pattern = group->pattern;
+
+  if (pattern)
+    {
+      /* Activate pattern */
+      hd_incoming_events_set_led_pattern (ie,
+                                          pattern,
+                                          TRUE);
+      /* Handler to deactivate the led event */
+      g_signal_connect_data (notification, "closed",
+                             G_CALLBACK (close_led_notification),
+                             g_strdup (pattern),
+                             (GClosureNotify) g_free,
+                             0);
+    }
 
   /* Return if no notification window should be shown */
   if (group && group->no_window)
@@ -663,8 +719,7 @@ load_notification_groups (HDIncomingEvents *ie)
                                                  groups[i],
                                                  NOTIFICATION_GROUP_KEY_NO_WINDOW,
                                                  NULL);
-
-      /* We do not need mor information as no notification windows are shown */
+      /* We do not need more information as no notification windows are shown */
       if (group->no_window)
         {
           g_debug ("Add group %s", groups[i]);
@@ -744,10 +799,16 @@ load_notification_groups (HDIncomingEvents *ie)
                                                    NOTIFICATION_GROUP_KEY_ACCOUNT_CALL,
                                                    NULL);
 
+      group->pattern = g_key_file_get_string (key_file,
+                                              groups[i],
+                                              NOTIFICATION_GROUP_KEY_LED_PATTERN,
+                                              NULL);
+
       g_debug ("Add group %s", groups[i]);
       g_hash_table_insert (ie->priv->groups,
                            groups[i],
                            group);
+      
       continue;
 
 load_key_error:
@@ -825,7 +886,6 @@ hd_incoming_events_init (HDIncomingEvents *ie)
   /* Connect to notification manager signals */
   g_signal_connect_object (hd_notification_manager_get (), "notified",
                            G_CALLBACK (hd_incoming_events_notified), ie, 0);
-
   load_notification_groups (ie);
 
   /* Get D-Bus proxy for mce calls */
