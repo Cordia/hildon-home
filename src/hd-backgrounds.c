@@ -223,6 +223,23 @@ save_cached_background_cb (GFile         *file,
 }
 
 static void
+save_thumbnail_cb (GFile         *file,
+                   GAsyncResult  *result,
+                   HDBackgrounds *backgrounds)
+{
+  GError *error = NULL;
+
+  if (!hd_background_helper_save_thumbnail_finish (file, result, &error))
+    {
+      g_debug ("%s, Could not save thumbnail. %s",
+               __FUNCTION__,
+               error->message);
+
+      g_error_free (error);
+    }
+}
+
+static void
 read_pixbuf_cb (GFile         *file,
                 GAsyncResult  *res,
                 HDBackgrounds *backgrounds)
@@ -230,8 +247,8 @@ read_pixbuf_cb (GFile         *file,
   HDBackgroundsPrivate *priv = backgrounds->priv;
   GdkPixbuf *pixbuf;
   GError *error = NULL;
-  gchar *cached_filename;
-  GFile *cached_file;
+  gchar *cached_filename, *thumb_filename;
+  GFile *cached_file, *thumb_file;
 
   pixbuf = hd_background_helper_read_pixbuf_finish (file,
                                                     res,
@@ -259,6 +276,11 @@ read_pixbuf_cb (GFile         *file,
                                      priv->current_data->view);
   cached_file = g_file_new_for_path (cached_filename);
 
+  thumb_filename = g_strdup_printf ("%s/" THUMBNAIL_CACHED,
+                                    g_get_home_dir (),
+                                    priv->current_data->view);
+  thumb_file = g_file_new_for_path (thumb_filename);
+
   hd_background_helper_save_pvr_texture_async (cached_file,
                                                pixbuf,
                                                G_PRIORITY_DEFAULT,
@@ -266,8 +288,17 @@ read_pixbuf_cb (GFile         *file,
                                                (GAsyncReadyCallback) save_cached_background_cb,
                                                backgrounds);
 
+  hd_background_helper_save_thumbnail_async (thumb_file,
+                                             pixbuf,
+                                             G_PRIORITY_LOW,
+                                             NULL,
+                                             (GAsyncReadyCallback) save_thumbnail_cb,
+                                             backgrounds);
+
   g_free (cached_filename);
   g_object_unref (cached_file);
+  g_free (thumb_filename);
+  g_object_unref (thumb_file);
   g_object_unref (pixbuf);
 }
 

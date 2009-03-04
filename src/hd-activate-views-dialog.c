@@ -35,15 +35,6 @@
 
 #include "hd-activate-views-dialog.h"
 
-/* Background gconf key */
-#define GCONF_BACKGROUND_KEY(i) g_strdup_printf ("/apps/osso/hildon-desktop/views/%u/bg-image", i)
-
-#define CURRENT_THEME_DIR "/etc/hildon/theme"
-#define BACKGROUNDS_DESKTOP_FILE CURRENT_THEME_DIR "/backgrounds/theme_bg.desktop"
-#define DEFAULT_THEME_DIR "/usr/share/themes/default"
-#define BACKGROUNDS_DEFAULT_DESKTOP_FILE DEFAULT_THEME_DIR "/backgrounds/theme_bg.desktop"
-#define BACKGROUNDS_DESKTOP_KEY_FILE "X-File%u"
-
 #define HD_MAX_HOME_VIEWS 4
 #define HD_GCONF_KEY_ACTIVE_VIEWS "/apps/osso/hildon-desktop/views/active"
 
@@ -270,7 +261,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
       GtkTreeIter iter;
       GtkTreePath *path;
 
-      bg_image = g_strdup_printf ("%s/.backgrounds/background-%u.png",
+      bg_image = g_strdup_printf ("%s/.backgrounds/thumbnail-%u.png",
                                   g_get_home_dir (),
                                   i);
 

@@ -231,7 +231,7 @@ save_thumbnail_async_thread (GSimpleAsyncResult *res,
                           GObject            *object,
                           GCancellable       *cancellable)
 {
-  GdkPixbuf *pixbuf = NULL;
+  GdkPixbuf *pixbuf = NULL, *scaled = NULL;
   GFileOutputStream *stream = NULL;
   GError *error = NULL;
   gchar *buffer;
@@ -250,6 +250,8 @@ save_thumbnail_async_thread (GSimpleAsyncResult *res,
       goto cleanup;
     }
 
+  scaled = gdk_pixbuf_scale_simple (pixbuf, 125, 75, GDK_INTERP_BILINEAR);
+
   /* Open file for write */
   stream = g_file_replace (G_FILE (object),
                            NULL,
@@ -265,7 +267,7 @@ save_thumbnail_async_thread (GSimpleAsyncResult *res,
       goto cleanup;
     }
 
-  if (!gdk_pixbuf_save_to_buffer (pixbuf,
+  if (!gdk_pixbuf_save_to_buffer (scaled,
                                   &buffer,
                                   &buffer_size,
                                   "png",
@@ -306,6 +308,8 @@ cleanup:
     g_object_unref (stream);
   if (pixbuf)
     g_object_unref (pixbuf);
+  if (scaled)
+    g_object_unref (scaled);
 }
 
 void
