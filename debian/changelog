@@ -1,7 +1,8 @@
 hildon-home (0.3.15~unreleased) unstable; urgency=low
 
   * Implement LED pattern support. Fixes: NB#93936
-  * Cache background images as pvr texture files.
+  * Cache background images as pvr texture files. Only cache files when they
+    are not changed. Fixes: NB#100103
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  2 Mar 2009 12:22:28 +0200
 

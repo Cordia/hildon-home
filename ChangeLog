@@ -1,5 +1,10 @@
 2009-03-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Cache background images as pvr texture files. Only
+	cache files when they are not changed. Fixes: NB#100103
+
+2009-03-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_init):
 	* src/hd-background-helper.c (save_thumbnail_async_thread):
 	* src/hd-backgrounds.c (save_thumbnail_cb, read_pixbuf_cb): Create
