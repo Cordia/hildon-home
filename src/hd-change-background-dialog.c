@@ -108,7 +108,7 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
 
   for (basename = g_dir_read_name (dir); basename; basename = g_dir_read_name (dir))
     {
-      gchar *type, *filename, *name;
+      gchar *type, *filename, *name, *label = NULL;
       gchar *image[5];
       guint order;
       gboolean image_set = FALSE;
@@ -194,10 +194,29 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
           goto cleanup;
         }
 
+      if (theme)
+        {
+          label = g_strdup_printf ("%s - %s",
+                                   dgettext ("maemo-af-desktop",
+                                             "home_ia_theme_prefix"),
+                                   name);
+        }
+      else if (image_set)
+        {
+          label = g_strdup_printf ("%s - %s",
+                                   dgettext ("maemo-af-desktop",
+                                             "home_ia_imageset_prefix"),
+                                   name);
+        }
+      else
+        {
+          label = g_strdup (name);
+        }
+
       gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
                                          &iter,
                                          -1,
-                                         COL_NAME, name,
+                                         COL_NAME, label,
                                          COL_ORDER, order,
                                          COL_IMAGE, image[0],
                                          COL_IMAGE_1, image[1],
@@ -223,6 +242,7 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
         }
 
 cleanup:
+      g_free (label);
       g_free (filename);
       g_key_file_free (keyfile);
       g_free (type);

@@ -1,5 +1,13 @@
 2009-03-07  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* debian/changelog: Update.
+
+	* src/hd-change-background-dialog.c
+	  (hd_change_background_dialog_append_backgrounds): Implement theme
+	  and imageset prefixes. 
+
+2009-03-07  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-backgrounds.c (hd_backgrounds_set_background,
 	  hd_backgrounds_get_background):
 	* src/hd-change-background-dialog.c (
