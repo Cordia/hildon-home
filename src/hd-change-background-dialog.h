@@ -58,7 +58,7 @@ struct _HDChangeBackgroundDialogClass
 
 GType      hd_change_background_dialog_get_type (void);
 
-GtkWidget *hd_change_background_dialog_new      (DBusGProxy *proxy);
+GtkWidget *hd_change_background_dialog_new      (guint current_view);
 
 G_END_DECLS
 

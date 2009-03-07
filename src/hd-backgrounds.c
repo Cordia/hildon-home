@@ -764,3 +764,16 @@ hd_backgrounds_set_background (HDBackgrounds *backgrounds,
    g_free (bg_image);
 }
 
+const gchar *
+hd_backgrounds_get_background (HDBackgrounds *backgrounds,
+                               guint          view)
+{
+  HDBackgroundsPrivate *priv;
+
+  g_return_val_if_fail (HD_IS_BACKGROUNDS (backgrounds), NULL);
+  g_return_val_if_fail (view > 0 && view <= 4, NULL);
+
+  priv = backgrounds->priv;
+
+  return priv->bg_image[view - 1];
+}

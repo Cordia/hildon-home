@@ -1,3 +1,23 @@
+2009-03-07  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-backgrounds.c (hd_backgrounds_set_background,
+	  hd_backgrounds_get_background):
+	* src/hd-change-background-dialog.c (
+	  hd_change_background_dialog_append_backgrounds,
+	  hd_change_background_dialog_constructed,
+	  hd_change_background_dialog_set_property,
+	  hd_change_background_dialog_response,
+	  hd_change_background_dialog_class_init,
+	  hd_change_background_dialog_init, hd_change_background_dialog_new):
+	* src/hd-change-background-dialog.h: Select current background in
+	  "Change background" dialog. Fixes: NB#101972, NB#96398
+
+	* src/hd-hildon-home-dbus.c (menu, current_view,
+	  change_background_clicked_cb, hd_hildon_home_dbus_show_edit_menu):
+	  Use current view.
+
+	* debian/changelog: Update.
+
 2009-03-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Cache background images as pvr texture files. Only

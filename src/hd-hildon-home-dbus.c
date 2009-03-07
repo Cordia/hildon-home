@@ -55,6 +55,8 @@ struct _HDHildonHomeDBusPrivate
   DBusGProxy      *contact_proxy;
 
   GtkWidget       *menu;
+
+  guint            current_view;
 };
 
 #define HD_HILDON_HOME_DBUS_DBUS_NAME  "com.nokia.HildonHome" 
@@ -214,7 +216,8 @@ change_background_clicked_cb (GtkButton        *button,
                               HDHildonHomeDBus *dbus)
 {
   HDHildonHomeDBusPrivate *priv = dbus->priv;
-  GtkWidget *dialog = hd_change_background_dialog_new (priv->hd_home_proxy);
+
+  GtkWidget *dialog = hd_change_background_dialog_new (priv->current_view);
 
   gtk_widget_show (dialog);
 }
@@ -269,6 +272,7 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
   HDHildonHomeDBusPrivate *priv = dbus->priv;
 
   g_debug ("hd_hildon_home_dbus_show_edit_menu (current_view: %u):", current_view);
+  priv->current_view = current_view;
 
   /* Construct menu */
   if (!priv->menu)
