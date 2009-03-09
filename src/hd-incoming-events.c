@@ -78,6 +78,9 @@ struct _HDIncomingEventsPrivate
   GQueue          *preview_queue;
   GHashTable      *groups;
 
+  GList           *preview_list;
+  GtkWidget       *preview_window;
+
   GPtrArray       *plugins;
 
   HDPluginManager *plugin_manager;
@@ -514,6 +517,22 @@ close_led_notification (HDNotification *notification,
                                       FALSE);
 }
 
+static gint
+cmp_category_func (gconstpointer a,
+                   gconstpointer b)
+{
+  const gchar *cat_a = hd_notification_get_category ((HDNotification *) a);
+  const gchar *cat_b = hd_notification_get_category ((HDNotification *) b);
+
+  if (!cat_a || !cat_a[0] || !cat_b || !cat_b[0])
+    return 1;
+
+  if (strcmp (cat_a, cat_b) == 0)
+    return -1;
+
+  return 1;
+}
+
 static void
 hd_incoming_events_notified (HDNotificationManager  *nm,
                              HDNotification         *notification,
@@ -579,6 +598,10 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   /* Return if no notification window should be shown */
   if (group && group->no_window)
     return;
+
+  priv->preview_list = g_list_insert_sorted (priv->preview_list,
+                                             notification,
+                                             cmp_category_func);
 
   summary = hd_notification_get_summary (notification);
   if (group && group->empty_summary &&

@@ -1,3 +1,8 @@
+2009-03-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/notification-groups.conf: Add D-Bus calls for chat-message and
+	sms-message (see NB#101536).
+
 2009-03-07  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/changelog: Update.
