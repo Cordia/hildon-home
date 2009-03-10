@@ -1,3 +1,7 @@
+2009-03-10  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.15
+
 2009-03-10  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-incoming-events.c (group_activate_notifications,

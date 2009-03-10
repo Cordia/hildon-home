@@ -1,14 +1,13 @@
-hildon-home (0.3.15~unreleased) unstable; urgency=low
+hildon-home (0.3.15) unstable; urgency=low
 
-  * Implement LED pattern support. Fixes: NB#93936
-  * Cache background images as pvr texture files. Only cache files when they
-    are not changed. Fixes: NB#100103
-  * Select current background in "Change background" dialog. Fixes: NB#101972,
-    NB#96398
+  * Fixes: NB#93936 - Implement LED pattern support. 
+  * Fixes: NB#100103 - Cache background images as pvr texture files. Only cache files when they
+    are not changed. 
+  * Fixes: NB#101972, NB#96398 - Select current background in "Change background" dialog.
   * Implement theme and imageset prefixes in "Change background" dialog.
-  * Implement grouped incoming notification previews. Fixes: NB#102328
+  * Fixes: NB#102328 - Implement grouped incoming notification previews.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  2 Mar 2009 12:22:28 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Mar 2009 12:00:07 +0200
 
 hildon-home (0.3.14) unstable; urgency=low
 
