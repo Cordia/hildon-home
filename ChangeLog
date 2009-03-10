@@ -1,3 +1,15 @@
+2009-03-10  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-incoming-events.c (group_activate_notifications,
+	  group_window_response, group_update_window_content, group_update, ie,
+	  group, notifications, preview_window_response,
+	  close_led_notification, remove_from_preview_list,
+	  preview_window_destroy_cb, show_preview_window,
+	  hd_incoming_events_notified, hd_incoming_events_finalize): Implement
+	  grouped incoming notification previews. Fixes: NB#102328
+
+	* debian/changelog: Update.
+
 2009-03-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/notification-groups.conf: Add D-Bus calls for chat-message and

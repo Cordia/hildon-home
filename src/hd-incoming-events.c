@@ -75,7 +75,6 @@ typedef struct
 
 struct _HDIncomingEventsPrivate
 {
-  GQueue          *preview_queue;
   GHashTable      *groups;
 
   GList           *preview_list;
@@ -121,6 +120,114 @@ group_notification_closed (HDIncomingEventGroup *group,
 }
 
 static void
+group_activate_notifications (HDIncomingEventGroup *group,
+                              GPtrArray            *notifications)
+{
+  guint i;
+
+  if (notifications->len == 1)
+    {
+      /* Always call default action if it is only one un-grouped notification */
+      HDNotification *notification;
+
+      notification = g_ptr_array_index (notifications,
+                                        0);
+
+      hd_notification_manager_call_action (hd_notification_manager_get (),
+                                           notification,
+                                           "default");
+      goto close_all;
+    }
+
+  if (group->account_call && group->account_hint)
+    {
+      const gchar *cmp_account = NULL;
+
+      /* If account call is available, check if the account hint is the same for
+       * each notification, if yes call the account call with the account hint
+       * as argument
+       */
+
+      for (i = 0; i < notifications->len; i++)
+        {
+          HDNotification *notification;
+          GValue *value;
+
+          notification = g_ptr_array_index (notifications,
+                                            i);
+          value = hd_notification_get_hint (notification,
+                                            group->account_hint);
+
+          if (!G_VALUE_HOLDS (value, G_TYPE_STRING))
+            {
+              cmp_account = NULL;
+              break;
+            }
+          else
+            {
+              const char *account = g_value_get_string (value);
+
+              if (cmp_account == NULL)
+                cmp_account = account;
+              else if (g_strcmp0 (cmp_account, account))
+                {
+                  cmp_account = NULL;
+                  break;
+                }
+            }
+        }
+
+      if (cmp_account)
+        {
+          gchar *dbus_call = g_strdup_printf ("%s string:%s",
+                                              group->account_call,
+                                              cmp_account);
+          hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
+                                                      dbus_call);
+          g_free (dbus_call);
+
+          goto close_all;
+        }
+    }
+
+  if (group->dbus_callback)
+    {
+      /* Call D-Bus callback if available else call default action on each notification */
+      hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
+                                                  group->dbus_callback);
+    }
+  else
+    {
+      for (i = 0; i < notifications->len; i++)
+        {
+          HDNotification *notification;
+
+          notification = g_ptr_array_index (notifications,
+                                            i);
+
+          hd_notification_manager_call_action (hd_notification_manager_get (),
+                                               notification,
+                                               "default");
+        }
+    }
+
+close_all:
+
+  /* Close all applications */
+  for (i = 0; i < notifications->len; i++)
+    {
+      HDNotification *notification;
+
+      notification = g_ptr_array_index (notifications,
+                                        i);
+
+      hd_notification_manager_close_notification (hd_notification_manager_get (),
+                                                  hd_notification_get_id (notification),
+                                                  NULL);
+    }
+}
+
+static void
 group_window_response (HDIncomingEventWindow *window,
                        gint                   response_id,
                        HDIncomingEventGroup  *group)
@@ -129,115 +236,138 @@ group_window_response (HDIncomingEventWindow *window,
 
   if (response_id == GTK_RESPONSE_OK)
     {
-      if (group->notifications->len == 1)
+      /* Close all applications */
+      for (i = 0; i < group->notifications->len; i++)
         {
-          /* Always call default action if it is only one un-grouped notification */
           HDNotification *notification;
 
           notification = g_ptr_array_index (group->notifications,
-                                            0);
+                                            i);
 
-          hd_notification_manager_call_action (hd_notification_manager_get (),
-                                               notification,
-                                               "default");
-          goto close_all;
+          /* The group is removed all at once */
+          g_signal_handlers_disconnect_by_func (notification, group_notification_closed, group);
         }
 
-      if (group->account_call && group->account_hint)
-        {
-          const gchar *cmp_account = NULL;
-
-          /* If account call is available, check if the account hint is the same for
-           * each notification, if yes call the account call with the account hint
-           * as argument
-           */
-
-          for (i = 0; i < group->notifications->len; i++)
-            {
-              HDNotification *notification;
-              GValue *value;
-
-              notification = g_ptr_array_index (group->notifications,
-                                                i);
-              value = hd_notification_get_hint (notification,
-                                                group->account_hint);
-
-              if (!G_VALUE_HOLDS (value, G_TYPE_STRING))
-                {
-                  cmp_account = NULL;
-                  break;
-                }
-              else
-                {
-                  const char *account = g_value_get_string (value);
-
-                  if (cmp_account == NULL)
-                    cmp_account = account;
-                  else if (g_strcmp0 (cmp_account, account))
-                    {
-                      cmp_account = NULL;
-                      break;
-                    }
-                }
-            }
-
-          if (cmp_account)
-            {
-              gchar *dbus_call = g_strdup_printf ("%s string:%s",
-                                                  group->account_call,
-                                                  cmp_account);
-              hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
-                                                          dbus_call);
-              g_free (dbus_call);
-
-              goto close_all;
-            }
-        }
-
-      if (group->dbus_callback)
-        {
-          /* Call D-Bus callback if available else call default action on each notification */
-          hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
-                                                      group->dbus_callback);
-        }
-      else
-        {
-          for (i = 0; i < group->notifications->len; i++)
-            {
-              HDNotification *notification;
-
-              notification = g_ptr_array_index (group->notifications,
-                                                i);
-
-              hd_notification_manager_call_action (hd_notification_manager_get (),
-                                                   notification,
-                                                   "default");
-            }
-        }
+      group_activate_notifications (group,
+                                    group->notifications);
     }
-
-close_all:
-
-  /* Close all applications */
-  for (i = 0; i < group->notifications->len; i++)
+  else
     {
-      HDNotification *notification;
+      /* Close all applications */
+      for (i = 0; i < group->notifications->len; i++)
+        {
+          HDNotification *notification;
 
-      notification = g_ptr_array_index (group->notifications,
-                                        i);
+          notification = g_ptr_array_index (group->notifications,
+                                            i);
 
-      /* The group is removed all at once */
-      g_signal_handlers_disconnect_by_func (notification, group_notification_closed, group);
+          /* The group is removed all at once */
+          g_signal_handlers_disconnect_by_func (notification, group_notification_closed, group);
 
-      hd_notification_manager_close_notification (hd_notification_manager_get (),
-                                                  hd_notification_get_id (notification),
-                                                  NULL);
+          hd_notification_manager_close_notification (hd_notification_manager_get (),
+                                                      hd_notification_get_id (notification),
+                                                      NULL);
+        }
     }
 
   g_ptr_array_remove_range (group->notifications,
                             0,
                             group->notifications->len);
   group_update (group);
+}
+
+static void
+group_update_window_content (HDIncomingEventGroup *group,
+                             GtkWidget            *window,
+                             GPtrArray            *notifications)
+{
+  /* Check if there are multiple notifications or just one */
+  if (notifications->len > 1)
+    {
+      gint i;
+      gint64 max_time = -2;
+      const gchar *latest_summary = "";
+      gchar *text_domain;
+      gchar *summary;
+      gchar *body;
+
+      /* Create a grouped notification */
+
+      /* Find the latest summary and time */
+      i = notifications->len - 1;
+      do
+        {
+          HDNotification *notification;
+          gint64 time;
+
+          notification = g_ptr_array_index (notifications,
+                                            i);
+
+          time = hd_notification_get_time (notification);
+          if (time > max_time)
+            {
+              max_time = time;
+              latest_summary = hd_notification_get_summary (notification);
+            }
+        }
+      while (i-- > 0);
+
+      if (group && group->empty_summary && (!latest_summary || !latest_summary[0]))
+        latest_summary = group->empty_summary;
+
+      /* Use default domain if no text domain is set */
+      text_domain = (group && group->text_domain) ? group->text_domain : GETTEXT_PACKAGE;
+
+      /* Create translated summary and body texts */
+      summary = g_strdup_printf (dgettext (text_domain,
+                                           group->summary),
+                                 notifications->len);
+      body = g_strdup_printf (dgettext (text_domain,
+                                        group->body),
+                              latest_summary);
+
+      g_object_set (window,
+                    "title", summary,
+                    "message", body,
+                    "icon", group->icon,
+                    "time", max_time,
+                    NULL);
+
+      g_free (summary);
+      g_free (body);
+    }
+  else
+    {
+      HDNotification *notification = g_ptr_array_index (notifications,
+                                                        0);
+      const gchar *summary, *body, *icon;
+
+      /* Check if there is a special summary for this group */
+      summary = hd_notification_get_summary (notification);
+      if (group && group->empty_summary && (!summary || !summary[0]))
+        summary = group->empty_summary;
+
+      body = hd_notification_get_body (notification);
+      if (group && group->preview_summary)
+        {
+          body = summary;
+          summary = group->preview_summary;
+        }
+
+      icon = hd_notification_get_icon (notification);
+      if (group && (!icon || !icon[0]))
+        {
+          icon = group->icon;
+        }
+
+      g_object_set (window,
+                    "title", summary,
+                    "message", body,
+                    "icon", icon,
+                    "time", (gint64) hd_notification_get_time (notification),
+                    NULL);
+    }
+
 }
 
 static void
@@ -269,92 +399,9 @@ group_update (HDIncomingEventGroup *group)
                             group);
         }
 
-      /* Check if there are multiple notifications or just one */
-      if (group->notifications->len > 1)
-        {
-          gint i;
-          gint64 max_time = -2;
-          const gchar *latest_summary = "";
-          gchar *text_domain;
-          gchar *summary;
-          gchar *body;
-
-          /* Create a grouped notification */
-
-          /* Find the latest summary and time */
-          i = group->notifications->len - 1;
-          do
-            {
-              HDNotification *notification;
-              gint64 time;
-
-              notification = g_ptr_array_index (group->notifications,
-                                                i);
-
-              time = hd_notification_get_time (notification);
-              if (time > max_time)
-                {
-                  max_time = time;
-                  latest_summary = hd_notification_get_summary (notification);
-                }
-            }
-          while (i-- > 0);
-
-          if (group->empty_summary && (!latest_summary || !latest_summary[0]))
-            latest_summary = group->empty_summary;
-
-          /* Use default domain if no text domain is set */
-          text_domain = group->text_domain ? group->text_domain : GETTEXT_PACKAGE;
-
-          /* Create translated summary and body texts */
-          summary = g_strdup_printf (dgettext (text_domain,
-                                               group->summary),
-                                     group->notifications->len);
-          body = g_strdup_printf (dgettext (text_domain,
-                                            group->body),
-                                  latest_summary);
-
-          g_object_set (group->switcher_window,
-                        "title", summary,
-                        "message", body,
-                        "icon", group->icon,
-                        "time", max_time,
-                        NULL);
-
-          g_free (summary);
-          g_free (body);
-        }
-      else
-        {
-          HDNotification *notification = g_ptr_array_index (group->notifications,
-                                                            0);
-          const gchar *summary, *body, *icon;
-          
-          /* Check if there is a special summary for this group */
-          summary = hd_notification_get_summary (notification);
-          if (group->empty_summary && (!summary || !summary[0]))
-            summary = group->empty_summary;
-
-          body = hd_notification_get_body (notification);
-          if (group->preview_summary)
-            {
-              body = summary;
-              summary = group->preview_summary;
-            }
-
-          icon = hd_notification_get_icon (notification);
-          if (!icon || !icon[0])
-            {
-              icon = group->icon;
-            }
-
-          g_object_set (group->switcher_window,
-                        "title", summary,
-                        "message", body,
-                        "icon", icon,
-                        "time", (gint64) hd_notification_get_time (notification),
-                        NULL);
-        }
+      group_update_window_content (group,
+                                   group->switcher_window,
+                                   group->notifications);
 
       gtk_widget_show (group->switcher_window);
     }
@@ -424,8 +471,9 @@ add_switcher_notification (HDIncomingEvents         *ie,
 
 typedef struct
 {
-  HDIncomingEvents *ie;
-  HDNotification   *notification;
+  HDIncomingEvents     *ie;
+  HDIncomingEventGroup *group;
+  GPtrArray            *notifications;
 } PreviewWindowResponseInfo;
 
 static void
@@ -434,7 +482,7 @@ preview_window_response (HDIncomingEventWindow     *window,
                          PreviewWindowResponseInfo *info)
 {
   HDIncomingEvents *ie = info->ie;
-  HDNotification *notification = info->notification;
+  GPtrArray *notifications = info->notifications;
 
   g_debug ("preview_window_response response_id:%d", response_id);
 
@@ -442,46 +490,25 @@ preview_window_response (HDIncomingEventWindow     *window,
 
   if (response_id == GTK_RESPONSE_OK)
     {
-      hd_notification_manager_call_action (hd_notification_manager_get (),
-                                           notification,
-                                           "default");
-      hd_notification_manager_close_notification (hd_notification_manager_get (),
-                                                  hd_notification_get_id (notification),
-                                                  NULL);
+      group_activate_notifications (info->group,
+                                    notifications);
     }
   else if (response_id == GTK_RESPONSE_DELETE_EVENT)
-    add_switcher_notification (ie, notification);
+    {
+      guint i;
+      for (i = 0; i < notifications->len; i++)
+        {
+          HDNotification *notification;
+
+          notification = g_ptr_array_index (notifications, i);
+
+          add_switcher_notification (ie, notification);
+        }
+    }
+
+  g_ptr_array_free (notifications, TRUE);
 
   gtk_widget_destroy (GTK_WIDGET (window));
-}
-
-static void
-preview_window_destroy (GtkWidget        *widget,
-                        HDIncomingEvents *ie)
-{
-  HDIncomingEventsPrivate *priv = ie->priv;
-
-  /* Pop the destroyed preview window */
-  g_queue_pop_head (priv->preview_queue);
-
-  /* Show the next avialable preview window */
-  while (!g_queue_is_empty (priv->preview_queue))
-    {
-      GtkWidget *next_preview = g_queue_peek_head (priv->preview_queue);
-
-      if (GTK_IS_WIDGET (next_preview))
-        {
-          gtk_widget_show (next_preview);
-
-          /* Send dbus request to mce to turn display backlight on */
-          if (priv->mce_proxy)
-            dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
-                                        G_TYPE_INVALID, G_TYPE_INVALID);
-          break;
-        }
-      else
-        g_queue_pop_head (priv->preview_queue);
-    }
 }
 
 /* Function to set/reset mce led pattern */
@@ -517,6 +544,111 @@ close_led_notification (HDNotification *notification,
                                       FALSE);
 }
 
+static void
+remove_from_preview_list (HDNotification   *notification,
+                          HDIncomingEvents *ie)
+{
+  HDIncomingEventsPrivate *priv = ie->priv;
+
+  priv->preview_list = g_list_remove (priv->preview_list,
+                                      notification);
+}
+
+static void show_preview_window (HDIncomingEvents *ie);
+
+static void
+preview_window_destroy_cb (GtkWidget        *window,
+                           HDIncomingEvents *ie)
+{
+  HDIncomingEventsPrivate *priv = ie->priv;
+
+  priv->preview_window = NULL;
+
+  show_preview_window (ie);
+}
+
+static void
+show_preview_window (HDIncomingEvents *ie)
+{
+  HDIncomingEventsPrivate *priv = ie->priv;
+  HDNotification *n;
+  GPtrArray *notifications;
+  const gchar *category;
+  HDIncomingEventGroup *group;
+  PreviewWindowResponseInfo *preview_window_response_info;
+
+  if (priv->preview_window || !priv->preview_list)
+    return;
+
+  /* Get first notification */
+  notifications = g_ptr_array_new ();
+
+  n = priv->preview_list->data;
+  g_ptr_array_add (notifications,
+                   n);
+  priv->preview_list = g_list_delete_link (priv->preview_list,
+                                           priv->preview_list);
+
+  category = hd_notification_get_category (n);
+  group = g_hash_table_lookup (priv->groups,
+                               category);
+
+  /* Get all further notifications with the same category */
+  while (priv->preview_list)
+    {
+      n = priv->preview_list->data;
+
+      if (category && !strcmp (category,
+                               hd_notification_get_category (n)))
+        {
+          g_ptr_array_add (notifications,
+                           n);
+          priv->preview_list = g_list_delete_link (priv->preview_list,
+                                                   priv->preview_list);
+        }
+      else
+        break;
+    }
+
+  /* Create the notification preview window */
+  priv->preview_window = hd_incoming_event_window_new (TRUE,
+                                                       NULL,
+                                                       NULL,
+                                                       NULL,
+                                                       -1,
+                                                       NULL);
+
+  group_update_window_content (group,
+                               priv->preview_window,
+                               notifications);
+
+  preview_window_response_info = g_new (PreviewWindowResponseInfo, 1);
+  preview_window_response_info->ie = ie;
+  preview_window_response_info->group = group;
+  preview_window_response_info->notifications = notifications;
+
+  g_signal_connect (priv->preview_window, "response",
+                    G_CALLBACK (preview_window_response),
+                    preview_window_response_info);
+  g_signal_connect (priv->preview_window, "destroy",
+                    G_CALLBACK (preview_window_destroy_cb), ie);
+/*  g_signal_connect_object (notification, "closed",
+                           G_CALLBACK (gtk_widget_destroy), priv->preview_window,
+                           G_CONNECT_SWAPPED);*/
+
+  /* Send dbus request to mce to turn display backlight on */
+  if (priv->mce_proxy)
+    {
+      g_debug ("%s. Call %s",
+               __FUNCTION__,
+               MCE_DISPLAY_ON_REQ);
+      dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
+                                  G_TYPE_INVALID, G_TYPE_INVALID);
+    }
+
+  gtk_widget_show (priv->preview_window);
+}
+
 static gint
 cmp_category_func (gconstpointer a,
                    gconstpointer b)
@@ -541,12 +673,10 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
 {
   HDIncomingEventsPrivate *priv = ie->priv;
   const gchar *category;
-  GtkWidget *preview_window;
-  PreviewWindowResponseInfo *preview_window_response_info;
   guint i;
   HDIncomingEventGroup *group;
   GValue *p;
-  const gchar *summary, *body, *icon, *pattern = NULL;
+  const gchar *pattern = NULL;
 
   g_return_if_fail (HD_IS_INCOMING_EVENTS (ie));
 
@@ -603,63 +733,10 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
                                              notification,
                                              cmp_category_func);
 
-  summary = hd_notification_get_summary (notification);
-  if (group && group->empty_summary &&
-      (!summary || !summary[0]))
-    {
-        summary = group->empty_summary;
-    }
+  g_signal_connect (notification, "closed",
+                    G_CALLBACK (remove_from_preview_list), ie);
 
-  body = hd_notification_get_body (notification);
-  if (group && group->preview_summary)
-    {
-      body = summary;
-      summary = group->preview_summary;
-    }
-
-  icon = hd_notification_get_icon (notification);
-  if (group && (!icon || !icon[0]))
-    {
-      icon = group->icon;
-    }
-
-  /* Create the notification preview window */
-  preview_window = hd_incoming_event_window_new (TRUE,
-                                                 NULL,
-                                                 summary,
-                                                 body,
-                                                 hd_notification_get_time (notification),
-                                                 icon);
-
-  preview_window_response_info = g_new (PreviewWindowResponseInfo, 1);
-  preview_window_response_info->ie = ie;
-  preview_window_response_info->notification = notification;
-
-  g_signal_connect (preview_window, "response",
-                    G_CALLBACK (preview_window_response),
-                    preview_window_response_info);
-  g_signal_connect (preview_window, "destroy",
-                    G_CALLBACK (preview_window_destroy), ie);
-  g_signal_connect_object (notification, "closed",
-                           G_CALLBACK (gtk_widget_destroy), preview_window,
-                           G_CONNECT_SWAPPED);
-
-  /* Show window when queue is empty */
-  if (g_queue_is_empty (priv->preview_queue))
-    gtk_widget_show (preview_window);
-
-  /* Send dbus request to mce to turn display backlight on */
-  if (priv->mce_proxy)
-    {
-      g_debug ("%s. Call %s",
-               __FUNCTION__,
-               MCE_DISPLAY_ON_REQ);
-      dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
-                                  G_TYPE_INVALID, G_TYPE_INVALID);
-    }
-
-  /* Push window on queue */
-  g_queue_push_tail (priv->preview_queue, preview_window);
+  show_preview_window (ie);
 }
 
 static void
@@ -684,12 +761,8 @@ hd_incoming_events_finalize (GObject *object)
   if (priv->groups)
     priv->groups = (g_hash_table_destroy (priv->groups), NULL);
 
-  if (priv->preview_queue)
-    {
-      g_queue_foreach (priv->preview_queue, (GFunc) gtk_widget_destroy, NULL);
-      g_queue_free (priv->preview_queue);
-      priv->preview_queue = NULL;
-    }
+  if (priv->preview_list)
+    priv->preview_list = (g_list_free (priv->preview_list), NULL);
 
   if (priv->plugins)
     priv->plugins = (g_ptr_array_free (priv->plugins, TRUE), NULL);
@@ -904,8 +977,6 @@ hd_incoming_events_init (HDIncomingEvents *ie)
                                         g_str_equal,
                                         (GDestroyNotify) g_free,
                                         (GDestroyNotify) group_free);
-
-  priv->preview_queue = g_queue_new ();
 
   priv->plugins = g_ptr_array_new ();
 
