@@ -1,5 +1,16 @@
 2009-03-11  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#104709, NB#104479
+
+	* com.nokia.HildonHome.service.in:
+	* debian/hildon-home.xsession:
+	* org.freedesktop.Notifications.service.in: Use dsmetool to make sure
+	only one hildon-home instance is running.
+
+	* debian/changelog: Update.
+
+2009-03-11  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-cairo-surface-cache.c (added):
 	* src/hd-cairo-surface-cache.h (added):
 	* src/Makefile.am: Add HDCairoSurfaceCache.

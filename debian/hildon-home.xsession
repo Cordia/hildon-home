@@ -1,4 +1,3 @@
 #!/bin/sh
 
-/usr/bin/hildon-home &
-
+/usr/sbin/dsmetool -t /usr/bin/hildon-home
