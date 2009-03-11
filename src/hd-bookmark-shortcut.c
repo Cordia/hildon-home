@@ -31,6 +31,7 @@
 
 #include <gconf/gconf-client.h>
 
+#include "hd-cairo-surface-cache.h"
 #include "hd-bookmark-shortcut.h"
 
 /* Size from Home layout guide 1.2 */
@@ -548,9 +549,12 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   g_signal_connect (applet, "delete-event",
                     G_CALLBACK (delete_event_cb), applet);
 
-  priv->bg_image = cairo_image_surface_create_from_png (BACKGROUND_IMAGE_FILE);
-  priv->bg_active = cairo_image_surface_create_from_png (BACKGROUND_ACTIVE_IMAGE_FILE);
-  priv->thumb_mask = cairo_image_surface_create_from_png (THUMBNAIL_MASK_FILE);
+  priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                       BACKGROUND_IMAGE_FILE);
+  priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                        BACKGROUND_ACTIVE_IMAGE_FILE);
+  priv->thumb_mask = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                         THUMBNAIL_MASK_FILE);
 
   priv->gconf_client = gconf_client_get_default ();
 }

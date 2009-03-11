@@ -57,6 +57,8 @@ hildon_home_SOURCES = \
 	hd-backgrounds.h		\
 	hd-bookmark-shortcut.c		\
 	hd-bookmark-shortcut.h		\
+	hd-cairo-surface-cache.c	\
+	hd-cairo-surface-cache.h	\
 	hd-change-background-dialog.c	\
 	hd-change-background-dialog.h	\
 	hd-hildon-home-dbus.c		\
