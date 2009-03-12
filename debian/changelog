@@ -1,9 +1,9 @@
-hildon-home (0.3.16~unreleased) unstable; urgency=low
+hildon-home (0.3.16) unstable; urgency=low
   
   * Fixes: NB#104852 - Cache cairo image surface for bookmark shortcuts.
   * Fixes: NB#104709, NB#104479 - Multiple hildon-home instances running.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Mar 2009 12:00:07 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 12 Mar 2009 15:30:07 +0200
 
 hildon-home (0.3.15) unstable; urgency=low
 
