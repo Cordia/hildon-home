@@ -1,3 +1,10 @@
+2009-03-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/notification-groups.conf: Set logical string to
+	tana_fi_msgs_multiple for SMS/chat messages. Fixes: NB#105391
+
+	* debian/changelog: update
+
 2009-03-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.16
