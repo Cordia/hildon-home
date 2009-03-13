@@ -278,8 +278,6 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
   if (!priv->menu)
     {
       GtkWidget *button;
-      Display *display;
-      Window root;
       HDAppletManager *applet_manager;
       HDTaskManager *task_manager;
       HDBookmarkManager *bookmark_manager;
@@ -363,11 +361,9 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                               GTK_BUTTON (button));
       gtk_widget_show (button);
 
-      /* Set menu transient for root window */
-      gtk_widget_realize (priv->menu);
-      display = GDK_DISPLAY_XDISPLAY (gtk_widget_get_display (priv->menu));
-      root = RootWindow (display, GDK_SCREEN_XNUMBER (gtk_widget_get_screen (priv->menu)));
-      XSetTransientForHint (display, GDK_WINDOW_XID (priv->menu->window), root);
+      /* Hide on delete */
+      g_signal_connect (priv->menu, "delete-event",
+                        G_CALLBACK (gtk_widget_hide_on_delete), NULL);
     }
 
   /* Show menu */

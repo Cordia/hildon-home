@@ -1,5 +1,12 @@
 2009-03-13  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#105332 - Fix desktop menu destroy bug.
+
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu): Hide
+	instead of destroy menu on delete.
+
+2009-03-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* debian/changelog: Fixes: NB#105748
 
 2009-03-12  Jan Arne Petersen  <jpetersen@openismus.com>
