@@ -93,6 +93,8 @@ test_incoming_event_LDFLAGS = \
 	$(HILDON_HOME_LIBS)
 
 test_incoming_event_SOURCES = \
+	hd-cairo-surface-cache.c	\
+	hd-cairo-surface-cache.h	\
 	hd-incoming-event-window.c	\
 	hd-incoming-event-window.h	\
 	test-incoming-event.c

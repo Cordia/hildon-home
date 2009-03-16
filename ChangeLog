@@ -1,3 +1,15 @@
+2009-03-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#105736 - Incoming event window theming.
+
+	* src/Makefile.am:
+	* src/hd-incoming-event-window.c (IMAGES_DIR, BACKGROUND_IMAGE_FILE,
+	  timeout_id, bg_image, hd_incoming_event_window_realize,
+	  hd_incoming_event_window_expose_event,
+	  hd_incoming_event_window_dispose,
+	  hd_incoming_event_window_class_init, hd_incoming_event_window_init):
+	* src/test-incoming-event.c (main): Add incoming event window theming. 
+
 2009-03-13  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#105332 - Fix desktop menu destroy bug.

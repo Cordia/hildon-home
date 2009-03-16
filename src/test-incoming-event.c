@@ -49,7 +49,7 @@ main (int argc, char **argv)
   hildon_init ();
 
   /* Demo notification window */
-  window = hd_incoming_event_window_new (FALSE,
+  window = hd_incoming_event_window_new (TRUE,
                                          "Osso_calculator",
                                          "Email Sender Freaked Out Badly",
                                          "Email Subject",
