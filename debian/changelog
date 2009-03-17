@@ -1,9 +1,10 @@
-hildon-home (0.3.17~unreleased) unstable; urgency=low
+hildon-home (0.3.17) unstable; urgency=low
   
-  * Fixes: NB#105391, NB#105748 - Fix logical string for sms/chast messages.
+  Jan Arne:
+  * Fixes: NB#105391, NB#105748 - Fix logical string for sms/chat messages.
   * Fixes: NB#105332 - Fix desktop menu destroy bug.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 12 Mar 2009 15:30:07 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 17 Mar 2009 12:22:58 +0200
 
 hildon-home (0.3.16) unstable; urgency=low
   
