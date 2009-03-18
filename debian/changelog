@@ -1,8 +1,18 @@
+hildon-home (0.3.18~unreleased) unstable; urgency=low
+  
+  Jan Arne:
+  * Fixes: NB#106506 - Update text/shadow colors in bookmark shortcuts.
+  * Fixes: NB#102307 - Scaling expose function in bookmark shortcuts.
+  * Add dependencies for localizations.
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 17 Mar 2009 12:22:58 +0200
+
 hildon-home (0.3.17) unstable; urgency=low
   
   Jan Arne:
   * Fixes: NB#105391, NB#105748 - Fix logical string for sms/chat messages.
   * Fixes: NB#105332 - Fix desktop menu destroy bug.
+  * Fixes: NB#105736 - Incoming event window theming.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 17 Mar 2009 12:22:58 +0200
 

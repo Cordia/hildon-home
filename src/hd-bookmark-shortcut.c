@@ -141,8 +141,43 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
     }
   else
     {
-      /* Set icon */
-      priv->thumbnail_icon = cairo_image_surface_create_from_png (value);
+      cairo_surface_t *icon;
+      int w, h;
+
+      icon = cairo_image_surface_create_from_png (value);
+
+      w = cairo_image_surface_get_width (icon);
+      h = cairo_image_surface_get_height (icon);
+
+      if (w != THUMBNAIL_WIDTH || h != THUMBNAIL_HEIGHT)
+        {
+          cairo_t *cr;
+
+          /* Create scaled icon */
+          priv->thumbnail_icon = cairo_surface_create_similar (icon,
+                                                               cairo_surface_get_content (icon),
+                                                               THUMBNAIL_WIDTH,
+                                                               THUMBNAIL_HEIGHT);
+
+          cr = cairo_create (priv->thumbnail_icon);
+
+          cairo_scale (cr, THUMBNAIL_WIDTH/w, THUMBNAIL_HEIGHT/h);
+
+          cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+          cairo_set_source_surface (cr,
+                                    icon,
+                                    0,
+                                    0);
+
+          cairo_paint (cr);
+          cairo_destroy (cr);
+
+          cairo_surface_destroy (icon);
+        }
+      else
+        {
+          priv->thumbnail_icon = icon;
+        }
     }
 
   /* Free memory */
@@ -323,25 +358,15 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
 
   if (priv->thumbnail_icon)
     {
-      int w, h;
-
-      w = cairo_image_surface_get_width (priv->thumbnail_icon);
-      h = cairo_image_surface_get_height (priv->thumbnail_icon);
-
-      cairo_save (cr);
-      cairo_scale (cr, THUMBNAIL_WIDTH/w, THUMBNAIL_HEIGHT/h);
-
       cairo_set_source_surface (cr,
                                 priv->thumbnail_icon,
-                                BORDER_WIDTH_LEFT*w/THUMBNAIL_WIDTH,
-                                BORDER_WIDTH_TOP*h/THUMBNAIL_HEIGHT);
+                                BORDER_WIDTH_LEFT,
+                                BORDER_WIDTH_TOP);
       if (priv->thumb_mask)
         cairo_mask_surface (cr,
                             priv->thumb_mask,
-                            BORDER_WIDTH_LEFT*w/THUMBNAIL_WIDTH,
-                            BORDER_WIDTH_TOP*h/THUMBNAIL_HEIGHT);
-
-      cairo_restore (cr);
+                            BORDER_WIDTH_LEFT,
+                            BORDER_WIDTH_TOP);
     }
 
   cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
@@ -377,8 +402,10 @@ hd_bookmark_shortcut_class_init (HDBookmarkShortcutClass *klass)
 
   /* Add shadow to label */
   gtk_rc_parse_string ("style \"HDBookmarkShortcut-Label\" = \"osso-color-themeing\"{\n"
+                       "  fg[NORMAL] = @DefaultTextColor\n"
+                       "  text[NORMAL] = @DefaultTextColor\n"
                        "  engine \"sapwood\" {\n"
-                       "    shadowcolor = @ReversedBackgroundColor\n"
+                       "    shadowcolor = @ReversedTextColor\n"
                        "  }\n"
                        "} widget \"*.HDBookmarkShortcut-Label\" style \"HDBookmarkShortcut-Label\"");
 

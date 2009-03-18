@@ -1,3 +1,15 @@
+2009-03-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* debian/control: Add dependencies for localizations.
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_update_from_gconf,
+	  hd_bookmark_shortcut_expose_event): Do not scale in expose function.
+	  Fixes: NB#102307.
+	  (hd_bookmark_shortcut_class_init): Update text/shadow colors. Fixes:
+	  NB#106506.
+
+	* debian/changelog: Update
+
 2009-03-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.17
