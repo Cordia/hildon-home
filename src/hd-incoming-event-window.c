@@ -207,10 +207,12 @@ hd_incoming_event_window_realize (GtkWidget *widget)
 
   screen = gtk_widget_get_screen (widget);
   gtk_widget_set_colormap (widget,
-                           gdk_screen_get_rgb_colormap (screen));
+                           gdk_screen_get_rgba_colormap (screen));
 
   gtk_widget_set_app_paintable (widget,
                                 TRUE);
+
+  gtk_window_set_decorated (GTK_WINDOW (widget), FALSE);
 
   GTK_WIDGET_CLASS (hd_incoming_event_window_parent_class)->realize (widget);
 

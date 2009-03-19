@@ -4,6 +4,7 @@ hildon-home (0.3.18~unreleased) unstable; urgency=low
   * Fixes: NB#106506 - Update text/shadow colors in bookmark shortcuts.
   * Fixes: NB#102307 - Scaling expose function in bookmark shortcuts.
   * Add dependencies for localizations.
+  * Fixes: NB#106312 - Incoming events hsould be rgba windows.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 17 Mar 2009 12:22:58 +0200
 

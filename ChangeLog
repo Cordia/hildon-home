@@ -1,3 +1,10 @@
+2009-03-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-incoming-event-window.c (hd_incoming_event_window_realize):
+	  Use undecorated rgba windows for incoming events. Fixes: NB#106312.
+
+	* debian/changelog: Update
+
 2009-03-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* debian/control: Add dependencies for localizations.
