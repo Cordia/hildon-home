@@ -174,21 +174,32 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
                                        KEY_FILE_BACKGROUND_KEY_FILE_4,
                                        NULL);
 
-      if (image[1] || image[2] || image[3] || image[4])
-        image_set = TRUE;
+      if (image[1])
+        {
+          image_set = TRUE;
+
+          /* Fallback images */
+          if (!image[2])
+            {
+              image[2] = g_strdup (image[1]);
+              image[3] = image[3] ? image[3] : g_strdup (image[1]);
+              image[4] = image[4] ? image[4] : g_strdup (image[1]);
+            }
+          else if (!image[3])
+            {
+              image[3] = g_strdup (image[1]);
+              image[4] = image[4] ? image[4] : g_strdup (image[2]);
+            }
+          else if (!image[4])
+            {
+              image[4] = g_strdup (image[1]);
+            }
+        }
       
 
       if (theme && !image_set)
         {
           g_warning ("%s. Theme background %s has to be an image set",
-                     __FUNCTION__,
-                     filename);
-          goto cleanup;
-        }
-
-      if (image_set && (!image[1] || !image[2] || !image[3] || !image[4]))
-        {
-          g_warning ("%s. Image set %s has to define images for all four views",
                      __FUNCTION__,
                      filename);
           goto cleanup;
@@ -269,7 +280,7 @@ hd_change_background_dialog_constructed (GObject *object)
     G_OBJECT_CLASS (hd_change_background_dialog_parent_class)->constructed (object);
 
   current_background = hd_backgrounds_get_background (hd_backgrounds_get (),
-                                                      priv->current_view + 1);
+                                                      priv->current_view);
 
   /* Append backgrounds from themes */
   dir = g_dir_open (DIR_THEMES, 0, NULL);
@@ -506,8 +517,8 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                               &iter))
         {
           gchar *image[5];
+          gboolean image_set;
           guint i;
-          const gchar *value;
 
           /* Get selected background image */
           gtk_tree_model_get (priv->model, &iter,
@@ -516,18 +527,31 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                               COL_IMAGE_2, &image[2],
                               COL_IMAGE_3, &image[3],
                               COL_IMAGE_4, &image[4],
+                              COL_IMAGE_SET, &image_set,
                               -1);
 
-          g_debug ("Selected: %s", image[0]);
+          if (image_set)
+            {
+              guint i;
 
-          if (image[priv->current_view + 1])
-            value = image[priv->current_view + 1];
+              hd_backgrounds_set_background (hd_backgrounds_get (),
+                                             priv->current_view,
+                                             image[priv->current_view + 1]);
+
+              for (i = 0; i <= 4; i++)
+                {
+                  if (i != priv->current_view)
+                    hd_backgrounds_set_background (hd_backgrounds_get (),
+                                                   i,
+                                                   image[i + 1]);
+                }
+            }
           else
-            value = image[0];
-
-          hd_backgrounds_set_background (hd_backgrounds_get (),
-                                         priv->current_view + 1,
-                                         value);
+            {
+              hd_backgrounds_set_background (hd_backgrounds_get (),
+                                             priv->current_view,
+                                             image[0]);
+            }
 
           /* free memory */
           for (i = 0; i < 5; i++)

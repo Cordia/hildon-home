@@ -1,3 +1,19 @@
+2009-03-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#105850 - Implementing fallback for background images.
+
+	* src/hd-backgrounds.c (get_background_for_view_from_theme,
+	  get_background_for_view, hd_backgrounds_set_background,
+	  hd_backgrounds_get_background): Implementing fallback for background
+	  images.
+	* src/hd-change-background-dialog.c
+	  (hd_change_background_dialog_append_backgrounds,
+	  hd_change_background_dialog_constructed,
+	  hd_change_background_dialog_response): Image sets set all
+	  backgrounds. Support fallback for background images.
+
+	* debian/changelog: Update
+
 2009-03-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-incoming-event-window.c (hd_incoming_event_window_realize):

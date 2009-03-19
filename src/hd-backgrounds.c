@@ -402,12 +402,11 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
                                     guint          view,
                                     const gchar   *backgrounds_desktop)
 {
-  gchar *key;
   GKeyFile *key_file;
-  gchar *bg_image = NULL;
+  gchar *bg_image[4];
+  gchar *background = NULL;
+  guint i;
   GError *error = NULL;
-
-  key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, view);
 
   key_file = g_key_file_new ();
   if (!g_key_file_load_from_file (key_file,
@@ -420,27 +419,53 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
                backgrounds_desktop,
                error->message);
       g_error_free (error);
-      goto cleanup;
+      g_key_file_free (key_file);
+      return NULL;
     }
 
-  bg_image = g_key_file_get_string (key_file,
-                                    G_KEY_FILE_DESKTOP_GROUP,
-                                    key,
-                                    &error);
-
-  if (error)
+  for (i = 0; i < 4; i++)
     {
-      g_debug ("%s. Could not load background defintion for theme %s. %s",
-               __FUNCTION__,
-               backgrounds_desktop,
-               error->message);
-      g_error_free (error);
+      gchar *key;
+
+      key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, i + 1);
+
+      bg_image[i] = g_key_file_get_string (key_file,
+                                           G_KEY_FILE_DESKTOP_GROUP,
+                                           key,
+                                           &error);
+
+      if (error)
+        {
+          g_debug ("%s. Could not load background defintion for theme %s. %s",
+                   __FUNCTION__,
+                   backgrounds_desktop,
+                   error->message);
+          g_clear_error (&error);
+        }
+
+      g_free (key);
     }
 
-cleanup:
-  g_free (key);
   g_key_file_free (key_file);
-  return bg_image;
+
+  if (bg_image[view - 1])
+    {
+      background = g_strdup (bg_image[view - 1]);
+    }
+  else if (bg_image[0])
+    {
+      /* Fallback */
+
+      if (view == 4 && bg_image[1] && !bg_image[2])
+        background = g_strdup (bg_image[1]);
+      else
+        background = g_strdup (bg_image[0]);
+    }
+
+  for (i = 0; i < 4; i++)
+    g_free (bg_image[i]);
+
+  return background;
 }
 
 static gchar *
@@ -481,10 +506,10 @@ get_background_for_view (HDBackgrounds *backgrounds,
     return bg_image;
 
 
-  /* Fallback to current theme */
+  /* Fallback to default theme */
   bg_image = get_background_for_view_from_theme (backgrounds,
                                                  view,
-                                                 CURRENT_BACKGROUNDS_DESKTOP);
+                                                 DEFAULT_BACKGROUNDS_DESKTOP);
   if (!bg_image)
     {
       g_warning ("%s. Could not get any background for view %u",
@@ -739,6 +764,9 @@ hd_backgrounds_set_background (HDBackgrounds *backgrounds,
 {
   gchar *bg_image;
 
+  g_return_if_fail (HD_IS_BACKGROUNDS (backgrounds));
+  g_return_if_fail (view < 4);
+
   if (g_path_is_absolute (uri))
     {
       bg_image = g_strdup (uri);
@@ -756,7 +784,7 @@ hd_backgrounds_set_background (HDBackgrounds *backgrounds,
     }
 
   create_cached_background (backgrounds,
-                            view,
+                            view + 1,
                             bg_image,
                             TRUE,
                             TRUE);
@@ -771,9 +799,9 @@ hd_backgrounds_get_background (HDBackgrounds *backgrounds,
   HDBackgroundsPrivate *priv;
 
   g_return_val_if_fail (HD_IS_BACKGROUNDS (backgrounds), NULL);
-  g_return_val_if_fail (view > 0 && view <= 4, NULL);
+  g_return_val_if_fail (view < 4, NULL);
 
   priv = backgrounds->priv;
 
-  return priv->bg_image[view - 1];
+  return priv->bg_image[view];
 }
