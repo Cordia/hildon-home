@@ -1,3 +1,13 @@
+2009-03-10  Adam Endrodi <ext-adam.endrodi@nokia.com>
+
+	NB#95670 PLayed games are not going to pause state ,when
+	         sms / message is received
+
+	* src/hd-incoming-event-window.c:
+	  Don't accept focus.
+	* src/test-incoming-event.c:
+	  Make it able to create previews and not previews.
+
 2009-03-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#105850 - Implementing fallback for background images.

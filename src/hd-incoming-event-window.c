@@ -575,6 +575,9 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   /* Enable handling of button press events */
   gtk_widget_add_events (GTK_WIDGET (window), GDK_BUTTON_PRESS_MASK);
 
+  /* Don't take focus away from the toplevel application. */
+  gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
+
   /* bg image */
   priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
                                                        BACKGROUND_IMAGE_FILE);
