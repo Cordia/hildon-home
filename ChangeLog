@@ -1,3 +1,8 @@
+2009-03-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.18
+	* configure.ac: 0.3.18
+
 2009-03-10  Adam Endrodi <ext-adam.endrodi@nokia.com>
 
 	NB#95670 PLayed games are not going to pause state ,when

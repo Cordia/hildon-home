@@ -1,4 +1,4 @@
-hildon-home (0.3.18~unreleased) unstable; urgency=low
+hildon-home (0.3.18) unstable; urgency=low
   
   Jan Arne:
   * Fixes: NB#106506 - Update text/shadow colors in bookmark shortcuts.
@@ -6,8 +6,11 @@ hildon-home (0.3.18~unreleased) unstable; urgency=low
   * Add dependencies for localizations.
   * Fixes: NB#106312 - Incoming events hsould be rgba windows.
   * Fixes: NB#105850 - Implementing fallback for background images.
+  Adam:
+  * Fixes: NB#95670 - Played games are not going to pause state when
+    sms / message is received
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 17 Mar 2009 12:22:58 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Mar 2009 13:58:55 +0200
 
 hildon-home (0.3.17) unstable; urgency=low
   
