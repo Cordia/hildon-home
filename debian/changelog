@@ -2,6 +2,9 @@ hildon-home (0.3.19~unreleased) unstable; urgency=low
 
   * writeme
 
+  Jan Arne:
+  * Fixes: NB#107329 - Opening account from grouped mail notifications broken.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Mar 2009 14:30:37 +0200
 
 hildon-home (0.3.18) unstable; urgency=low

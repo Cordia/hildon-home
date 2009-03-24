@@ -1,3 +1,17 @@
+2009-03-24  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#107329 - Opening account from grouped mail notifications
+	broken.
+
+	* src/hd-incoming-events.c (group_activate_notifications): Create a
+	DBus Message to call.
+
+	* src/hd-notification-manager.c
+	  (hd_notification_manager_call_message):
+	* src/hd-notification-manager.h: Add function to call a DBusMessage.
+
+	* debian/changelog: Update
+
 2009-03-23  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.18

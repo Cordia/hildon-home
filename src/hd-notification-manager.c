@@ -1355,6 +1355,8 @@ hd_notification_manager_message_from_desc (HDNotificationManager *nm,
       g_scanner_destroy (scanner);
     }
 
+  g_strfreev (message_elements);
+
   return message;
 }
 
@@ -1445,3 +1447,15 @@ hd_notification_manager_call_dbus_callback (HDNotificationManager *nm,
       dbus_message_unref (message);
     }
 }
+
+void
+hd_notification_manager_call_message (HDNotificationManager *nm,
+                                      DBusMessage           *message)
+{
+  g_return_if_fail (HD_IS_NOTIFICATION_MANAGER (nm));
+
+  if (message != NULL)
+    dbus_connection_send (dbus_g_connection_get_connection (nm->priv->connection), 
+                          message, 
+                          NULL);
+} 

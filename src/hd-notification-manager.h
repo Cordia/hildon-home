@@ -111,6 +111,8 @@ void                   hd_notification_manager_call_action           (HDNotifica
 
 void                   hd_notification_manager_call_dbus_callback    (HDNotificationManager *nm,
                                                                       const gchar           *dbus_call);
+void                   hd_notification_manager_call_message          (HDNotificationManager *nm,
+                                                                      DBusMessage           *message);
 
 G_END_DECLS
 

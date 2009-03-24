@@ -13,7 +13,7 @@ def emit_notification(iface):
 	global emitted
 	emitted += 1
 	sender = "Sender %d" % (emitted) 
-	id = iface.Notify ('test-send.py', '0', '', 'janarne@gmail.com', '', ['default', 'default'], { 'category': 'auth-request' }, 0)
+	id = iface.Notify ('test-send.py', '0', '', 'janarne@gmail.com', '', ['default', 'default'], { 'category': 'email-message', 'email-account' : 'foo' }, 0)
 	print 'notification emmited. id: ' + str(id)
 
 	return True

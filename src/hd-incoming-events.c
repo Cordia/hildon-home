@@ -179,12 +179,42 @@ group_activate_notifications (HDIncomingEventGroup *group,
 
       if (cmp_account)
         {
-          gchar *dbus_call = g_strdup_printf ("%s string:%s",
-                                              group->account_call,
-                                              cmp_account);
-          hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
-                                                      dbus_call);
-          g_free (dbus_call);
+          gchar **message_elements;
+
+          message_elements = g_strsplit (group->account_call, " ", 5);
+
+          if (g_strv_length (message_elements) >= 4)
+            {
+              DBusMessage *message;
+
+              message = dbus_message_new_method_call (message_elements[0], 
+                                                      message_elements[1], 
+                                                      message_elements[2], 
+                                                      message_elements[3]);
+              dbus_message_append_args (message,
+                                        DBUS_TYPE_STRING, &cmp_account,
+                                        DBUS_TYPE_INVALID);
+
+              g_debug ("%s. Call D-Bus account call to %s %s %s %s string:%s",
+                       __FUNCTION__,
+                       message_elements[0],
+                       message_elements[1],
+                       message_elements[2],
+                       message_elements[3],
+                       cmp_account);
+
+              hd_notification_manager_call_message (hd_notification_manager_get (),
+                                                    message);
+              dbus_message_unref (message);
+            }
+          else
+            {
+              g_warning ("%s. Invalid D-Bus account call. %s",
+                         __FUNCTION__,
+                         group->account_call);
+            }
+
+          g_strfreev (message_elements);
 
           goto close_all;
         }
