@@ -52,7 +52,10 @@ main (int argc, char **argv)
   window = hd_incoming_event_window_new (argv[1] == NULL,
                                          "Osso_calculator",
                                          "Email Sender Freaked Out Badly",
-                                         "Email Subject",
+                                         "Papa don't preach, I'm in trouble deep "
+                                         "Papa don't preach, I've been losing sleep "
+                                         "But I made up my mind, I'm keeping my baby, "
+                                         "oh I'm gonna keep my baby, mmm...",
                                          12220784,
                                          "qgn_list_messagin");
   g_signal_connect (window, "response", G_CALLBACK (response), NULL);

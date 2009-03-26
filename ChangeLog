@@ -1,3 +1,12 @@
+2009-03-26  Adam Endrodi <ext-adam.endrodi@nokia.com>
+
+	* src/hd-incoming-event-window.c:
+	  Communicate the event time and message in the X Window properties.
+	  The WM will need to know about them because it will need to layout
+	  the notification window (thumbnail) entirely on its own.
+	* src/test-incoming-event.c:
+	  Add longer message text.
+
 2009-03-24  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#107329 - Opening account from grouped mail notifications

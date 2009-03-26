@@ -235,8 +235,14 @@ hd_incoming_event_window_realize (GtkWidget *widget)
                              "_HILDON_INCOMING_EVENT_NOTIFICATION_ICON",
                              icon);
   hd_incoming_event_window_set_string_xwindow_property (widget,
+                             "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
+                             gtk_label_get_label (GTK_LABEL (priv->time_label)));
+  hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
                           gtk_label_get_text (GTK_LABEL (priv->title)));
+  hd_incoming_event_window_set_string_xwindow_property (widget,
+                             "_HILDON_INCOMING_EVENT_NOTIFICATION_MESSAGE",
+                             gtk_label_get_label (GTK_LABEL (priv->message)));
   hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION",
                           priv->destination);
