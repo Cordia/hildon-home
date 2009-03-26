@@ -56,6 +56,8 @@ struct _HDHildonHomeDBusPrivate
 
   GtkWidget       *menu;
 
+  GtkWidget       *select_contacts_button;
+
   guint            current_view;
 };
 
@@ -68,6 +70,7 @@ struct _HDHildonHomeDBusPrivate
 #define CONTACT_DBUS_NAME "com.nokia.osso_addressbook"
 #define CONTACT_DBUS_PATH "/"
 #define CONTACT_DBUS_ADD_SHORTCUT "add_shortcut"
+#define CONTACT_DBUS_CAN_ADD_SHORTCUT "can_add_shortcut"
 
 G_DEFINE_TYPE (HDHildonHomeDBus, hd_hildon_home_dbus, G_TYPE_OBJECT);
 
@@ -265,6 +268,35 @@ model_row_deleted_cb (GtkTreeModel *model,
     gtk_widget_hide (button);
 }
 
+static void
+can_add_shortcut_notify (DBusGProxy       *proxy,
+                         DBusGProxyCall   *call,
+                         HDHildonHomeDBus *dbus)
+{
+  HDHildonHomeDBusPrivate *priv = dbus->priv;
+  gboolean can_add_shortcut;
+  GError *error = NULL;
+
+  if (dbus_g_proxy_end_call (proxy,
+                             call,
+                             &error,
+                             G_TYPE_BOOLEAN, &can_add_shortcut,
+                             G_TYPE_INVALID))
+    {
+      if (can_add_shortcut)
+        gtk_widget_show (priv->select_contacts_button);
+      else
+        gtk_widget_hide (priv->select_contacts_button);
+    }
+  else
+    {
+      g_warning ("Error calling can_add_shortcut. %s", error->message);
+      g_error_free (error);
+      
+      gtk_widget_hide (priv->select_contacts_button);
+    }  
+}
+
 void
 hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                                     guint             current_view)
@@ -309,7 +341,13 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
                               G_CALLBACK (select_contacts_clicked_cb), dbus);
       hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
                               GTK_BUTTON (button));
-      gtk_widget_show (button);
+      priv->select_contacts_button = button;
+      dbus_g_proxy_begin_call (priv->contact_proxy,
+                               CONTACT_DBUS_CAN_ADD_SHORTCUT,
+                               (DBusGProxyCallNotify) can_add_shortcut_notify,
+                               g_object_ref (dbus),
+                               (GDestroyNotify) g_object_unref,
+                               G_TYPE_INVALID);
 
       button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_bookmarks"));
       g_signal_connect_after (button, "clicked",
@@ -364,6 +402,15 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
       /* Hide on delete */
       g_signal_connect (priv->menu, "delete-event",
                         G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+    }
+  else
+    {
+      dbus_g_proxy_begin_call (priv->contact_proxy,
+                               CONTACT_DBUS_CAN_ADD_SHORTCUT,
+                               (DBusGProxyCallNotify) can_add_shortcut_notify,
+                               g_object_ref (dbus),
+                               (GDestroyNotify) g_object_unref,
+                               G_TYPE_INVALID);
     }
 
   /* Show menu */

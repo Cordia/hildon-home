@@ -1,5 +1,15 @@
 2009-03-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#106387 - Add contact option is displayed in desktop menu
+	even there are no contacts to add
+
+	* src/hd-hildon-home-dbus.c (select_contacts_button,
+	  CONTACT_DBUS_CAN_ADD_SHORTCUT, model_row_deleted_cb,
+	  can_add_shortcut_notify, hd_hildon_home_dbus_show_edit_menu): Call
+	  can_add_shortcut to check if there is a contact to add.
+
+2009-03-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#107622 - hildon-home crash trying to open a NULL URL.
 
 	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_update_from_gconf,
