@@ -115,6 +115,9 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
       g_clear_error (&error);
     }
 
+  if (!value)
+    g_warning ("%s. No label for bookmark %s.", __FUCNTION__, plugin_id);
+
   /* Set label */
   gtk_label_set_text (GTK_LABEL (priv->label), value);
 
@@ -180,6 +183,9 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
         }
     }
 
+  if (!value)
+    g_warning ("%s. No icon for bookmark %s.", __FUCNTION__, plugin_id);
+
   /* Free memory */
   g_free (key);
   g_free (value);
@@ -199,6 +205,9 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
                  error->message);
       g_clear_error (&error);
     }
+
+  if (!priv->url)
+    g_warning ("%s. No URL for bookmark %s.", __FUCNTION__, plugin_id);
 
   /* Free memory */
   g_free (key);
@@ -255,6 +264,12 @@ hd_bookmark_shortcut_activate_service (const gchar *url)
   DBusMessage *msg = NULL;
   DBusError error;
   DBusConnection *conn;
+
+  if (!url)
+    {
+      g_warning ("%s. Cannot open empty URL.", __FUCNTION__);
+      return;
+    }
 
   /* FIXME use libosso? */
 

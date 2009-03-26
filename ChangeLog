@@ -1,3 +1,10 @@
+2009-03-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#107622 - hildon-home crash trying to open a NULL URL.
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_update_from_gconf,
+	  hd_bookmark_shortcut_activate_service): Fix hildon-home crash.
+
 2009-03-26  Adam Endrodi <ext-adam.endrodi@nokia.com>
 
 	* src/hd-incoming-event-window.c:

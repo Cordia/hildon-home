@@ -4,6 +4,7 @@ hildon-home (0.3.19~unreleased) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#107329 - Opening account from grouped mail notifications broken.
+  * Fixes: NB#107622 - hildon-home crash trying to open a NULL URL.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Mar 2009 14:30:37 +0200
 
