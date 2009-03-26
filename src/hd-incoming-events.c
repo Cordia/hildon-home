@@ -520,6 +520,17 @@ preview_window_response (HDIncomingEventWindow     *window,
 
   if (response_id == GTK_RESPONSE_OK)
     {
+      guint i;
+      for (i = 0; i < notifications->len; i++)
+        {
+          HDNotification *notification;
+
+          notification = g_ptr_array_index (notifications, i);
+          g_object_weak_unref (G_OBJECT (notification),
+                               (GWeakNotify) g_ptr_array_remove,
+                               notifications);
+        }
+
       group_activate_notifications (info->group,
                                     notifications);
     }
@@ -531,6 +542,9 @@ preview_window_response (HDIncomingEventWindow     *window,
           HDNotification *notification;
 
           notification = g_ptr_array_index (notifications, i);
+          g_object_weak_unref (G_OBJECT (notification),
+                               (GWeakNotify) g_ptr_array_remove,
+                               notifications);
 
           add_switcher_notification (ie, notification);
         }
@@ -616,6 +630,10 @@ show_preview_window (HDIncomingEvents *ie)
   n = priv->preview_list->data;
   g_ptr_array_add (notifications,
                    n);
+  g_object_weak_ref (G_OBJECT (n),
+                     (GWeakNotify) g_ptr_array_remove,
+                     notifications);
+
   priv->preview_list = g_list_delete_link (priv->preview_list,
                                            priv->preview_list);
 
@@ -633,6 +651,9 @@ show_preview_window (HDIncomingEvents *ie)
         {
           g_ptr_array_add (notifications,
                            n);
+          g_object_weak_ref (G_OBJECT (n),
+                             (GWeakNotify) g_ptr_array_remove,
+                             notifications);
           priv->preview_list = g_list_delete_link (priv->preview_list,
                                                    priv->preview_list);
         }

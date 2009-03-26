@@ -1,5 +1,14 @@
 2009-03-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#107871 - hildon-home crash related to incoming events.
+
+	* src/hd-incoming-events.c (preview_window_response,
+	  show_preview_window): Make sure the notifications are still alive.
+
+	* debian/changelog: Update
+
+2009-03-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#106387 - Add contact option is displayed in desktop menu
 	even there are no contacts to add
 
