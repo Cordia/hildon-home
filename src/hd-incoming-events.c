@@ -516,8 +516,6 @@ preview_window_response (HDIncomingEventWindow     *window,
 
   g_debug ("preview_window_response response_id:%d", response_id);
 
-  g_free (info);
-
   if (response_id == GTK_RESPONSE_OK)
     {
       guint i;
@@ -550,6 +548,7 @@ preview_window_response (HDIncomingEventWindow     *window,
         }
     }
 
+  g_free (info);
   g_ptr_array_free (notifications, TRUE);
 
   gtk_widget_destroy (GTK_WIDGET (window));

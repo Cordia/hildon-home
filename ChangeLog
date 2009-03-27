@@ -1,5 +1,10 @@
 2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	* src/hd-incoming-events.c (preview_window_response): Fix use after
+	free spotted by Coverity: 'info' was used after freeing it.
+
+2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	Released 0.3.19
 	* configure.ac: 0.3.19
 
