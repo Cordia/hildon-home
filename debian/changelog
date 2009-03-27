@@ -1,14 +1,13 @@
-hildon-home (0.3.19~unreleased) unstable; urgency=low
-
-  * writeme
+hildon-home (0.3.19) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#107329 - Opening account from grouped mail notifications broken.
   * Fixes: NB#107622 - hildon-home crash trying to open a NULL URL.
-  * Fixes: NB#106387 - Add contact option is displayed in desktop menu even there are no contacts to add
+  * Fixes: NB#106387 - Add contact option is displayed in desktop menu even
+    there are no contacts to add
   * Fixes: NB#107871 - hildon-home crash related to incoming events.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Mar 2009 14:30:37 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 27 Mar 2009 09:10:37 +0200
 
 hildon-home (0.3.18) unstable; urgency=low
   
