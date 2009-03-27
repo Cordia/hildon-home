@@ -2,6 +2,8 @@
 
 	* src/hd-incoming-events.c (preview_window_response): Fix use after
 	free spotted by Coverity: 'info' was used after freeing it.
+	(group_update_window_content): Check for group==NULL before using it.
+	Spotted by Coverity.
 
 2009-03-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 

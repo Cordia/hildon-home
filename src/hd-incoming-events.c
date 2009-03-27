@@ -346,25 +346,31 @@ group_update_window_content (HDIncomingEventGroup *group,
         latest_summary = group->empty_summary;
 
       /* Use default domain if no text domain is set */
-      text_domain = (group && group->text_domain) ? group->text_domain : GETTEXT_PACKAGE;
+      text_domain = (group && group->text_domain) ?
+                     group->text_domain : GETTEXT_PACKAGE;
 
-      /* Create translated summary and body texts */
-      summary = g_strdup_printf (dgettext (text_domain,
+      if (group)
+        {
+          /* Create translated summary and body texts */
+          summary = g_strdup_printf (dgettext (text_domain,
                                            group->summary),
                                  notifications->len);
-      body = g_strdup_printf (dgettext (text_domain,
+          body = g_strdup_printf (dgettext (text_domain,
                                         group->body),
                               latest_summary);
 
-      g_object_set (window,
+          g_object_set (window,
                     "title", summary,
                     "message", body,
                     "icon", group->icon,
                     "time", max_time,
                     NULL);
 
-      g_free (summary);
-      g_free (body);
+          g_free (summary);
+          g_free (body);
+        }
+      else
+        g_warning ("%s: group == NULL", __FUNCTION__);
     }
   else
     {
