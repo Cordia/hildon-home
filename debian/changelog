@@ -1,8 +1,8 @@
-hildon-home (0.3.20~unreleased) unstable; urgency=low
+hildon-home (0.3.20) unstable; urgency=low
 
-  * writeme
+  * Fixed couple of Coverity found bugs.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 27 Mar 2009 09:42:41 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 31 Mar 2009 09:31:52 +0300
 
 hildon-home (0.3.19) unstable; urgency=low
 
