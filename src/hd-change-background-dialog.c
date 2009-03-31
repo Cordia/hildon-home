@@ -538,7 +538,7 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                              priv->current_view,
                                              image[priv->current_view + 1]);
 
-              for (i = 0; i <= 4; i++)
+              for (i = 0; i < 4; i++)
                 {
                   if (i != priv->current_view)
                     hd_backgrounds_set_background (hd_backgrounds_get (),

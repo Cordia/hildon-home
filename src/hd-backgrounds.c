@@ -303,6 +303,76 @@ read_pixbuf_cb (GFile         *file,
 }
 
 static void
+copy_pvr_cb (GFile         *file,
+             GAsyncResult  *res,
+             HDBackgrounds *backgrounds)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  GError *error = NULL;
+
+  if (g_file_copy_finish (file, res, &error))
+    {
+      gchar *cache_info_filename;
+      GFile *cache_info_file;
+      guint view = priv->current_data->view;
+      GString *buffer;
+      guint i;
+
+      g_free (priv->bg_image[view - 1]);
+      priv->bg_image[view - 1] = priv->current_data->uri;
+
+      cache_info_filename = g_strdup_printf ("%s/" CACHE_INFO_FILE,
+                                            g_get_home_dir ());
+      cache_info_file = g_file_new_for_path (cache_info_filename);
+
+      g_free (priv->cache_info_contents);
+      buffer = g_string_sized_new (512);
+      for (i = 0; i < 4; i++)
+        {
+          g_string_append (buffer, priv->bg_image[i] ? priv->bg_image[i] : "");
+          g_string_append_c (buffer, '\n');
+        }
+      priv->cache_info_contents = g_string_free (buffer, FALSE);
+
+      g_file_replace_contents_async (cache_info_file,
+                                     priv->cache_info_contents,
+                                     strlen (priv->cache_info_contents),
+                                     NULL,
+                                     FALSE,
+                                     G_FILE_CREATE_NONE,
+                                     priv->current_data->cancellable,
+                                     (GAsyncReadyCallback) replace_cache_info_cb,
+                                     backgrounds);
+
+/*      g_free (contents); */
+      g_free (cache_info_filename);
+      g_object_unref (cache_info_file);
+    }
+  else
+    {
+      GFile *file;
+
+      g_debug ("%s. Could not copy pre generated pvr file. %s",
+               __FUNCTION__,
+               error->message);
+      g_error_free (error);
+
+      if (g_path_is_absolute (priv->current_data->uri))
+        file = g_file_new_for_path (priv->current_data->uri);
+      else
+        file = g_file_new_for_uri (priv->current_data->uri);
+
+      hd_background_helper_read_pixbuf_async (file,
+                                              G_PRIORITY_DEFAULT,
+                                              priv->current_data->cancellable,
+                                              (GAsyncReadyCallback) read_pixbuf_cb,
+                                              backgrounds);
+
+      g_object_unref (file);
+    }
+}
+
+static void
 check_queue (HDBackgrounds *backgrounds)
 {
   HDBackgroundsPrivate *priv = backgrounds->priv;
@@ -331,25 +401,39 @@ check_queue (HDBackgrounds *backgrounds)
         }
       else
         {
-          GFile *file;
+          gchar *pvr_filename, *cached_filename;
+          GFile *file, *cached_file;
 
-          if (g_path_is_absolute (data->uri))
-            file = g_file_new_for_path (data->uri);
+          pvr_filename = g_strdup_printf ("%s.pvr", data->uri);
+
+          if (g_path_is_absolute (pvr_filename))
+            file = g_file_new_for_path (pvr_filename);
           else
-            file = g_file_new_for_uri (data->uri);
+            file = g_file_new_for_uri (pvr_filename);
+
+          cached_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED,
+                                             g_get_home_dir (),
+                                             data->view);
+          cached_file = g_file_new_for_path (cached_filename);
 
           g_debug ("%s. Create cached image %s for view %u.",
                    __FUNCTION__,
                    data->uri,
                    data->view);
 
-          hd_background_helper_read_pixbuf_async (file,
-                                                  G_PRIORITY_DEFAULT,
-                                                  data->cancellable,
-                                                  (GAsyncReadyCallback) read_pixbuf_cb,
-                                                  backgrounds);
+          g_file_copy_async (file,
+                             cached_file,
+                             G_FILE_COPY_OVERWRITE,
+                             G_PRIORITY_DEFAULT,
+                             data->cancellable,
+                             NULL, NULL,
+                             (GAsyncReadyCallback) copy_pvr_cb,
+                             backgrounds);
 
+          g_free (pvr_filename);
+          g_free (cached_filename);
           g_object_unref (file);
+          g_object_unref (cached_file);
         }
     }
 }

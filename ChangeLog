@@ -1,3 +1,16 @@
+2009-03-31  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-backgrounds.c (copy_pvr_cb, check_queue): Add support to copy
+	pre-generated .pvr images.
+
+	* src/hd-change-background-dialog.c
+	  (hd_change_background_dialog_response): Fix bug in loop.
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_init): Fix label
+	colour, use "hildon-label-shadow". Fixes: NB#106506.
+
+	* debian/changelog: Update
+
 2009-03-31  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.20
