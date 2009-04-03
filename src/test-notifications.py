@@ -29,13 +29,10 @@ if __name__ == '__main__':
 
 	bus = dbus.SessionBus()
 
-	try:
-		proxy = bus.get_object('org.freedesktop.Notifications', '/org/freedesktop/Notifications')
-		iface = dbus.Interface(proxy, 'org.freedesktop.Notifications')
-		proxy.connect_to_signal('NotificationClosed', notification_closed_handler, dbus_interface='org.freedesktop.Notifications')
-		proxy.connect_to_signal('ActionInvoked', action_invoked_handler, dbus_interface='org.freedesktop.Notifications')
-	except dbus.DBusException:
-		traceback.print_exc()
+	proxy = bus.get_object('org.freedesktop.Notifications', '/org/freedesktop/Notifications')
+	iface = dbus.Interface(proxy, 'org.freedesktop.Notifications')
+	proxy.connect_to_signal('NotificationClosed', notification_closed_handler, dbus_interface='org.freedesktop.Notifications')
+	proxy.connect_to_signal('ActionInvoked', action_invoked_handler, dbus_interface='org.freedesktop.Notifications')
 
 # iface.SystemNoteInfoprint ('foo1');
 # iface.SystemNoteInfoprint ('foo2');

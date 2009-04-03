@@ -1,3 +1,20 @@
+2009-04-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#109450 - Changed theme is not applied to shortcuts.	
+
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_init): Redraw if
+	  cached surface change.
+
+	* src/hd-cairo-surface-cache.c (HD_CAIRO_SURFACE_CACHE_GET_PRIVATE,
+	  _HDCairoSurfaceCachePrivate, table, theme_monitor, CHANGED,
+	  LAST_SIGNAL, signals, hd_cairo_surface_cache_dispose,
+	  hd_cairo_surface_cache_class_init, theme_changed,
+	  hd_cairo_surface_cache_init, hd_cairo_surface_cache_get_surface):
+	  Reload new images and update surfaces on theme change
+
+	* src/hd-incoming-event-window.c (hd_incoming_event_window_init):
+	  Redraw if cached surface change.
+
 2009-03-31  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-backgrounds.c (copy_pvr_cb, check_queue): Add support to copy

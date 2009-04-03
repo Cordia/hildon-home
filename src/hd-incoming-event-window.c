@@ -585,8 +585,11 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
 
   /* bg image */
+  g_signal_connect_object (hd_cairo_surface_cache_get (), "changed",
+                           G_CALLBACK (gtk_widget_queue_draw), window, G_CONNECT_SWAPPED);
   priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
                                                        BACKGROUND_IMAGE_FILE);
+
 
   gtk_widget_set_size_request (GTK_WIDGET (window),
                                cairo_image_surface_get_width (priv->bg_image),
