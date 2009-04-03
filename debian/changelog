@@ -2,6 +2,7 @@ hildon-home (0.3.21~unstable) unstable; urgency=low
   
   Jan Arne:
   * Fixes: NB#106506 - Update text colour in bookmark shortcuts.
+  * Fixes: NB#109450 - Changed theme is not applied to shortcuts.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Mar 2009 13:58:55 +0200
 
