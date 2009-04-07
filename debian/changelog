@@ -1,4 +1,4 @@
-hildon-home (0.3.21~unstable) unstable; urgency=low
+hildon-home (0.3.21) unstable; urgency=low
   
   Jan Arne:
   * Fixes: NB#106506 - Update text colour in bookmark shortcuts.
@@ -6,7 +6,7 @@ hildon-home (0.3.21~unstable) unstable; urgency=low
   * Fixes: NB#108935 - Chat and SMS message notifications are not grouped
     together
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 23 Mar 2009 13:58:55 +0200
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 07 Apr 2009 17:54:16 +0300
 
 hildon-home (0.3.20) unstable; urgency=low
 
