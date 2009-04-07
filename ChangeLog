@@ -1,3 +1,27 @@
+2009-04-07  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#108935 - Chat and SMS message notifications are not grouped
+	together
+
+	* src/hd-incoming-events.c (NOTIFICATION_GROUP_KEY_GROUPED_CATEGORY,
+	  NOTIFICATION_GROUP_KEY_GROUPED, grouped_category, switcher_window,
+	  notifications, no_window, grouped, ie, group_free,
+	  group_update_window_content, switcher_window_response,
+	  get_mapped_category, add_switcher_notification, show_preview_window,
+	  cmp_category_func, hd_incoming_events_notified,
+	  load_notification_groups): Support groups for multiple categories
+	  used for sms and chat messages.
+
+	* src/notification-groups.conf: Add messages group.
+
+	* debian/changelog: Update
+
+2009-04-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-backgrounds.c (gconf_bgimage_notify): Only show update
+	  notification when background is changed via Change background
+	  dialog.
+
 2009-04-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#109450 - Changed theme is not applied to shortcuts.	

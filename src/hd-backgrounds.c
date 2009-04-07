@@ -618,7 +618,7 @@ gconf_bgimage_notify (GConfClient *client,
   create_cached_background (backgrounds,
                             GPOINTER_TO_UINT (user_data),
                             bg_image,
-                            TRUE,
+                            FALSE,
                             FALSE);
   g_free (bg_image);
 }
