@@ -34,6 +34,8 @@
 #include <dbus/dbus-glib-bindings.h>
 #include <mce/dbus-names.h>
 
+#include <osso-mem.h>
+
 #include "hd-incoming-event-window.h"
 #include "hd-notification-manager.h"
 
@@ -125,11 +127,25 @@ group_notification_closed (HDIncomingEventGroup *group,
   group_update (group);
 }
 
-static void
+static gboolean
 group_activate_notifications (HDIncomingEventGroup *group,
                               GPtrArray            *notifications)
 {
   guint i;
+
+  if (osso_mem_in_lowmem_state ())
+    {
+      GtkWidget* banner;
+
+      g_debug ("%s. Do not activate notification in low mem state.",
+               __FUNCTION__);
+
+      banner = hildon_banner_show_information (NULL, NULL,
+                                               dgettext ("ke-recv",
+                                                         "memr_ti_close_applications"));
+
+      return FALSE;
+    }
 
   if (notifications->len == 1)
     {
@@ -261,6 +277,8 @@ close_all:
                                                   hd_notification_get_id (notification),
                                                   NULL);
     }
+
+  return TRUE;
 }
 
 static void
@@ -269,6 +287,7 @@ group_window_response (HDIncomingEventWindow *window,
                        HDIncomingEventGroup  *group)
 {
   guint i;
+  gboolean activated = TRUE;
 
   if (response_id == GTK_RESPONSE_OK)
     {
@@ -284,8 +303,8 @@ group_window_response (HDIncomingEventWindow *window,
           g_signal_handlers_disconnect_by_func (notification, group_notification_closed, group);
         }
 
-      group_activate_notifications (group,
-                                    group->notifications);
+      activated = group_activate_notifications (group,
+                                                group->notifications);
     }
   else
     {
@@ -306,10 +325,13 @@ group_window_response (HDIncomingEventWindow *window,
         }
     }
 
-  g_ptr_array_remove_range (group->notifications,
-                            0,
-                            group->notifications->len);
-  group_update (group);
+  if (activated)
+    {
+      g_ptr_array_remove_range (group->notifications,
+                                0,
+                                group->notifications->len);
+      group_update (group);
+    }
 }
 
 static void
@@ -604,6 +626,7 @@ preview_window_response (HDIncomingEventWindow     *window,
 {
   HDIncomingEvents *ie = info->ie;
   GPtrArray *notifications = info->notifications;
+  gboolean activated = TRUE;
 
   g_debug ("preview_window_response response_id:%d", response_id);
 
@@ -620,10 +643,11 @@ preview_window_response (HDIncomingEventWindow     *window,
                                notifications);
         }
 
-      group_activate_notifications (info->group,
-                                    notifications);
+      activated = group_activate_notifications (info->group,
+                                                notifications);
     }
-  else if (response_id == GTK_RESPONSE_DELETE_EVENT)
+  
+  if (response_id == GTK_RESPONSE_DELETE_EVENT || !activated)
     {
       guint i;
       for (i = 0; i < notifications->len; i++)

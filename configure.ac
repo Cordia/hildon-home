@@ -74,7 +74,8 @@ PKG_CHECK_MODULES(HILDON_HOME,
 		   gnome-vfs-2.0	>= 2.8.3	dnl
 		   sqlite3				dnl
 		   osso-bookmark-engine			dnl
-		   mce])
+		   mce 					dnl
+		   libosso])
 
 AC_SUBST(HILDON_HOME_LIBS)
 AC_SUBST(HILDON_HOME_CFLAGS)
