@@ -1,12 +1,10 @@
-hildon-home (0.3.22~unreleased) unstable; urgency=low
-
-  * writeme
+hildon-home (0.3.22) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#108185 - Notification process doesn't check RAM level
   * Fixes: NB#111271, NB#111255 - hildon-home crashes
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  7 Apr 2009 17:57:57 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 16 Apr 2009 13:15:50 +0300
 
 hildon-home (0.3.21) unstable; urgency=low
   

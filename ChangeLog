@@ -1,3 +1,8 @@
+2009-04-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.22
+	* configure.ac: 0.3.22
+
 2009-04-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Nokia: Fixes: NB#111271, NB#111255 - hildon-home crashes
