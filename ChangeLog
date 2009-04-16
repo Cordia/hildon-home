@@ -1,3 +1,15 @@
+2009-04-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Nokia: Fixes: NB#111271, NB#111255 - hildon-home crashes
+
+	* src/hd-incoming-events.c (group_update_window_content): Use the real
+	  group.
+	  (get_mapped_category): Return the default category if not mapped.
+	  (show_preview_window, switcher_window_response): Handle
+	  notifications without a category.
+
+	* debian/changelog: Update.
+
 2009-04-09  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#108185 - Notification process doesn't check RAM level

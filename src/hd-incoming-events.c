@@ -466,7 +466,7 @@ group_update_window_content (HDIncomingEventGroup *group,
       else if (real_group && real_group->preview_summary)
         {
           body = summary;
-          summary = group->preview_summary;
+          summary = real_group->preview_summary;
         }
 
       icon = hd_notification_get_icon (notification);
@@ -547,6 +547,9 @@ switcher_window_response (HDIncomingEventWindow     *window,
     }
 }
 
+/* Check if category is mapped to a virtual category
+ * and returns the virtual category in this case, 
+ * else return category */
 static const gchar *
 get_mapped_category (HDIncomingEvents *ie,
                      const gchar      *category)
@@ -563,24 +566,26 @@ get_mapped_category (HDIncomingEvents *ie,
                                category);
 
   if (!group)
-    return NULL;
+    return category;
 
-  return group->grouped_category;
+  if (group->grouped_category)
+    return group->grouped_category;
+  else
+    return category;
 }
 
 static void
 add_switcher_notification (HDIncomingEvents         *ie,
                            HDNotification           *notification)
 {
-  HDIncomingEventGroup *group;
+  HDIncomingEventGroup *group = NULL;
   const gchar *grouped_category;
 
   grouped_category = get_mapped_category (ie,
                                           hd_notification_get_category (notification));
-
-  group = g_hash_table_lookup (ie->priv->groups,
-                               grouped_category);
-  g_debug ("group %p, for category %s", group, hd_notification_get_category (notification));
+  if (grouped_category)
+    group = g_hash_table_lookup (ie->priv->groups,
+                                 grouped_category);
 
   if (group)
     {
@@ -732,7 +737,7 @@ show_preview_window (HDIncomingEvents *ie)
   HDNotification *n;
   GPtrArray *notifications;
   const gchar *category;
-  HDIncomingEventGroup *group;
+  HDIncomingEventGroup *group = NULL;
   PreviewWindowResponseInfo *preview_window_response_info;
 
   if (priv->preview_window || !priv->preview_list)
@@ -753,17 +758,18 @@ show_preview_window (HDIncomingEvents *ie)
 
   category = get_mapped_category (ie,
                                   hd_notification_get_category (n));
-  group = g_hash_table_lookup (priv->groups,
-                               category);
+  if (category)
+    group = g_hash_table_lookup (priv->groups,
+                                 category);
 
   /* Get all further notifications with the same category */
   while (priv->preview_list)
     {
       n = priv->preview_list->data;
 
-      if (category && !strcmp (category,
-                               get_mapped_category (ie,
-                                                    hd_notification_get_category (n))))
+      if (category && !g_strcmp0 (category,
+                                  get_mapped_category (ie,
+                                                       hd_notification_get_category (n))))
         {
           g_ptr_array_add (notifications,
                            n);
