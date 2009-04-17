@@ -65,16 +65,13 @@ static GOptionEntry entries[] =
 };
 
 /* signal handler, hildon-desktop sends SIGTERM to all tracked applications
- * when it receives SIGTEM itselgf */
+ * when it receives SIGTEM itself */
 static void
 signal_handler (int signal)
-{
-  if (signal == SIGTERM)
-  {
-    hd_stamp_file_finalize (HD_HOME_STAMP_FILE);
-
-    exit (0);
-  }
+{ /* Finish what we're doing but exit as soon as possible. */
+  hd_stamp_file_finalize (HD_HOME_STAMP_FILE);
+  g_idle_add_full (G_PRIORITY_DEFAULT,
+                   (GSourceFunc)gtk_main_quit, NULL, NULL);
 }
 
 static void
@@ -149,7 +146,8 @@ main (int argc, char **argv)
   /* Initialize GnomeVFS */
   gnome_vfs_init ();
 
-  /* Add handler for TERM signal */
+  /* Add handler for signals */
+  signal (SIGINT,  signal_handler);
   signal (SIGTERM, signal_handler);
 
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
@@ -199,6 +197,10 @@ main (int argc, char **argv)
 
   /* Start the main loop */
   gtk_main ();
+
+  /* We got a signal, flush the database.  How we do it breaks
+   * if somebody has taken reference of the nm, but we don't. */
+  g_object_unref (hd_notification_manager_get ());
 
   return 0;
 }

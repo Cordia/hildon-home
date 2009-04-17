@@ -178,13 +178,13 @@ system_notifications_notified (HDNotificationManager *nm,
   const gchar *category;
 
   g_return_if_fail (HD_IS_SYSTEM_NOTIFICATIONS (sn));
-  g_return_if_fail (!replayed_event);
 
   /* Get category string */
   category = hd_notification_get_category (notification);
 
   if (category && g_str_equal (category, "system.note.infoprint"))
     {
+      g_return_if_fail (!replayed_event);
       dialog = create_note_infoprint (hd_notification_get_summary (notification),
                                       hd_notification_get_body (notification), 
                                       hd_notification_get_icon (notification));
@@ -193,6 +193,7 @@ system_notifications_notified (HDNotificationManager *nm,
     }
   else if (category && g_str_equal (category, "system.note.dialog")) 
     {
+      g_return_if_fail (!replayed_event);
       dialog = create_note_dialog (hd_notification_get_summary (notification),
                                    hd_notification_get_body (notification), 
                                    hd_notification_get_icon (notification), 

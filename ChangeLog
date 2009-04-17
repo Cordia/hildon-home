@@ -1,3 +1,19 @@
+2009-04-17  Adam Endrodi <ext-adam.endrodi@nokia.com>
+
+	Performance improvements.  In relationship with NB#110711.
+
+	* hd-notification-manager.c:
+	  Use prepared statements to write to the database.
+	  Batch multiple notifications in one transaction
+	  and commit them together.  This way you can have
+	  ~20 notifications per second (or more if you're
+	  a maniac).
+	* hildon-home.c:
+	  Exit cleanly on SIGINT.
+	* hd-system-notifications.c:
+	  Don't print bogus critical warnings when reprocessing
+	  the notification database.
+
 2009-04-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.22

@@ -41,6 +41,29 @@
 #include <gtk/gtk.h>
 #include <sqlite3.h>
 
+/* To trace _db-related things. */
+#if 0
+# define DBDBG                          g_warning
+#else
+# define DBDBG(...)                     /* */
+#endif
+
+#if 0
+# define ACTION                         g_warning
+#else
+# define ACTION(...)                    /* */
+#endif
+
+/* Macros for hd_notification_manager_bind_params() to make it easier
+ * to bind an integer, a string etc. to an SQL placeholder.
+ * Always terminate the arguments with %DB_BIND_END. */
+#define DB_BIND_INT(val)                G_TYPE_INT,     val
+#define DB_BIND_STR(val)                G_TYPE_STRING,  val
+#define DB_BIND_FLOAT(val)              G_TYPE_FLOAT,   val
+#define DB_BIND_UCHAR(val)              G_TYPE_UCHAR,   val
+#define DB_BIND_INT64(val)              G_TYPE_INT64,   val
+#define DB_BIND_END                     G_TYPE_INVALID
+
 #define HD_NOTIFICATION_MANAGER_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_NOTIFICATION_MANAGER, HDNotificationManagerPrivate))
 
@@ -63,24 +86,51 @@ struct _HDNotificationManagerPrivate
   DBusGConnection *connection;
   GMutex          *mutex;
   guint            current_id;
-  sqlite3         *db;
   GHashTable      *notifications;
+
+  /*
+   * @prepared_statements is a map between SQL statement strings
+   * and SQLite prepared statements.  Can be %NULL.  Destroying
+   * the hash table destroys all the prepared statements.
+   * @db should be valid as long as the hash table is not empty.
+   *
+   * Database modifications are done in a common transaction.
+   * After a modification is complete a COMMIT is scheduled
+   * at @commit_timeout.  If there are more modifications until
+   * that time COMMIT is further deferred.  This may lead to
+   * starvation.
+   *
+   * @commit_callback is the #GSource ID of the deferred committing
+   * function.  If not 0 a transaction is open.  This case the
+   * function must be called when hildon-home quits.
+   */
+  sqlite3         *db;
+  GHashTable      *prepared_statements;
+  time_t           commit_timeout;
+  gulong           commit_callback;
+
 };
 
+/* IPC structure between _insert_hints() and _insert_hint(). */
 typedef struct 
 {
-  HDNotificationManager  *nm;
-  gint                    id;
-  gint                    result;
+  /* @stmt is the prepared statement to insert the hint with. */
+  sqlite3_stmt *stmt;
+  gint          id;
+  gint          result;
 } HildonNotificationHintInfo;
 
+/* Notification hint value type codes, as used in the database.
+ * For upgrade compatibility with ourselves new values should be
+ * added at the end and existing ones should not be changed. */
 enum
 {
   HD_NM_HINT_TYPE_NONE,
   HD_NM_HINT_TYPE_STRING,
   HD_NM_HINT_TYPE_INT,
   HD_NM_HINT_TYPE_FLOAT,
-  HD_NM_HINT_TYPE_UCHAR
+  HD_NM_HINT_TYPE_UCHAR,
+  HD_NM_HINT_TYPE_INT64,
 };
 
 static void                            
@@ -161,6 +211,15 @@ hd_notification_manager_load_hint (void *data,
           sscanf (argv[2], "%d", &value_i);
           g_value_init (value, G_TYPE_INT);
           g_value_set_int (value, value_i);
+          break;
+        }
+    case HD_NM_HINT_TYPE_INT64:
+        {
+          gint64 value_i64;
+
+          sscanf (argv[2], "%Ld", &value_i64);
+          g_value_init (value, G_TYPE_INT64);
+          g_value_set_int64 (value, value_i64);
           break;
         }
     case HD_NM_HINT_TYPE_FLOAT:
@@ -318,6 +377,187 @@ hd_notification_manager_db_exec (HDNotificationManager *nm,
   return SQLITE_OK;
 }
 
+/*
+ * Prepares and caches an SQL query.  You should not finalize the
+ * returned statement.  Returns %NULL on error.  Prepared statements
+ * can be executed with hd_notification_manager_db_exec_prepared().
+ * For the caching to be effective @sql should be a string literal.
+ */
+static sqlite3_stmt *
+hd_notification_manager_db_prepare (HDNotificationManager *nm,
+                                    const gchar           *sql)
+{
+  gint ret;
+  sqlite3_stmt *stmt;
+
+  if (G_UNLIKELY (!nm->priv->prepared_statements))
+    /* We can use `direct' operations on the key because we know
+     * they will be string literals. */
+    nm->priv->prepared_statements = g_hash_table_new_full(
+                                   g_direct_hash, g_direct_equal,
+                                   NULL, (GDestroyNotify)sqlite3_finalize);
+  else if ((stmt = g_hash_table_lookup (nm->priv->prepared_statements, sql)))
+    return stmt;
+
+  g_return_val_if_fail (nm->priv->db != NULL, NULL);
+  if ((ret = sqlite3_prepare_v2 (nm->priv->db, sql, -1,
+                                 &stmt, NULL)) != SQLITE_OK)
+    g_critical("sqlite3_prepare_v2(%s): %d", sql, ret);
+
+  return stmt;
+}
+
+/*
+ * Wrapper around sqlite3_bind_*() to bind actual parameters to @stmt.
+ * The arguments are %GType--value pairs, terminated by a %G_TYPE_INVALID.
+ * Only INT:s, STRING:s, FLOAT:s and UCHAR:s are handled.  Use %DB_BIND_*()
+ * to specify the parameter values.  Returns an sqlite status code.
+ */
+static gint
+hd_notification_manager_db_bind_params (sqlite3_stmt *stmt, ...)
+{
+  guint i;
+  gint ret;
+  GType type;
+  va_list types;
+  const gchar *str;
+
+  ret = SQLITE_OK;
+  g_return_val_if_fail (stmt != NULL, SQLITE_ERROR);
+  va_start(types, stmt);
+  for (i = 1; (type = va_arg (types, GType)) != DB_BIND_END && ret == SQLITE_OK;
+       i++)
+    if      (type == G_TYPE_INT)
+      ret = sqlite3_bind_int  (stmt, i, va_arg (types, gint));
+    else if (type == G_TYPE_STRING)
+      /* @str needs to be saved because the commit is delayed. */
+      ret = (str = va_arg (types, const gchar *)) != NULL
+        ? sqlite3_bind_text (stmt, i, str, -1, SQLITE_TRANSIENT)
+        : sqlite3_bind_null (stmt, i);
+    else if (type == G_TYPE_INT64)
+      ret = sqlite3_bind_int64 (stmt, i, va_arg (types, gint64));
+    else if (type == G_TYPE_FLOAT)
+      /* Quoting gcc: 'gfloat' is promoted to 'double' when passed
+       * through '...' */
+      ret = sqlite3_bind_double (stmt, i, va_arg (types, gdouble));
+    else if (type == G_TYPE_UCHAR)
+      /* Same for guchar -> int. */
+      ret = sqlite3_bind_int (stmt, i, va_arg (types, gint));
+    else
+      g_assert_not_reached();
+  va_end (types);
+
+  return ret;
+}
+
+/* Like hd_notification_manager_db_exec() executes a non-SELECT statement
+ * and returns %SQLITE_OK/not-OK.  @stmt is reset in any case. */
+static gint
+hd_notification_manager_db_exec_prepared (sqlite3_stmt *stmt)
+{
+  gint ret;
+
+  g_return_val_if_fail (stmt != NULL, SQLITE_ERROR);
+
+  /* @stmt is expected to be reset.  SELECT, INSERT, UPDATE return
+   * DONE on success, COMMIT returns OK. */
+  if ((ret = sqlite3_step (stmt)) != SQLITE_DONE && ret != SQLITE_OK)
+    g_warning ("Unable to execute query: %d", ret);
+  else /* Be sqlite3_exec() like. */
+    ret = SQLITE_OK;
+  sqlite3_reset(stmt);
+
+  return ret;
+}
+
+/* Prepare, cache and execute @sql. */
+static gint
+hd_notification_manager_db_prepare_and_exec (HDNotificationManager *nm,
+                                             const gchar           *sql)
+{
+  return hd_notification_manager_db_exec_prepared (
+                          hd_notification_manager_db_prepare (nm, sql));
+}
+
+/* #GSourceFunc to COMMIT an active transaction. */
+static gboolean
+hd_notification_manager_db_commit (HDNotificationManager *nm)
+{ DBDBG(__FUNCTION__);
+  sqlite3_stmt *stmt;
+
+  if (nm->priv->commit_timeout > time(NULL))
+    /* Not yet. */
+    return TRUE;
+
+  if (hd_notification_manager_db_prepare_and_exec (nm, "COMMIT")
+      != SQLITE_OK)
+    /* We can lose more than one notification here but if COMMIT
+     * fails something is very wrong anyway. */
+    hd_notification_manager_db_prepare_and_exec (nm, "ROLLBACK");
+
+  nm->priv->commit_callback = 0;
+  return FALSE;
+}
+
+/* Like a plain BEGIN but allows you to batch multiple atomic units of work
+ * in one transaction.  This is faster because writing back a transaction
+ * is slow. */
+static int
+hd_notification_manager_db_begin (HDNotificationManager *nm)
+{ DBDBG(__FUNCTION__);
+
+  /* Open a transaction if it hasn't been. */
+  if (!nm->priv->commit_callback)
+    {
+      if (hd_notification_manager_db_prepare_and_exec (nm, "BEGIN")
+          != SQLITE_OK)
+        return SQLITE_ERROR;
+      nm->priv->commit_callback = g_timeout_add_seconds (10,
+                      (GSourceFunc)hd_notification_manager_db_commit, nm);
+    }
+
+  /* Create the savepoint we can revert to on error. */
+  if (hd_notification_manager_db_prepare_and_exec (nm, "SAVEPOINT willie")
+      != SQLITE_OK)
+    /* It's okay to leave the transaction open, it's only that the caller
+     * needs to know it shouldn't continue.  But other callers may. */
+    return SQLITE_ERROR;
+
+  return SQLITE_OK;
+}
+
+/* Record the last unit of work in the transaction as done,
+ * but don't commit yet.  On error you must _revert(). */
+static int
+hd_notification_manager_db_finish (HDNotificationManager *nm)
+{ DBDBG(__FUNCTION__);
+  g_assert (nm->priv->commit_callback != 0);
+
+  if (hd_notification_manager_db_prepare_and_exec (nm, "RELEASE willie")
+      != SQLITE_OK)
+    /* Caller will revert. */
+    return SQLITE_ERROR;
+
+  /* Commit in 8 seconds or so. */
+  nm->priv->commit_timeout = time(NULL) + 8;
+  return SQLITE_OK;
+}
+
+/* Reverts the last unit of work.  Earlier work is unaffected
+ * (unless something reall bad is in the air). */
+static void
+hd_notification_manager_db_revert (HDNotificationManager *nm)
+{ DBDBG(__FUNCTION__);
+  g_assert (nm->priv->commit_callback != 0);
+  if (hd_notification_manager_db_prepare_and_exec (nm, "ROLLBACK TO willie")
+      != SQLITE_OK)
+    { /* It is very nasty if ROLLBACK fails but what can we do? */
+      hd_notification_manager_db_prepare_and_exec (nm, "ROLLBACK");
+      g_source_remove (nm->priv->commit_callback);
+      nm->priv->commit_callback = 0;
+    }
+}
+
 static gint
 hd_notification_manager_db_create (HDNotificationManager *nm)
 {
@@ -367,6 +607,30 @@ hd_notification_manager_db_create (HDNotificationManager *nm)
   return result; 
 }
 
+static int
+hd_notification_manager_db_insert_actions (HDNotificationManager  *nm,
+                                           guint                  id,
+                                           gchar                 **actions)
+{
+  guint i;
+  sqlite3_stmt *insert;
+
+  /* Insert the actions. */
+  insert = hd_notification_manager_db_prepare (nm,
+             "INSERT INTO actions (id, label, nid) VALUES (?, ?, ?)");
+  for (i = 0; actions && actions[i] != NULL; i += 2)
+    {
+      if (hd_notification_manager_db_bind_params (insert,
+                 DB_BIND_STR(actions[i]), DB_BIND_STR(actions[i+1]),
+                 DB_BIND_INT(id), DB_BIND_END) != SQLITE_OK)
+        return SQLITE_ERROR;
+      if (hd_notification_manager_db_exec_prepared (insert) != SQLITE_OK)
+        return SQLITE_ERROR;
+    }
+
+  return SQLITE_OK;
+}
+
 static void 
 hd_notification_manager_db_insert_hint (gpointer key, gpointer value,
                                         gpointer data)
@@ -374,50 +638,70 @@ hd_notification_manager_db_insert_hint (gpointer key, gpointer value,
   HildonNotificationHintInfo *hinfo = (HildonNotificationHintInfo *) data;
   GValue *hvalue = (GValue *) value;
   gchar *hkey = (gchar *) key;
-  gchar *sql;
-  gchar *sql_value = NULL;
-  gint type = HD_NM_HINT_TYPE_NONE;
 
+  /* Don't bother if we have an error already. */
+  if (hinfo->result != SQLITE_OK)
+    return;
+
+  /* Compile the statement. */
   switch (G_VALUE_TYPE (hvalue))
     {
     case G_TYPE_STRING:
-      sql_value = g_strdup (g_value_get_string (hvalue));
-      type = HD_NM_HINT_TYPE_STRING;
+      hinfo->result = hd_notification_manager_db_bind_params (hinfo->stmt,
+             DB_BIND_STR (hkey), DB_BIND_INT (HD_NM_HINT_TYPE_STRING),
+             DB_BIND_STR (g_value_get_string (hvalue)),
+             DB_BIND_INT (hinfo->id), DB_BIND_END);
       break;
-
     case G_TYPE_INT:
-      sql_value = g_strdup_printf ("%d", g_value_get_int (hvalue));;
-      type = HD_NM_HINT_TYPE_INT;
+      hinfo->result = hd_notification_manager_db_bind_params (hinfo->stmt,
+             DB_BIND_STR (hkey), DB_BIND_INT (HD_NM_HINT_TYPE_INT),
+             DB_BIND_INT (g_value_get_int (hvalue)),
+             DB_BIND_INT (hinfo->id), DB_BIND_END);
       break;
-
+    case G_TYPE_INT64:
+      hinfo->result = hd_notification_manager_db_bind_params (hinfo->stmt,
+             DB_BIND_STR (hkey), DB_BIND_INT (HD_NM_HINT_TYPE_INT64),
+             DB_BIND_INT64 (g_value_get_int64 (hvalue)),
+             DB_BIND_INT (hinfo->id), DB_BIND_END);
+      break;
     case G_TYPE_FLOAT:
-      sql_value = g_strdup_printf ("%f", g_value_get_float (hvalue));;
-      type = HD_NM_HINT_TYPE_FLOAT;
-      type = 3;
+      hinfo->result = hd_notification_manager_db_bind_params (hinfo->stmt,
+             DB_BIND_STR (hkey), DB_BIND_INT (HD_NM_HINT_TYPE_FLOAT),
+             DB_BIND_FLOAT (g_value_get_float (hvalue)),
+             DB_BIND_INT (hinfo->id), DB_BIND_END);
       break;
-
     case G_TYPE_UCHAR:
-      sql_value = g_strdup_printf ("%d", g_value_get_uchar (hvalue));;
-      type = HD_NM_HINT_TYPE_UCHAR;
+      hinfo->result = hd_notification_manager_db_bind_params (hinfo->stmt,
+             DB_BIND_STR (hkey), DB_BIND_INT (HD_NM_HINT_TYPE_UCHAR),
+             DB_BIND_UCHAR (g_value_get_uchar (hvalue)),
+             DB_BIND_INT (hinfo->id), DB_BIND_END);
       break;
-    }
-
-  if (sql_value == NULL || type == HD_NM_HINT_TYPE_NONE)
-    {
+    default:
+      g_warning ("Hint `%s' of notification %d has invalid value type %lu",
+                 hkey, hinfo->id, G_VALUE_TYPE (hvalue));
       hinfo->result = SQLITE_ERROR;
       return;
     }
 
-  sql = sqlite3_mprintf ("INSERT INTO hints \n"
-                         "(id, type, value, nid)\n" 
-                         "VALUES \n"
-                         "('%q', %d, '%q', %d)",
-                         hkey, type, sql_value, hinfo->id);
+  if (hinfo->result == SQLITE_OK)
+    hinfo->result = hd_notification_manager_db_exec_prepared (hinfo->stmt);
+}
 
-  hinfo->result = hd_notification_manager_db_exec (hinfo->nm, sql);
+static int
+hd_notification_manager_db_insert_hints (HDNotificationManager *nm,
+                                         guint                  id,
+                                         GHashTable            *hints)
+{
+  HildonNotificationHintInfo hinfo;
 
-  sqlite3_free (sql);
-  g_free (sql_value);
+  /* Insert the notification hints. */
+  hinfo.id = id;
+  hinfo.result = SQLITE_OK; 
+  hinfo.stmt = hd_notification_manager_db_prepare (nm,
+             "INSERT INTO hints (id, type, value, nid) "
+             "VALUES (?, ?, ?, ?)");
+  g_hash_table_foreach (hints, hd_notification_manager_db_insert_hint, &hinfo);
+  return hinfo.result;
 }
 
 static gint 
@@ -432,66 +716,97 @@ hd_notification_manager_db_insert (HDNotificationManager *nm,
                                    gint                   timeout,
                                    const gchar           *dest)
 {
-  HildonNotificationHintInfo *hinfo;
-  gchar *sql;
-  gint result, i;
+  sqlite3_stmt *insert;
 
-  result = hd_notification_manager_db_exec (nm, "BEGIN TRANSACTION");
+  /* Prepare and begin.  We needn't begin before prepare. */
+  insert = hd_notification_manager_db_prepare (nm,
+             "INSERT INTO notifications "
+             "(id, app_name, icon_name, summary, body, timeout, dest) " 
+             "VALUES (?, ?, ?, ?, ?, ?, ?)");
+  if (hd_notification_manager_db_bind_params (insert,
+             DB_BIND_INT(id), DB_BIND_STR(app_name), DB_BIND_STR(icon),
+             DB_BIND_STR(summary), DB_BIND_STR(body), DB_BIND_INT(timeout),
+             DB_BIND_STR(dest), DB_BIND_END) != SQLITE_OK)
+    return SQLITE_ERROR;
 
-  if (result != SQLITE_OK) goto rollback;
+  if (hd_notification_manager_db_begin (nm) != SQLITE_OK)
+    return SQLITE_ERROR;
 
-  sql = sqlite3_mprintf ("INSERT INTO notifications \n"
-                         "(id, app_name, icon_name, summary, body, timeout, dest)\n" 
-                         "VALUES \n"
-                         "(%d, '%q', '%q', '%q', '%q', %d, '%q')",
-                         id, app_name, icon, summary, body, timeout, dest);
+  /* Insert the notification, its actions and hints. */
+  if (hd_notification_manager_db_exec_prepared (insert) != SQLITE_OK)
+    goto rollback;
+  if (hd_notification_manager_db_insert_actions (nm, id, actions) != SQLITE_OK)
+    goto rollback;
+  if (hd_notification_manager_db_insert_hints (nm, id, hints) != SQLITE_OK)
+    goto rollback;
 
-  result = hd_notification_manager_db_exec (nm, sql);
-
-  sqlite3_free (sql);
-
-  if (result != SQLITE_OK) goto rollback;
-
-  for (i = 0; actions && actions[i] != NULL; i += 2)
-    {
-      gchar *label = actions[i + 1];
-
-      sql = sqlite3_mprintf ("INSERT INTO actions \n"
-                             "(id, label, nid) \n" 
-                             "VALUES \n"
-                             "('%q', '%q', %d)",
-                             actions[i], label, id);
-
-      result = hd_notification_manager_db_exec (nm, sql);
-
-      sqlite3_free (sql);
-
-      if (result != SQLITE_OK) goto rollback;
-    }
-
-  hinfo = g_new0 (HildonNotificationHintInfo, 1);
-
-  hinfo->id = id;
-  hinfo->nm = nm;
-  hinfo->result = SQLITE_OK; 
-
-  g_hash_table_foreach (hints, hd_notification_manager_db_insert_hint, hinfo);
-
-  result = hinfo->result;
-
-  g_free (hinfo);
-
-  if (result != SQLITE_OK) goto rollback;
-
-  result = hd_notification_manager_db_exec (nm, "COMMIT TRANSACTION");
-
-  if (result != SQLITE_OK) goto rollback;
-
-  return SQLITE_OK;
+  /* Finish. */
+  if (hd_notification_manager_db_finish(nm) == SQLITE_OK)
+    return SQLITE_OK;
 
 rollback:
-  hd_notification_manager_db_exec (nm, "ROLLBACK TRANSACTION");
+  hd_notification_manager_db_revert (nm);
+  return SQLITE_ERROR;
+}
 
+static gint
+hd_notification_manager_db_delete_actions_and_hints (
+                                    HDNotificationManager *nm,
+                                    guint                  id)
+{
+  sqlite3_stmt *delete;
+
+  /* Delete actions. */
+  delete = hd_notification_manager_db_prepare (nm,
+             "DELETE FROM actions WHERE nid = ?");
+  if (hd_notification_manager_db_bind_params (delete,
+             DB_BIND_INT (id), DB_BIND_END) != SQLITE_OK)
+    return SQLITE_ERROR;
+  if (hd_notification_manager_db_exec_prepared (delete) != SQLITE_OK)
+    return SQLITE_ERROR;
+
+  /* Delete hints. */
+  delete = hd_notification_manager_db_prepare (nm,
+             "DELETE FROM hints WHERE nid = ?");
+  if (hd_notification_manager_db_bind_params (delete,
+             DB_BIND_INT (id), DB_BIND_END) != SQLITE_OK)
+    return SQLITE_ERROR;
+  if (hd_notification_manager_db_exec_prepared (delete) != SQLITE_OK)
+    return SQLITE_ERROR;
+
+  return SQLITE_OK;
+}
+
+static gint
+hd_notification_manager_db_delete (HDNotificationManager *nm,
+                                   guint                  id)
+{
+  sqlite3_stmt *delete;
+
+  /* Prepare and begin. */
+  delete = hd_notification_manager_db_prepare (nm,
+             "DELETE FROM notifications WHERE id = ?");
+  if (hd_notification_manager_db_bind_params (delete,
+             DB_BIND_INT (id), DB_BIND_END) != SQLITE_OK)
+    return SQLITE_ERROR;
+
+  if (hd_notification_manager_db_begin (nm) != SQLITE_OK)
+    return SQLITE_ERROR;
+
+  /* Delete. */
+  if (hd_notification_manager_db_delete_actions_and_hints (nm, id)
+      != SQLITE_OK)
+    goto rollback;
+  if (hd_notification_manager_db_exec_prepared (delete)
+      != SQLITE_OK)
+    goto rollback;
+
+  /* Finish. */
+  if (hd_notification_manager_db_finish (nm) == SQLITE_OK)
+    return SQLITE_OK;
+
+rollback:
+  hd_notification_manager_db_revert (nm);
   return SQLITE_ERROR;
 }
 
@@ -506,125 +821,40 @@ hd_notification_manager_db_update (HDNotificationManager *nm,
                                    GHashTable            *hints,
                                    gint                   timeout)
 {
-  HildonNotificationHintInfo *hinfo;
-  gchar *sql;
-  gint result, i;
+  sqlite3_stmt *update;
 
-  result = hd_notification_manager_db_exec (nm, "BEGIN TRANSACTION");
+  /* Prepare and begin. */
+  update = hd_notification_manager_db_prepare (nm,
+             "UPDATE notifications SET "
+             "  app_name = ?, icon_name = ?, "
+             "  summary = ?, body = ?, timeout = ? " 
+             "WHERE id = ?");
+  if (hd_notification_manager_db_bind_params (update,
+             DB_BIND_STR(app_name), DB_BIND_STR(icon), DB_BIND_STR(summary),
+             DB_BIND_STR(body), DB_BIND_INT(timeout), DB_BIND_INT(id),
+             DB_BIND_END) != SQLITE_OK)
+    return SQLITE_ERROR;
 
-  if (result != SQLITE_OK) goto rollback;
+  if (hd_notification_manager_db_begin (nm) != SQLITE_OK)
+    return SQLITE_ERROR;
 
-  sql = sqlite3_mprintf ("UPDATE notifications SET\n"
-                         "app_name='%q', icon_name='%q', \n"
-                         "summary='%q', body='%q', timeout=%d\n" 
-                         "WHERE id=%d",
-                         app_name, icon, summary, body, timeout, id);
+  /* Update the notification, then wipe out and re-add its actions
+   * and hints. */
+  if (hd_notification_manager_db_exec_prepared (update) != SQLITE_OK)
+    goto rollback;
+  if (hd_notification_manager_db_delete_actions_and_hints (nm, id) != SQLITE_OK)
+    goto rollback;
+  if (hd_notification_manager_db_insert_actions (nm, id, actions) != SQLITE_OK)
+    goto rollback;
+  if (hd_notification_manager_db_insert_hints (nm, id, hints) != SQLITE_OK)
+    goto rollback;
 
-  result = hd_notification_manager_db_exec (nm, sql);
-
-  sqlite3_free (sql);
-
-  if (result != SQLITE_OK) goto rollback;
-
-  sql = sqlite3_mprintf ("DELETE FROM actions WHERE nid=%d", id);
-
-  result = hd_notification_manager_db_exec (nm, sql);
-
-  sqlite3_free (sql);
-
-  if (result != SQLITE_OK) goto rollback;
-
-  for (i = 0; actions && actions[i] != NULL; i += 2)
-    {
-      gchar *label = actions[i + 1];
-
-      sql = sqlite3_mprintf ("INSERT INTO actions \n"
-                             "(id, label, nid) \n" 
-                             "VALUES \n"
-                             "('%q', '%q', %d)",
-                             actions[i], label, id);
-
-      result = hd_notification_manager_db_exec (nm, sql);
-
-      sqlite3_free (sql);
-
-      if (result != SQLITE_OK) goto rollback;
-    }
-
-  sql = sqlite3_mprintf ("DELETE FROM hints WHERE nid=%d", id);
-
-  result = hd_notification_manager_db_exec (nm, sql);
-
-  sqlite3_free (sql);
-
-  if (result != SQLITE_OK) goto rollback;
-
-  hinfo = g_new0 (HildonNotificationHintInfo, 1);
-
-  hinfo->id = id;
-  hinfo->nm = nm;
-  hinfo->result = SQLITE_OK; 
-
-  g_hash_table_foreach (hints, hd_notification_manager_db_insert_hint, hinfo);
-
-  result = hinfo->result;
-
-  g_free (hinfo);
-
-  if (result != SQLITE_OK) goto rollback;
-
-  result = hd_notification_manager_db_exec (nm, "COMMIT TRANSACTION");
-
-  if (result != SQLITE_OK) goto rollback;
-
-  return SQLITE_OK;
+  /* Finish. */
+  if (hd_notification_manager_db_finish (nm) == SQLITE_OK)
+    return SQLITE_OK;
 
 rollback:
-  hd_notification_manager_db_exec (nm, "ROLLBACK TRANSACTION");
-
-  return SQLITE_ERROR;
-}
-
-static gint
-hd_notification_manager_db_delete (HDNotificationManager *nm,
-                                   guint id)
-{
-  gchar *sql;
-  gint result;
-
-  result = hd_notification_manager_db_exec (nm, "BEGIN TRANSACTION");
-
-  if (result != SQLITE_OK) goto rollback;
-
-  sql = sqlite3_mprintf ("DELETE FROM actions WHERE nid=%d", id);
-
-  result = hd_notification_manager_db_exec (nm, sql);
-
-  sqlite3_free (sql);
-
-  sql = sqlite3_mprintf ("DELETE FROM hints WHERE nid=%d", id);
-
-  result = hd_notification_manager_db_exec (nm, sql);
-
-  sqlite3_free (sql);
-
-  sql = sqlite3_mprintf ("DELETE FROM notifications WHERE id=%d", id);
-
-  result = hd_notification_manager_db_exec (nm, sql);
-
-  sqlite3_free (sql);
-
-  if (result != SQLITE_OK) goto rollback;
-
-  result = hd_notification_manager_db_exec (nm, "COMMIT TRANSACTION");
-
-  if (result != SQLITE_OK) goto rollback;
-
-  return SQLITE_OK;
-
-rollback:
-  hd_notification_manager_db_exec (nm, "ROLLBACK TRANSACTION");
-
+  hd_notification_manager_db_revert (nm);
   return SQLITE_ERROR;
 }
 
@@ -697,7 +927,6 @@ hd_notification_manager_init (HDNotificationManager *nm)
                                  ".config",
                                  "hildon-desktop",
                                  NULL);
-
   if (!g_mkdir_with_parents (config_dir,
                              S_IRWXU |
                              S_IRGRP | S_IXGRP |
@@ -761,10 +990,23 @@ hd_notification_manager_finalize (GObject *object)
   if (priv->db)
     {
       sqlite3_stmt *stmt;
-      while ((stmt = sqlite3_next_stmt(priv->db, 0)) != NULL) {
-          sqlite3_finalize (stmt);
-      }
 
+      /* Save uncommitted work. */
+      if (priv->commit_callback)
+        { /* Remove the source first beca use _commit() clears it. */
+          priv->commit_timeout = 0;
+          g_source_remove (priv->commit_callback);
+          hd_notification_manager_db_commit (HD_NOTIFICATION_MANAGER (object));
+        }
+
+      /* Release the prepared statements we know about. */
+      if (priv->prepared_statements)
+        {
+          g_hash_table_destroy (priv->prepared_statements);
+          priv->prepared_statements = NULL;
+        }
+
+      /* Now we can close the shop. */
       priv->db = (sqlite3_close (priv->db), NULL);
     }
 
@@ -1364,7 +1606,7 @@ void
 hd_notification_manager_call_action (HDNotificationManager *nm,
                                      HDNotification        *notification,
                                      const gchar           *action_id)
-{
+{ ACTION(__FUNCTION__);
   DBusMessage *message = NULL;
   const gchar *dbus_cb;
 
@@ -1410,7 +1652,7 @@ hd_notification_manager_call_action (HDNotificationManager *nm,
 
 void
 hd_notification_manager_close_all (HDNotificationManager *nm)
-{
+{ ACTION(__FUNCTION__);
   GHashTableIter iter;
   gpointer key, value;
 
@@ -1431,7 +1673,7 @@ hd_notification_manager_close_all (HDNotificationManager *nm)
 void
 hd_notification_manager_call_dbus_callback (HDNotificationManager *nm,
                                             const gchar *dbus_call)
-{ 
+{ ACTION(__FUNCTION__); 
   DBusMessage *message;
 
   g_return_if_fail (HD_IS_NOTIFICATION_MANAGER (nm));
@@ -1451,7 +1693,7 @@ hd_notification_manager_call_dbus_callback (HDNotificationManager *nm,
 void
 hd_notification_manager_call_message (HDNotificationManager *nm,
                                       DBusMessage           *message)
-{
+{ ACTION(__FUNCTION__);
   g_return_if_fail (HD_IS_NOTIFICATION_MANAGER (nm));
 
   if (message != NULL)
