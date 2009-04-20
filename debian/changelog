@@ -2,6 +2,9 @@ hildon-home (0.3.23~unreleased) unstable; urgency=low
 
   * writeme
 
+  Adam Endrodi:
+  * Fixes: NB#110711, NB#109096 - Blank notifications displayed
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 16 Apr 2009 13:19:54 +0300
 
 hildon-home (0.3.22) unstable; urgency=low
