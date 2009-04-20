@@ -1,3 +1,10 @@
+2009-04-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#110711, NB#109096 - Blank notifications displayed.
+
+	* src/hd-notification-manager.c (hd_notification_manager_db_commit,
+	  hd_notification_manager_db_insert_hint): Fix some warnings.
+
 2009-04-17  Adam Endrodi <ext-adam.endrodi@nokia.com>
 
 	Performance improvements.  In relationship with NB#110711.

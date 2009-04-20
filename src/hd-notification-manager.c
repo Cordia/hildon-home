@@ -482,8 +482,8 @@ hd_notification_manager_db_prepare_and_exec (HDNotificationManager *nm,
 /* #GSourceFunc to COMMIT an active transaction. */
 static gboolean
 hd_notification_manager_db_commit (HDNotificationManager *nm)
-{ DBDBG(__FUNCTION__);
-  sqlite3_stmt *stmt;
+{
+  DBDBG(__FUNCTION__);
 
   if (nm->priv->commit_timeout > time(NULL))
     /* Not yet. */
@@ -677,7 +677,7 @@ hd_notification_manager_db_insert_hint (gpointer key, gpointer value,
              DB_BIND_INT (hinfo->id), DB_BIND_END);
       break;
     default:
-      g_warning ("Hint `%s' of notification %d has invalid value type %lu",
+      g_warning ("Hint `%s' of notification %d has invalid value type %u",
                  hkey, hinfo->id, G_VALUE_TYPE (hvalue));
       hinfo->result = SQLITE_ERROR;
       return;
@@ -989,8 +989,6 @@ hd_notification_manager_finalize (GObject *object)
 
   if (priv->db)
     {
-      sqlite3_stmt *stmt;
-
       /* Save uncommitted work. */
       if (priv->commit_callback)
         { /* Remove the source first beca use _commit() clears it. */
