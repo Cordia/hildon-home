@@ -1,6 +1,6 @@
 2009-04-17  Adam Endrodi <ext-adam.endrodi@nokia.com>
 
-	NB#09378 Details (sender , time) in the notification window is not updated.
+	NB#109378 Details (sender , time) in the notification window is not updated.
 
 	group_update_window_content() calculates all the properties correctly
 	but HdIncomingEventWindow forgot to tell the new values to hd.
