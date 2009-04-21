@@ -411,11 +411,19 @@ hd_incoming_event_window_set_property (GObject      *object,
           if (priv->time >= 0)
             strftime (buf, 20, "%H:%M", localtime (&(priv->time)));
           gtk_label_set_text (GTK_LABEL (priv->time_label), buf);
+          hd_incoming_event_window_set_string_xwindow_property (
+                              GTK_WIDGET (object),
+                              "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
+                              buf);
         }
       break;
 
     case PROP_MESSAGE:
       gtk_label_set_text (GTK_LABEL (priv->message), g_value_get_string (value));
+      hd_incoming_event_window_set_string_xwindow_property (
+                          GTK_WIDGET (object),
+                          "_HILDON_INCOMING_EVENT_NOTIFICATION_MESSAGE",
+                          g_value_get_string (value));
       break;
 
     default:
