@@ -1,3 +1,13 @@
+2009-04-22  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#110238 - Let plugins know about notifications of category
+	system.note.*
+
+	* src/hd-incoming-events.c (hd_incoming_events_notified): Call plugins
+	also for notification with system.note.* category.
+
+	* debian/changelog: Update.
+
 2009-04-17  Adam Endrodi <ext-adam.endrodi@nokia.com>
 
 	NB#109378 Details (sender , time) in the notification window is not updated.
