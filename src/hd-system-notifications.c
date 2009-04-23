@@ -56,12 +56,9 @@ create_note_infoprint (const gchar *summary,
 {
   GtkWidget *banner;
 
-  banner = GTK_WIDGET (g_object_new (HILDON_TYPE_BANNER, 
-                                     "is-timed", FALSE,
-                                     NULL));
-
-  hildon_banner_set_markup (HILDON_BANNER (banner), body);
-  hildon_banner_set_icon (HILDON_BANNER (banner), icon_name);
+  banner = hildon_banner_show_information_with_markup (NULL,
+                                                       icon_name,
+                                                       body);
 
   return banner;
 }

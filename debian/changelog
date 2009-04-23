@@ -8,6 +8,7 @@ hildon-home (0.3.23~unreleased) unstable; urgency=low
   Jan Arne:
   Fixes: NB#110238 - Let plugins know about notifications of category
   system.note.*
+  Fixes: NB#105139 - Fix broken HildonBanner theming.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 16 Apr 2009 13:19:54 +0300
 
