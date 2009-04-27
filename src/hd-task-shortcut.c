@@ -90,7 +90,13 @@ hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
       else
         gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
                                       icon_name,
-                                      GTK_ICON_SIZE_INVALID);
+                                      HILDON_ICON_SIZE_THUMB);
+    }
+  else
+    {
+      gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
+                                    "tasklaunch_default_application",
+                                    HILDON_ICON_SIZE_THUMB);
     }
 
   g_free (desktop_id);

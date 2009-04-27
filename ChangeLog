@@ -1,3 +1,12 @@
+2009-04-27  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#111639 - Default icon is not shown for application
+	shortcuts.
+
+	* src/hd-task-manager.c (hd_task_manager_load_desktop_file):
+	* src/hd-task-shortcut.c (hd_task_shortcut_desktop_file_changed_cb):
+	Fallback to default icon if no application icon is available.
+
 2009-04-27  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.23

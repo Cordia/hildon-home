@@ -120,6 +120,8 @@ hd_task_manager_load_desktop_file (const gchar *filename)
   gchar *desktop_id = NULL;
   gchar *type = NULL, *translation_domain = NULL, *name = NULL;
   GdkPixbuf *pixbuf = NULL;
+  GtkIconTheme *icon_theme = gtk_icon_theme_get_default ();
+  GtkIconInfo *icon_info = NULL;
 
   g_debug ("hd_task_manager_load_desktop_file (%s)", filename);
 
@@ -220,19 +222,21 @@ hd_task_manager_load_desktop_file (const gchar *filename)
 
   /* Load icon for list */
   if (info->icon)
-    {
-      GtkIconTheme *icon_theme = gtk_icon_theme_get_default ();
-      GtkIconInfo *icon_info;
+    icon_info = gtk_icon_theme_lookup_icon (icon_theme,
+                                            info->icon,
+                                            64,
+                                            GTK_ICON_LOOKUP_NO_SVG);
 
-      icon_info = gtk_icon_theme_lookup_icon (icon_theme,
-                                              info->icon,
-                                              64,
-                                              GTK_ICON_LOOKUP_NO_SVG);
-      if (icon_info)
-        {
-          pixbuf = gtk_icon_info_load_icon (icon_info, NULL);
-          gtk_icon_info_free (icon_info);
-        }
+  if (!icon_info)
+    icon_info = gtk_icon_theme_lookup_icon (icon_theme,
+                                            "tasklaunch_default_application",
+                                            64,
+                                            GTK_ICON_LOOKUP_NO_SVG);
+
+  if (icon_info)
+    {
+      pixbuf = gtk_icon_info_load_icon (icon_info, NULL);
+      gtk_icon_info_free (icon_info);
     }
 
   if (gtk_tree_row_reference_valid (info->row))
