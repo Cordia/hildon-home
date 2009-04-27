@@ -1,16 +1,18 @@
-hildon-home (0.3.23~unreleased) unstable; urgency=low
-
-  * writeme
+hildon-home (0.3.23) unstable; urgency=low
 
   Adam Endrodi:
-  * Fixes: NB#110711, NB#109096 - Blank notifications displayed
+  * Fixes: NB#110711 - TOP10: Device hangs if received multiple notifications
+    and trying to open it.
+  * Fixes: NB#109096 - Blank notifications displayed
+  * Fixes: NB#109378 - Details (sender , time) in the notification window is
+    not updated.
 
   Jan Arne:
-  Fixes: NB#110238 - Let plugins know about notifications of category
-  system.note.*
-  Fixes: NB#105139 - Fix broken HildonBanner theming.
+  * Fixes: NB#110238 - Let plugins know about notifications of category
+    system.note.*
+  * Fixes: NB#105139 - Fix broken HildonBanner theming.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 16 Apr 2009 13:19:54 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 27 Apr 2009 11:21:14 +0300
 
 hildon-home (0.3.22) unstable; urgency=low
 
