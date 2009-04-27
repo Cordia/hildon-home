@@ -1,3 +1,9 @@
+hildon-home (0.3.24~unreleased) unstable; urgency=low
+
+  * writeme
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 27 Apr 2009 17:31:48 +0300
+
 hildon-home (0.3.23) unstable; urgency=low
 
   Adam Endrodi:
