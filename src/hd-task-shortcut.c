@@ -48,7 +48,7 @@
 
 #define LABEL_WIDTH SHORTCUT_WIDTH
 
-#define LABEL_FONT "SystemFont"
+#define LABEL_FONT "SmallSystemFont"
 #define LABEL_COLOR "DefaultTextColor"
 
 /* Private definitions */
@@ -221,8 +221,9 @@ hd_task_shortcut_class_init (HDTaskShortcutClass *klass)
 
   /* Add shadow to label */
   gtk_rc_parse_string ("style \"HDTaskShortcut-Label\" = \"osso-color-themeing\" {\n"
+                       "  fg[NORMAL] = \"#FFFFFF\"\n"
                        "  engine \"sapwood\" {\n"
-                       "    shadowcolor = @DarkerBackgroundColor\n"
+                       "    shadowcolor = \"#000000\"\n"
                        "  }\n"
                        "} widget \"*.HDTaskShortcut-Label\" style \"HDTaskShortcut-Label\"");
 
@@ -318,7 +319,6 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_widget_show (priv->label);
   gtk_widget_set_size_request (priv->label, LABEL_WIDTH, -1);
   hildon_helper_set_logical_font (priv->label, LABEL_FONT);
-  hildon_helper_set_logical_color (priv->label, GTK_RC_FG, GTK_STATE_NORMAL, LABEL_COLOR);
 
   priv->icon = gtk_image_new ();
   gtk_widget_show (priv->icon);

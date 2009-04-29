@@ -1,3 +1,11 @@
+2009-04-29  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#113822 - Application shortcut label should have hardcoded
+	colours
+
+	* src/hd-task-shortcut.c (LABEL_FONT, hd_task_shortcut_class_init):
+	Use new hardcoded colours and SmallSystemFont for the label.
+
 2009-04-27  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#111639 - Default icon is not shown for application

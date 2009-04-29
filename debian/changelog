@@ -2,6 +2,10 @@ hildon-home (0.3.24~unreleased) unstable; urgency=low
 
   * writeme
 
+  Jan Arne:
+  * Fixes: NB#111639 - Default icon is not shown for application shortcuts.
+  * Fixes: NB#113822 - Application shortcut label should have hardcoded colours
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 27 Apr 2009 17:31:48 +0300
 
 hildon-home (0.3.23) unstable; urgency=low
