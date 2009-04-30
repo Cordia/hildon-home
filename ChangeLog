@@ -1,5 +1,10 @@
 2009-04-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
+	Released 0.3.24
+	* configure.ac: 0.3.24
+
+2009-04-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
 	Fix Coverity issues.
 	* src/hd-incoming-events.c (group_activate_notifications): Remove
 	unneeded variable 'banner'.
