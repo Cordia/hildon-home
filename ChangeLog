@@ -1,3 +1,22 @@
+2009-04-30  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#111026 - Notifications, Event notification overview displays
+	wrong message
+
+	* src/hd-incoming-events.c: Cleanup code make it more simple and
+	easier to understand. Add docs. Remove redundance. Make it easier to
+	enhance it for chat/sms account split functionallity. Fix bugs.
+
+	* src/hd-notification-manager.c
+	  (hd_notification_manager_call_dbus_callback_with_arg):
+	* src/hd-notification-manager.h: Move code from HDIncomingEvents into
+	new hd_notification_manager_call_dbus_callback_with_arg function.
+
+	* src/test-notifications.py (emit_notification): Update to add more
+	debug output.
+
+	* debian/changelog: Update.
+
 2009-04-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.24

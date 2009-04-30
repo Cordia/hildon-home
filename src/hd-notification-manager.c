@@ -1689,6 +1689,30 @@ hd_notification_manager_call_dbus_callback (HDNotificationManager *nm,
 }
 
 void
+hd_notification_manager_call_dbus_callback_with_arg (HDNotificationManager *nm,
+                                                     const gchar           *dbus_call,
+                                                     const gchar           *arg)
+{ ACTION(__FUNCTION__); 
+  DBusMessage *message;
+
+  g_return_if_fail (HD_IS_NOTIFICATION_MANAGER (nm));
+  g_return_if_fail (dbus_call != NULL);
+
+  message = hd_notification_manager_message_from_desc (nm, dbus_call); 
+
+  if (message != NULL)
+    {
+      dbus_message_append_args (message,
+                                DBUS_TYPE_STRING, &arg,
+                                DBUS_TYPE_INVALID);
+      dbus_connection_send (dbus_g_connection_get_connection (nm->priv->connection), 
+                            message, 
+                            NULL);
+      dbus_message_unref (message);
+    }
+}
+
+void
 hd_notification_manager_call_message (HDNotificationManager *nm,
                                       DBusMessage           *message)
 { ACTION(__FUNCTION__);

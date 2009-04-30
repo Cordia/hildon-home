@@ -12,10 +12,11 @@ emitted = 0
 def emit_notification(iface):
 	global emitted
 	emitted += 1
-	sender = "Sender %d" % (emitted) 
-	id = iface.Notify ('test-send.py', '0', '', 'janarne@gmail.com', '', ['default', 'default'], { 'category': 'sms-message', 'email-account' : 'foo' }, 0)
-	id = iface.Notify ('test-send.py', '0', '', 'janarne@gmail.com', '', ['default', 'default'], { 'category': 'chat-message', 'email-account' : 'foo' }, 0)
-	print 'notification emmited. id: ' + str(id)
+	id = iface.Notify ('test-send.py', '0', '', '%dsms' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'sms-message' }, 0)
+	print "%dsms (id %d)" % (emitted, id) 
+	emitted += 1
+	id = iface.Notify ('test-send.py', '0', '', '%dchat' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'chat-message' }, 0)
+	print "%dchat (id %d)" % (emitted, id) 
 
 	return True
 

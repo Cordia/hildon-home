@@ -59,6 +59,26 @@
 #define NOTIFICATION_GROUP_KEY_GROUPED_CATEGORY "Grouped-Category"
 #define NOTIFICATION_GROUP_KEY_GROUPED "Grouped"
 
+typedef struct _Notifications Notifications;
+
+
+/*
+ * A HDNotification contains in a category (hd_notification_get_category)
+ *
+ * This categories are represented as CategoryInfo
+ * (loaded from notification-groups.conf) multiple categories can be mapped
+ * together.
+ *
+ * For display of notifications in preview and switcher windows the notifications
+ * are grouped together based on the mapped category (Notifications).
+ *
+ */
+
+/*
+ * Informations for categories loaded
+ * in /etc/hildon-desktop/notification-groups.conf
+ *
+ */
 typedef struct
 {
   gchar *destination;
@@ -72,17 +92,33 @@ typedef struct
   gchar *account_hint;
   gchar *account_call;
   gchar *pattern;
-  gchar *grouped_category;
+  gchar *mapped_category;
   GtkWidget *switcher_window;
-  GPtrArray *notifications;
+  Notifications *notifications;
   gboolean no_window : 1;
-  gboolean grouped : 1;
+  gboolean mapped : 1;
   HDIncomingEvents *ie;
-} HDIncomingEventGroup;
+} CategoryInfo;
+
+typedef void (*NotificationsCallback) (Notifications *ns,
+                                       gpointer       data);
+
+/*
+ * Used to group notifications with the same (mapped) category
+ * toegther for preview and switcher windows.
+ */
+struct _Notifications
+{
+  CategoryInfo          *info;
+  CategoryInfo          *fallback;
+  GPtrArray             *notifications;
+  NotificationsCallback  cb;
+  gpointer               cb_data;
+};
 
 struct _HDIncomingEventsPrivate
 {
-  GHashTable      *groups;
+  GHashTable      *categories;
 
   GList           *preview_list;
   GtkWidget       *preview_window;
@@ -96,42 +132,256 @@ struct _HDIncomingEventsPrivate
 
 G_DEFINE_TYPE (HDIncomingEvents, hd_incoming_events, G_TYPE_OBJECT);
 
+/* Check if category is mapped to a virtual category
+ * and returns the virtual category in this case, 
+ * else return category */
 static void
-group_free (HDIncomingEventGroup *group)
+notification_get_category_info (HDIncomingEvents  *ie,
+                                HDNotification    *n,
+                                CategoryInfo     **mapped,
+                                CategoryInfo     **fallback)
 {
-  g_free (group->destination);
-  g_free (group->summary);
-  g_free (group->body);
-  g_free (group->icon);
-  g_free (group->dbus_callback);
-  g_free (group->empty_summary);
-  g_free (group->preview_summary);
-  g_free (group->text_domain);
-  g_free (group->account_call);
-  g_free (group->account_hint);
-  g_free (group->pattern);
-  g_free (group->grouped_category);
-  if (GTK_IS_WIDGET (group->switcher_window))
-    gtk_widget_destroy (group->switcher_window);
-  g_ptr_array_free (group->notifications, TRUE);
-  g_free (group);
+  HDIncomingEventsPrivate *priv = ie->priv;
+  const gchar *category;
+  CategoryInfo *info = NULL;
+
+  /* Lookup info for notification */
+  category = hd_notification_get_category (n);
+  if (category)
+    info = g_hash_table_lookup (priv->categories,
+                                category);
+
+  if (info && info->mapped_category)
+    {
+      /* If the category is mapped into another category
+       * set mapped and fallback info 
+       */
+      if (fallback)
+        *fallback = info;
+
+      info = g_hash_table_lookup (priv->categories,
+                                  info->mapped_category);
+
+      if (mapped)
+        *mapped = info;
+    }
+  else
+    {
+      /* If the category is not mapped set mapped to this category
+       * and set no fallback */
+      if (mapped)
+        *mapped = info;
+      if (fallback)
+        *fallback = NULL;
+    }
 }
 
-static void group_update (HDIncomingEventGroup *group);
-
 static void
-group_notification_closed (HDIncomingEventGroup *group,
-                           HDNotification       *notification)
+notification_closed_cb (HDNotification *n,
+                        Notifications  *ns)
 {
-  g_ptr_array_remove_fast (group->notifications, notification);
-  group_update (group);
+  g_ptr_array_remove (ns->notifications,
+                      n);
+  g_signal_handlers_disconnect_by_func (n,
+                                        G_CALLBACK (notification_closed_cb),
+                                        ns);
+  g_object_unref (n);
+
+  if (ns->cb)
+    ns->cb (ns, ns->cb_data);
 }
 
+/* 
+ * Returns: an empty Notifications structure
+ */
+static Notifications *
+notifications_new_for_category (CategoryInfo *info)
+{
+  Notifications *ns;
+  GPtrArray *notifications = g_ptr_array_new ();
+
+  ns = g_slice_new0 (Notifications);
+  ns->info = info;
+  ns->notifications = notifications;
+
+  return ns;
+}
+
+/*
+ * Returns: a Notifications structure containing just 
+ * notification @n
+ */
+static Notifications *
+notifications_new_for_notification (HDIncomingEvents *ie,
+                                    HDNotification   *n)
+{
+  Notifications *ns;
+  GPtrArray *notifications = g_ptr_array_sized_new (1);
+
+  ns = g_slice_new0 (Notifications);
+  ns->notifications = notifications;
+
+  g_object_ref (n);
+  if (ie)
+    {
+      notification_get_category_info (ie,
+                                      n,
+                                      &ns->info,
+                                      &ns->fallback);
+
+      g_debug ("%s. Category %s, Info: %p, Fallback: %p",
+               __FUNCTION__,
+               hd_notification_get_category (n),
+               ns->info,
+               ns->fallback);
+    }
+
+  g_ptr_array_add (notifications,
+                   n);
+  g_signal_connect (n, "closed",
+                    G_CALLBACK (notification_closed_cb), ns);
+
+  return ns;
+}
+
+/*
+ * Frees Notifications structure @ns
+ */
+static void
+notifications_free (Notifications *ns)
+{
+  GPtrArray *notifications = ns->notifications;
+  guint i;
+
+  for (i = 0; i < notifications->len; i++)
+    {
+      HDNotification *n = g_ptr_array_index (notifications, i);
+
+      g_signal_handlers_disconnect_by_func (n, G_CALLBACK (notification_closed_cb), ns);
+
+      g_object_unref (n);
+    }
+
+  g_ptr_array_free (notifications, TRUE);
+  g_slice_free (Notifications, ns);
+}
+
+/*
+ * Check if Notifications structure is empty
+ */
 static gboolean
-group_activate_notifications (HDIncomingEventGroup *group,
-                              GPtrArray            *notifications)
+notifications_is_empty (Notifications *ns)
+{
+  return ns->notifications->len == 0;
+}
+
+/*
+ * Append all notifications from @other to @ns.
+ * @ns and @other have to be the same category.
+ */
+static void
+notifications_append (Notifications *ns,
+                      Notifications *other)
 {
   guint i;
+
+  /* Only notifications with an info can be grouped together */
+  g_return_if_fail (ns->info);
+
+  /* The notifications are always of the same (mapped) category */
+  g_return_if_fail (ns->info == other->info);
+
+  /* update fallback to latest appended notification */
+  ns->fallback = other->fallback;
+
+  for (i = 0; i < other->notifications->len; i++)
+    {
+      HDNotification *n = g_ptr_array_index (other->notifications, i);
+
+      g_object_ref (n);
+      g_ptr_array_add (ns->notifications, n);
+      g_signal_connect (n, "closed",
+                        G_CALLBACK (notification_closed_cb), ns);
+    }
+}
+
+/* Close all notifications and call the update cb */
+static void
+notifications_close_all (Notifications *ns)
+{
+  guint i;
+
+  for (i = 0; i < ns->notifications->len; i++)
+    {
+      HDNotification *n = g_ptr_array_index (ns->notifications,
+                                             i);
+      g_signal_handlers_disconnect_by_func (n,
+                                            notification_closed_cb,
+                                            ns);
+      hd_notification_manager_close_notification (hd_notification_manager_get (),
+                                                  hd_notification_get_id (n),
+                                                  NULL);
+      g_object_unref (n);
+    }
+
+  g_ptr_array_remove_range (ns->notifications,
+                            0,
+                            ns->notifications->len);
+
+  if (ns->cb)
+    ns->cb (ns, ns->cb_data);
+}
+
+/* If account call is available, check if the account hint is the same for
+ * each notification
+ */
+static const gchar *
+notifications_get_common_account (Notifications *ns)
+{
+  const gchar *account = NULL;
+  guint i;
+
+  if (!ns->info->account_call || !ns->info->account_hint)
+    return NULL;
+
+
+  for (i = 0; i < ns->notifications->len; i++)
+    {
+      GValue *value;
+      HDNotification *n = g_ptr_array_index (ns->notifications,
+                                             i); 
+
+      value = hd_notification_get_hint (n, ns->info->account_hint);
+
+      if (!G_VALUE_HOLDS (value, G_TYPE_STRING))
+        {
+          return NULL;
+        }
+      else
+        {
+          if (!account)
+            account = g_value_get_string (value);
+          else if (g_strcmp0 (account,
+                              g_value_get_string (value)))
+            return NULL;
+        }
+    }
+
+  return account;
+}
+
+/* Activate an array of notifications
+ *
+ * Returns: %TRUE if the notifications were sucessfullly activated
+ */ 
+static gboolean
+notifications_activate (Notifications *ns)
+{
+  guint i;
+  const gchar *common_account;
+
+  if (ns->notifications->len == 0)
+    return TRUE;
 
   if (osso_mem_in_lowmem_state ())
     {
@@ -145,284 +395,125 @@ group_activate_notifications (HDIncomingEventGroup *group,
       return FALSE;
     }
 
-  if (notifications->len == 1)
+  if (ns->notifications->len == 1)
     {
-      /* Always call default action if it is only one un-grouped notification */
-      HDNotification *notification;
-
-      notification = g_ptr_array_index (notifications,
-                                        0);
+      /* Always call default action if it is only one notification */
+      HDNotification *n = g_ptr_array_index (ns->notifications, 0);
 
       hd_notification_manager_call_action (hd_notification_manager_get (),
-                                           notification,
+                                           n,
                                            "default");
-      goto close_all;
+      notifications_close_all (ns);
+      return TRUE;
     }
 
-  if (group->account_call && group->account_hint)
+  common_account = notifications_get_common_account (ns);
+
+  if (common_account)
     {
-      const gchar *cmp_account = NULL;
-
-      /* If account call is available, check if the account hint is the same for
-       * each notification, if yes call the account call with the account hint
-       * as argument
-       */
-
-      for (i = 0; i < notifications->len; i++)
-        {
-          HDNotification *notification;
-          GValue *value;
-
-          notification = g_ptr_array_index (notifications,
-                                            i);
-          value = hd_notification_get_hint (notification,
-                                            group->account_hint);
-
-          if (!G_VALUE_HOLDS (value, G_TYPE_STRING))
-            {
-              cmp_account = NULL;
-              break;
-            }
-          else
-            {
-              const char *account = g_value_get_string (value);
-
-              if (cmp_account == NULL)
-                cmp_account = account;
-              else if (g_strcmp0 (cmp_account, account))
-                {
-                  cmp_account = NULL;
-                  break;
-                }
-            }
-        }
-
-      if (cmp_account)
-        {
-          gchar **message_elements;
-
-          message_elements = g_strsplit (group->account_call, " ", 5);
-
-          if (g_strv_length (message_elements) >= 4)
-            {
-              DBusMessage *message;
-
-              message = dbus_message_new_method_call (message_elements[0], 
-                                                      message_elements[1], 
-                                                      message_elements[2], 
-                                                      message_elements[3]);
-              dbus_message_append_args (message,
-                                        DBUS_TYPE_STRING, &cmp_account,
-                                        DBUS_TYPE_INVALID);
-
-              g_debug ("%s. Call D-Bus account call to %s %s %s %s string:%s",
-                       __FUNCTION__,
-                       message_elements[0],
-                       message_elements[1],
-                       message_elements[2],
-                       message_elements[3],
-                       cmp_account);
-
-              hd_notification_manager_call_message (hd_notification_manager_get (),
-                                                    message);
-              dbus_message_unref (message);
-            }
-          else
-            {
-              g_warning ("%s. Invalid D-Bus account call. %s",
-                         __FUNCTION__,
-                         group->account_call);
-            }
-
-          g_strfreev (message_elements);
-
-          goto close_all;
-        }
+      hd_notification_manager_call_dbus_callback_with_arg (hd_notification_manager_get (),
+                                                           ns->info->account_call,
+                                                           common_account);
+      notifications_close_all (ns);
+      return TRUE;
     }
 
-  if (group->dbus_callback)
+  if (ns->info->dbus_callback)
     {
       /* Call D-Bus callback if available else call default action on each notification */
       hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
-                                                  group->dbus_callback);
+                                                  ns->info->dbus_callback);
+      notifications_close_all (ns);
+      return TRUE;
     }
   else
     {
-      for (i = 0; i < notifications->len; i++)
+      for (i = 0; i < ns->notifications->len; i++)
         {
-          HDNotification *notification;
-
-          notification = g_ptr_array_index (notifications,
-                                            i);
+          HDNotification *n = g_ptr_array_index (ns->notifications,
+                                                 i);
 
           hd_notification_manager_call_action (hd_notification_manager_get (),
-                                               notification,
+                                               n,
                                                "default");
         }
     }
 
-close_all:
-
-  /* Close all applications */
-  for (i = 0; i < notifications->len; i++)
-    {
-      HDNotification *notification;
-
-      notification = g_ptr_array_index (notifications,
-                                        i);
-
-      hd_notification_manager_close_notification (hd_notification_manager_get (),
-                                                  hd_notification_get_id (notification),
-                                                  NULL);
-    }
-
+  notifications_close_all (ns);
   return TRUE;
 }
 
 static void
-group_window_response (HDIncomingEventWindow *window,
-                       gint                   response_id,
-                       HDIncomingEventGroup  *group)
+notifications_update_window (Notifications *ns,
+                             GtkWidget     *window)
 {
-  guint i;
-  gboolean activated = TRUE;
-
-  if (response_id == GTK_RESPONSE_OK)
+  /* Destroy the window when all notifications are closed */
+  if (notifications_is_empty (ns))
     {
-      /* Close all applications */
-      for (i = 0; i < group->notifications->len; i++)
-        {
-          HDNotification *notification;
-
-          notification = g_ptr_array_index (group->notifications,
-                                            i);
-
-          /* The group is removed all at once */
-          g_signal_handlers_disconnect_by_func (notification, group_notification_closed, group);
-        }
-
-      activated = group_activate_notifications (group,
-                                                group->notifications);
-    }
-  else
-    {
-      /* Close all applications */
-      for (i = 0; i < group->notifications->len; i++)
-        {
-          HDNotification *notification;
-
-          notification = g_ptr_array_index (group->notifications,
-                                            i);
-
-          /* The group is removed all at once */
-          g_signal_handlers_disconnect_by_func (notification, group_notification_closed, group);
-
-          hd_notification_manager_close_notification (hd_notification_manager_get (),
-                                                      hd_notification_get_id (notification),
-                                                      NULL);
-        }
+      gtk_widget_destroy (window);
+      return;
     }
 
-  if (activated)
-    {
-      g_ptr_array_remove_range (group->notifications,
-                                0,
-                                group->notifications->len);
-      group_update (group);
-    }
-}
-
-static void
-group_update_window_content (HDIncomingEventGroup *group,
-                             GtkWidget            *window,
-                             GPtrArray            *notifications)
-{
   /* Check if there are multiple notifications or just one */
-  if (notifications->len > 1)
+  if (ns->notifications->len > 1)
     {
-      gint i;
-      gint64 max_time = -2;
-      HDNotification *latest_notification = NULL;
+      gint64 max_time;
+      HDNotification *latest_notification;
       const gchar *latest_summary = NULL;
       gchar *summary = NULL, *body = NULL;
       const gchar *icon;
-      HDIncomingEventGroup *latest_group = NULL;
+      CategoryInfo *info = ns->info;
+      CategoryInfo *fallback = ns->fallback;
 
-      /* Create a grouped notification */
-      if (!group)
-        {
-          g_warning ("%s: group == NULL", __FUNCTION__);
-          return;
-        }
-
-      /* Find the latest summary and time */
-      i = notifications->len - 1;
-      do
-        {
-          HDNotification *notification;
-          gint64 time;
-
-          notification = g_ptr_array_index (notifications,
-                                            i);
-
-          time = hd_notification_get_time (notification);
-          if (time > max_time)
-            {
-              max_time = time;
-              latest_notification = notification;
-            }
-        }
-      while (i-- > 0);
-
-      if (group->grouped)
-        latest_group = g_hash_table_lookup (group->ie->priv->groups,
-                                            hd_notification_get_category (latest_notification));
+      latest_notification = g_ptr_array_index (ns->notifications,
+                                               ns->notifications->len - 1);
+      max_time = hd_notification_get_time (latest_notification);
 
       latest_summary = hd_notification_get_summary (latest_notification);
 
       if (!latest_summary || !latest_summary[0])
         {
-          if (group->empty_summary)
-            latest_summary = group->empty_summary;
-          else if (latest_group && latest_group->empty_summary)
-            latest_summary = latest_group->empty_summary;
+          if (info->empty_summary)
+            latest_summary = info->empty_summary;
+          else if (fallback && fallback->empty_summary)
+            latest_summary = fallback->empty_summary;
         }
 
       /* Icon */
-      if (group->icon)
-        icon = group->icon;
-      else if (latest_group && latest_group->icon)
-        icon = latest_group->icon;
+      if (info->icon)
+        icon = info->icon;
+      else if (fallback && fallback->icon)
+        icon = fallback->icon;
       else
         icon = hd_notification_get_icon (latest_notification);
 
       /* Create translated summary and body texts */
-      if (group->summary)
+      if (info->summary)
         {
-          summary = g_strdup_printf (dgettext (group->text_domain ? group->text_domain : GETTEXT_PACKAGE,
-                                               group->summary),
-                                     notifications->len);
+          summary = g_strdup_printf (dgettext (info->text_domain ? info->text_domain : GETTEXT_PACKAGE,
+                                               info->summary),
+                                     ns->notifications->len);
         }
-      else if (latest_group && latest_group->summary)
+      else if (fallback && fallback->summary)
         {
-          summary = g_strdup_printf (dgettext (latest_group->text_domain ? latest_group->text_domain : GETTEXT_PACKAGE,
-                                               latest_group->summary),
-                                     notifications->len);
+          summary = g_strdup_printf (dgettext (fallback->text_domain ? fallback->text_domain : GETTEXT_PACKAGE,
+                                               fallback->summary),
+                                     ns->notifications->len);
         }
 
-      if (group->body)
+      if (info->body)
         {
-          body = g_strdup_printf (dgettext (group->text_domain ? group->text_domain : GETTEXT_PACKAGE,
-                                            group->body),
+          body = g_strdup_printf (dgettext (info->text_domain ? info->text_domain : GETTEXT_PACKAGE,
+                                            info->body),
                                   latest_summary);
         }
-      else if (latest_group && latest_group->body)
+      else if (fallback && fallback->body)
         {
-          body = g_strdup_printf (dgettext (latest_group->text_domain ? latest_group->text_domain : GETTEXT_PACKAGE,
-                                            latest_group->body),
+          body = g_strdup_printf (dgettext (fallback->text_domain ? fallback->text_domain : GETTEXT_PACKAGE,
+                                            fallback->body),
                                   latest_summary);
         }
- 
+
       g_object_set (window,
                     "title", summary,
                     "message", body,
@@ -435,45 +526,44 @@ group_update_window_content (HDIncomingEventGroup *group,
     }
   else
     {
-      HDNotification *notification = g_ptr_array_index (notifications,
-                                                        0);
+      HDNotification *notification = g_ptr_array_index (ns->notifications, 0);
       const gchar *summary, *body, *icon;
-      HDIncomingEventGroup *real_group = NULL;
+      CategoryInfo *fallback = NULL;
 
-      if (group && group->grouped)
-        real_group = g_hash_table_lookup (group->ie->priv->groups,
+      if (ns->info && ns->info->mapped)
+        fallback = g_hash_table_lookup (ns->info->ie->priv->categories,
                                           hd_notification_get_category (notification));
- 
 
-      /* Check if there is a special summary for this group */
+
+      /* Check if there is a special summary for this ns->info */
       summary = hd_notification_get_summary (notification);
       if (!summary || !summary[0])
         {
-          if (group && group->empty_summary)
-            summary = group->empty_summary;
-          else if (real_group && real_group->empty_summary)
-            summary = real_group->empty_summary;
+          if (ns->info && ns->info->empty_summary)
+            summary = ns->info->empty_summary;
+          else if (fallback && fallback->empty_summary)
+            summary = fallback->empty_summary;
         }
 
       body = hd_notification_get_body (notification);
-      if (group && group->preview_summary)
+      if (ns->info && ns->info->preview_summary)
         {
           body = summary;
-          summary = group->preview_summary;
+          summary = ns->info->preview_summary;
         }
-      else if (real_group && real_group->preview_summary)
+      else if (fallback && fallback->preview_summary)
         {
           body = summary;
-          summary = real_group->preview_summary;
+          summary = fallback->preview_summary;
         }
 
       icon = hd_notification_get_icon (notification);
       if (!icon || !icon[0])
         {
-          if (group && group->icon)
-            icon = group->icon;
-          else if (real_group && real_group->icon)
-            icon = real_group->icon;
+          if (ns->info && ns->info->icon)
+            icon = ns->info->icon;
+          else if (fallback && fallback->icon)
+            icon = fallback->icon;
         }
 
       g_object_set (window,
@@ -487,115 +577,72 @@ group_update_window_content (HDIncomingEventGroup *group,
 }
 
 static void
-group_update (HDIncomingEventGroup *group)
+switcher_window_response (HDIncomingEventWindow *window,
+                          gint                   response_id,
+                          Notifications         *ns)
 {
-  g_debug ("update group");
+  if (response_id == GTK_RESPONSE_OK)
+    {
+      notifications_activate (ns);
+    }
+  else
+    {
+      notifications_close_all (ns);
+    }
+}
 
-  if (!group->notifications->len)
+static void
+notifications_update_switcher_window (Notifications *ns,
+                                      GtkWidget     *window)
+{
+  if (notifications_is_empty (ns))
     {
       /* Last notification in this group was closed,
        *  destroy window */
-      if (GTK_IS_WIDGET (group->switcher_window))
+      if (GTK_IS_WIDGET (ns->info->switcher_window))
         {
-          gtk_widget_destroy (group->switcher_window);
-          group->switcher_window = NULL;
+          gtk_widget_destroy (ns->info->switcher_window);
+          ns->info->switcher_window = NULL;
         }
     }
   else
     {
       /* At least one notification needs to be displayed,
        * create a window if it does not exist yet */
-      if (!GTK_IS_WIDGET (group->switcher_window))
+      if (!GTK_IS_WIDGET (ns->info->switcher_window))
         {
-          group->switcher_window = hd_incoming_event_window_new (FALSE,
-                                                                 group->destination,
-                                                                 NULL, NULL, -1, NULL);
-          g_signal_connect (group->switcher_window, "response",
-                            G_CALLBACK (group_window_response),
-                            group);
+          ns->info->switcher_window = hd_incoming_event_window_new (FALSE,
+                                                                    ns->info->destination,
+                                                                    NULL, NULL, -1, NULL);
+          g_signal_connect (ns->info->switcher_window, "response",
+                            G_CALLBACK (switcher_window_response),
+                            ns->info->notifications);
         }
 
-      group_update_window_content (group,
-                                   group->switcher_window,
-                                   group->notifications);
+      notifications_update_window (ns->info->notifications,
+                                   ns->info->switcher_window);
 
-      gtk_widget_show (group->switcher_window);
+      gtk_widget_show (ns->info->switcher_window);
     }
 }
 
 static void
-switcher_window_response (HDIncomingEventWindow     *window,
-                          gint                       response_id,
-                          HDNotification            *notification)
+notifications_add_to_switcher (Notifications *ns)
 {
-  if (response_id == GTK_RESPONSE_OK)
+  if (ns->info)
     {
-      hd_notification_manager_call_action (hd_notification_manager_get (),
-                                           notification,
-                                           "default");
-      hd_notification_manager_close_notification (hd_notification_manager_get (),
-                                                  hd_notification_get_id (notification),
-                                                  NULL);
+      notifications_append (ns->info->notifications,
+                            ns);
+
+      notifications_update_switcher_window (ns->info->notifications,
+                                            NULL);
+      ns->info->notifications->cb = (NotificationsCallback) notifications_update_switcher_window;
+      ns->info->notifications->cb_data = NULL;
     }
-  else
-    {
-      hd_notification_manager_close_notification (hd_notification_manager_get (),
-                                                  hd_notification_get_id (notification),
-                                                  NULL);
-    }
-}
-
-/* Check if category is mapped to a virtual category
- * and returns the virtual category in this case, 
- * else return category */
-static const gchar *
-get_mapped_category (HDIncomingEvents *ie,
-                     const gchar      *category)
-{
-  HDIncomingEventsPrivate *priv = ie->priv;
-  HDIncomingEventGroup *group;
-
-  g_return_val_if_fail (ie, NULL);
-
-  if (!category)
-    return NULL;
-
-  group = g_hash_table_lookup (priv->groups,
-                               category);
-
-  if (!group)
-    return category;
-
-  if (group->grouped_category)
-    return group->grouped_category;
-  else
-    return category;
-}
-
-static void
-add_switcher_notification (HDIncomingEvents         *ie,
-                           HDNotification           *notification)
-{
-  HDIncomingEventGroup *group = NULL;
-  const gchar *grouped_category;
-
-  grouped_category = get_mapped_category (ie,
-                                          hd_notification_get_category (notification));
-  if (grouped_category)
-    group = g_hash_table_lookup (ie->priv->groups,
-                                 grouped_category);
-
-  if (group)
-    {
-      g_ptr_array_add (group->notifications,
-                       notification);
-      group_update (group);
-      g_signal_connect_swapped (notification, "closed",
-                                G_CALLBACK (group_notification_closed), group);
-    }
-  else
+  else if (ns->notifications->len == 1)
     {
       GtkWidget *switcher_window;
+      HDNotification *notification = g_ptr_array_index (ns->notifications, 0);
 
       switcher_window = hd_incoming_event_window_new (FALSE,
                                                       NULL,
@@ -606,68 +653,39 @@ add_switcher_notification (HDIncomingEvents         *ie,
 
       g_signal_connect (switcher_window, "response",
                         G_CALLBACK (switcher_window_response),
-                        notification);
+                        notifications_new_for_notification (NULL,
+                                                            notification));
       g_signal_connect_object (notification, "closed",
                                G_CALLBACK (gtk_widget_destroy), switcher_window,
                                G_CONNECT_SWAPPED);
 
       gtk_widget_show (switcher_window);
     }
+  else
+    {
+      g_warning ("%s. No info defined for notifications array", __FUNCTION__);
+    }
 }
 
-typedef struct
-{
-  HDIncomingEvents     *ie;
-  HDIncomingEventGroup *group;
-  GPtrArray            *notifications;
-} PreviewWindowResponseInfo;
-
 static void
-preview_window_response (HDIncomingEventWindow     *window,
-                         gint                       response_id,
-                         PreviewWindowResponseInfo *info)
+preview_window_response (HDIncomingEventWindow *window,
+                         gint                   response_id,
+                         Notifications         *ns)
 {
-  HDIncomingEvents *ie = info->ie;
-  GPtrArray *notifications = info->notifications;
-  gboolean activated = TRUE;
-
   g_debug ("preview_window_response response_id:%d", response_id);
 
   if (response_id == GTK_RESPONSE_OK)
     {
-      guint i;
-      for (i = 0; i < notifications->len; i++)
+      if (!notifications_activate (ns))
         {
-          HDNotification *notification;
-
-          notification = g_ptr_array_index (notifications, i);
-          g_object_weak_unref (G_OBJECT (notification),
-                               (GWeakNotify) g_ptr_array_remove,
-                               notifications);
-        }
-
-      activated = group_activate_notifications (info->group,
-                                                notifications);
-    }
-  
-  if (response_id == GTK_RESPONSE_DELETE_EVENT || !activated)
-    {
-      guint i;
-      for (i = 0; i < notifications->len; i++)
-        {
-          HDNotification *notification;
-
-          notification = g_ptr_array_index (notifications, i);
-          g_object_weak_unref (G_OBJECT (notification),
-                               (GWeakNotify) g_ptr_array_remove,
-                               notifications);
-
-          add_switcher_notification (ie, notification);
+          /* Notifications could not be activated add them to task switcher */
+          notifications_add_to_switcher (ns);
         }
     }
+  else if (response_id == GTK_RESPONSE_DELETE_EVENT)
+    notifications_add_to_switcher (ns);
 
-  g_free (info);
-  g_ptr_array_free (notifications, TRUE);
+  notifications_free (ns);
 
   gtk_widget_destroy (GTK_WIDGET (window));
 }
@@ -705,16 +723,6 @@ close_led_notification (HDNotification *notification,
                                       FALSE);
 }
 
-static void
-remove_from_preview_list (HDNotification   *notification,
-                          HDIncomingEvents *ie)
-{
-  HDIncomingEventsPrivate *priv = ie->priv;
-
-  priv->preview_list = g_list_remove (priv->preview_list,
-                                      notification);
-}
-
 static void show_preview_window (HDIncomingEvents *ie);
 
 static void
@@ -732,54 +740,15 @@ static void
 show_preview_window (HDIncomingEvents *ie)
 {
   HDIncomingEventsPrivate *priv = ie->priv;
-  HDNotification *n;
-  GPtrArray *notifications;
-  const gchar *category;
-  HDIncomingEventGroup *group = NULL;
-  PreviewWindowResponseInfo *preview_window_response_info;
+  Notifications *ns;
 
   if (priv->preview_window || !priv->preview_list)
     return;
 
-  /* Get first notification */
-  notifications = g_ptr_array_new ();
-
-  n = priv->preview_list->data;
-  g_ptr_array_add (notifications,
-                   n);
-  g_object_weak_ref (G_OBJECT (n),
-                     (GWeakNotify) g_ptr_array_remove,
-                     notifications);
-
+  /* Pop first notification from preview ns */
+  ns = priv->preview_list->data;
   priv->preview_list = g_list_delete_link (priv->preview_list,
                                            priv->preview_list);
-
-  category = get_mapped_category (ie,
-                                  hd_notification_get_category (n));
-  if (category)
-    group = g_hash_table_lookup (priv->groups,
-                                 category);
-
-  /* Get all further notifications with the same category */
-  while (priv->preview_list)
-    {
-      n = priv->preview_list->data;
-
-      if (category && !g_strcmp0 (category,
-                                  get_mapped_category (ie,
-                                                       hd_notification_get_category (n))))
-        {
-          g_ptr_array_add (notifications,
-                           n);
-          g_object_weak_ref (G_OBJECT (n),
-                             (GWeakNotify) g_ptr_array_remove,
-                             notifications);
-          priv->preview_list = g_list_delete_link (priv->preview_list,
-                                                   priv->preview_list);
-        }
-      else
-        break;
-    }
 
   /* Create the notification preview window */
   priv->preview_window = hd_incoming_event_window_new (TRUE,
@@ -789,23 +758,17 @@ show_preview_window (HDIncomingEvents *ie)
                                                        -1,
                                                        NULL);
 
-  group_update_window_content (group,
-                               priv->preview_window,
-                               notifications);
+  ns->cb  = (NotificationsCallback) notifications_update_window;
+  ns->cb_data = priv->preview_window;
 
-  preview_window_response_info = g_new (PreviewWindowResponseInfo, 1);
-  preview_window_response_info->ie = ie;
-  preview_window_response_info->group = group;
-  preview_window_response_info->notifications = notifications;
+  notifications_update_window (ns,
+                               priv->preview_window);
 
   g_signal_connect (priv->preview_window, "response",
                     G_CALLBACK (preview_window_response),
-                    preview_window_response_info);
+                    ns);
   g_signal_connect (priv->preview_window, "destroy",
                     G_CALLBACK (preview_window_destroy_cb), ie);
-/*  g_signal_connect_object (notification, "closed",
-                           G_CALLBACK (gtk_widget_destroy), priv->preview_window,
-                           G_CONNECT_SWAPPED);*/
 
   /* Send dbus request to mce to turn display backlight on */
   if (priv->mce_proxy)
@@ -821,25 +784,30 @@ show_preview_window (HDIncomingEvents *ie)
 }
 
 static gint
-cmp_category_func (gconstpointer a,
-                   gconstpointer b,
-                   gpointer      data)
+notifications_cmp (gconstpointer a,
+                   gconstpointer b)
 {
-  HDIncomingEvents *ie = data;
-  const gchar *cat_a, *cat_b;
-  
-  cat_a = get_mapped_category (ie,
-                               hd_notification_get_category ((HDNotification *) a));
-  cat_b = get_mapped_category (ie,
-                               hd_notification_get_category ((HDNotification *) b));
+  const Notifications *l_a = a;
+  const Notifications *l_b = b;
 
-  if (!cat_a || !cat_a[0] || !cat_b || !cat_b[0])
-    return 1;
+  if (l_a->info == l_b->info)
+    return 0;
 
-  if (strcmp (cat_a, cat_b) == 0)
-    return -1;
+  return -1;
+}
 
-  return 1;
+static void
+preview_list_notifications_cb (Notifications *ns,
+                               gpointer       data)
+{
+  HDIncomingEventsPrivate *priv = data;
+
+  if (notifications_is_empty (ns))
+    {
+      priv->preview_list = g_list_remove (priv->preview_list,
+                                          ns);
+      notifications_free (ns);
+    }
 }
 
 static void
@@ -851,9 +819,9 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   HDIncomingEventsPrivate *priv = ie->priv;
   const gchar *category;
   guint i;
-  HDIncomingEventGroup *group;
   GValue *p;
   const gchar *pattern = NULL;
+  Notifications *ns;
 
   g_return_if_fail (HD_IS_INCOMING_EVENTS (ie));
 
@@ -861,7 +829,7 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   category = hd_notification_get_category (notification);
 
   /* Only call plugins for internal system.note.* notifications */
-  if (g_str_has_prefix (category, "system.note."))
+  if (category && g_str_has_prefix (category, "system.note."))
     {
       for (i = 0; i < priv->plugins->len; i++)
         {
@@ -872,9 +840,15 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
       return;
     }
 
+  ns = notifications_new_for_notification (ie,
+                                             notification); 
+
+  /* Replayed events are just added to the switcher */
   if (replayed_event)
     {
-      add_switcher_notification (ie, notification);
+      notifications_add_to_switcher (ns);
+      notifications_free (ns);
+
       return;
     }
 
@@ -886,16 +860,14 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
       hd_notification_plugin_notify (plugin, notification);
     }
 
-  /* Lookup category and handle special summary cases */
-  group = g_hash_table_lookup (ie->priv->groups,
-                               category);
-
   /* Lets see if we have any led event for this category */
   p = hd_notification_get_hint (notification, "led-pattern");
   if (G_VALUE_HOLDS_STRING (p))
     pattern = g_value_get_string (p);
-  if (!pattern)
-    pattern = group->pattern;
+  if (!pattern && ns->info)
+    pattern = ns->info->pattern;
+  if (!pattern && ns->fallback)
+    pattern = ns->fallback->pattern;
 
   if (pattern)
     {
@@ -912,16 +884,36 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
     }
 
   /* Return if no notification window should be shown */
-  if (group && group->no_window)
+  if (ns->info && ns->info->no_window)
     return;
 
-  priv->preview_list = g_list_insert_sorted_with_data (priv->preview_list,
-                                                       notification,
-                                                       cmp_category_func,
-                                                       ie);
+  if (ns->info)
+    {
+      GList *l  = g_list_find_custom (priv->preview_list,
+                                      ns,
+                                      notifications_cmp);
 
-  g_signal_connect (notification, "closed",
-                    G_CALLBACK (remove_from_preview_list), ie);
+      if (l)
+        {
+          Notifications *existing = l->data;
+
+          notifications_append (existing,
+                                ns);
+          notifications_free (ns);
+        }
+      else
+        {
+          priv->preview_list = g_list_append (priv->preview_list,
+                                              ns);
+          ns->cb = preview_list_notifications_cb;
+          ns->cb_data = priv;
+        }
+    }
+  else
+    {
+      priv->preview_list = g_list_append (priv->preview_list,
+                                          ns);
+    }
 
   show_preview_window (ie);
 }
@@ -945,8 +937,8 @@ hd_incoming_events_finalize (GObject *object)
 {
   HDIncomingEventsPrivate *priv = HD_INCOMING_EVENTS (object)->priv;
 
-  if (priv->groups)
-    priv->groups = (g_hash_table_destroy (priv->groups), NULL);
+  if (priv->categories)
+    priv->categories = (g_hash_table_destroy (priv->categories), NULL);
 
   if (priv->preview_list)
     priv->preview_list = (g_list_free (priv->preview_list), NULL);
@@ -969,160 +961,184 @@ hd_incoming_events_class_init (HDIncomingEventsClass *klass)
 }
 
 static void
-load_notification_groups (HDIncomingEvents *ie)
+category_info_free (CategoryInfo *info)
 {
-  HDConfigFile *groups_file;
+  g_free (info->destination);
+  g_free (info->summary);
+  g_free (info->body);
+  g_free (info->icon);
+  g_free (info->dbus_callback);
+  g_free (info->empty_summary);
+  g_free (info->preview_summary);
+  g_free (info->text_domain);
+  g_free (info->account_call);
+  g_free (info->account_hint);
+  g_free (info->pattern);
+  g_free (info->mapped_category);
+  if (GTK_IS_WIDGET (info->switcher_window))
+    gtk_widget_destroy (info->switcher_window);
+  notifications_free (info->notifications);
+  g_free (info);
+}
+
+/* 
+ * Loads all the category infos from /etc/hildon-desktop/notification-groups.conf
+ */
+static void
+load_category_infos (HDIncomingEvents *ie)
+{
+  HDConfigFile *infos_file;
   GKeyFile *key_file;
-  gchar **groups;
+  gchar **infos;
   guint i;
 
   /* Load the config file */
-  groups_file = hd_config_file_new (HD_DESKTOP_CONFIG_PATH,
-                                    NULL,
-                                    "notification-groups.conf");
-  key_file = hd_config_file_load_file (groups_file, TRUE);
+  infos_file = hd_config_file_new (HD_DESKTOP_CONFIG_PATH,
+                                   NULL,
+                                   "notification-groups.conf");
+  key_file = hd_config_file_load_file (infos_file, TRUE);
 
   if (!key_file)
     {
-      g_warning ("Could not load notifications group file");
-      g_object_unref (groups_file);
+      g_warning ("Could not load notifications info file");
+      g_object_unref (infos_file);
       return;
     }
 
-  /* Get all groups */
-  groups = g_key_file_get_groups (key_file, NULL);
+  /* Get all infos */
+  infos = g_key_file_get_groups (key_file, NULL);
 
-  /* Warning if no groups */
-  if (groups == NULL)
+  /* Warning if no infos */
+  if (infos == NULL)
     {
-      g_warning ("Notification groups file is empty");
-      g_object_unref (groups_file);
+      g_warning ("Notification infos file is empty");
+      g_object_unref (infos_file);
       g_key_file_free (key_file);
       return;
     }
 
-  /* Iterate all groups the group is the org.freedesktop.Notifications.Notify hints category */
-  for (i = 0; groups[i]; i++)
+  /* Iterate all infos the info is the org.freedesktop.Notifications.Notify hints category */
+  for (i = 0; infos[i]; i++)
     {
-      HDIncomingEventGroup *group;
+      CategoryInfo *info;
       gchar *untranslated;
       GError *error = NULL;
 
-      group = g_new0 (HDIncomingEventGroup, 1);
-      group->ie = ie;
+      info = g_new0 (CategoryInfo, 1);
+      info->ie = ie;
 
-      group->notifications = g_ptr_array_new ();
+      info->notifications = notifications_new_for_category (info);
 
-      group->no_window = g_key_file_get_boolean (key_file,
-                                                 groups[i],
-                                                 NOTIFICATION_GROUP_KEY_NO_WINDOW,
-                                                 NULL);
+      info->no_window = g_key_file_get_boolean (key_file,
+                                                infos[i],
+                                                NOTIFICATION_GROUP_KEY_NO_WINDOW,
+                                                NULL);
       /* We do not need more information as no notification windows are shown */
-      if (group->no_window)
+      if (info->no_window)
         {
-          g_debug ("Add group %s", groups[i]);
-          g_hash_table_insert (ie->priv->groups,
-                               groups[i],
-                               group);
+          g_debug ("Add category %s", infos[i]);
+          g_hash_table_insert (ie->priv->categories,
+                               infos[i],
+                               info);
           continue;
         }
 
-      group->destination = g_key_file_get_string (key_file,
-                                                  groups[i],
-                                                  NOTIFICATION_GROUP_KEY_DESTINATION,
-                                                  &error);
+      info->destination = g_key_file_get_string (key_file,
+                                                 infos[i],
+                                                 NOTIFICATION_GROUP_KEY_DESTINATION,
+                                                 &error);
       if (error)
         goto load_key_error;
 
-      group->summary = g_key_file_get_string (key_file,
-                                              groups[i],
-                                              NOTIFICATION_GROUP_KEY_SUMMARY,
-                                              NULL);
+      info->summary = g_key_file_get_string (key_file,
+                                             infos[i],
+                                             NOTIFICATION_GROUP_KEY_SUMMARY,
+                                             NULL);
 
-      group->body = g_key_file_get_string (key_file,
-                                           groups[i],
-                                           NOTIFICATION_GROUP_KEY_BODY,
-                                           NULL);
+      info->body = g_key_file_get_string (key_file,
+                                          infos[i],
+                                          NOTIFICATION_GROUP_KEY_BODY,
+                                          NULL);
 
-      group->icon = g_key_file_get_string (key_file,
-                                           groups[i],
-                                           NOTIFICATION_GROUP_KEY_ICON,
-                                           NULL);
+      info->icon = g_key_file_get_string (key_file,
+                                          infos[i],
+                                          NOTIFICATION_GROUP_KEY_ICON,
+                                          NULL);
 
-      group->text_domain = g_key_file_get_string (key_file,
-                                                  groups[i],
-                                                  NOTIFICATION_GROUP_KEY_TEXT_DOMAIN,
-                                                  NULL);
+      info->text_domain = g_key_file_get_string (key_file,
+                                                 infos[i],
+                                                 NOTIFICATION_GROUP_KEY_TEXT_DOMAIN,
+                                                 NULL);
 
       untranslated = g_key_file_get_string (key_file,
-                                            groups[i],
+                                            infos[i],
                                             NOTIFICATION_GROUP_KEY_EMPTY_SUMMARY,
                                             NULL);
       if (untranslated)
         {
-          group->empty_summary = g_strdup (dgettext (group->text_domain,
-                                                     untranslated));
+          info->empty_summary = g_strdup (dgettext (info->text_domain,
+                                                    untranslated));
           g_free (untranslated);
         }
 
       untranslated = g_key_file_get_string (key_file,
-                                            groups[i],
+                                            infos[i],
                                             NOTIFICATION_GROUP_KEY_PREVIEW_SUMMARY,
                                             NULL);
       if (untranslated)
         {
-          group->preview_summary = g_strdup (dgettext (group->text_domain,
-                                                       untranslated));
+          info->preview_summary = g_strdup (dgettext (info->text_domain,
+                                                      untranslated));
           g_free (untranslated);
         }
 
-      group->dbus_callback = g_key_file_get_string (key_file,
-                                                    groups[i],
-                                                    NOTIFICATION_GROUP_KEY_DBUS_CALL,
-                                                    NULL);
-
-      group->account_hint = g_key_file_get_string (key_file,
-                                                   groups[i],
-                                                   NOTIFICATION_GROUP_KEY_ACCOUNT_HINT,
-                                                   NULL);
- 
-      group->account_call = g_key_file_get_string (key_file,
-                                                   groups[i],
-                                                   NOTIFICATION_GROUP_KEY_ACCOUNT_CALL,
+      info->dbus_callback = g_key_file_get_string (key_file,
+                                                   infos[i],
+                                                   NOTIFICATION_GROUP_KEY_DBUS_CALL,
                                                    NULL);
 
-      group->pattern = g_key_file_get_string (key_file,
-                                              groups[i],
-                                              NOTIFICATION_GROUP_KEY_LED_PATTERN,
-                                              NULL);
+      info->account_hint = g_key_file_get_string (key_file,
+                                                  infos[i],
+                                                  NOTIFICATION_GROUP_KEY_ACCOUNT_HINT,
+                                                  NULL);
 
-      group->grouped_category = g_key_file_get_string (key_file,
-                                                       groups[i],
-                                                       NOTIFICATION_GROUP_KEY_GROUPED_CATEGORY,
-                                                       NULL);
+      info->account_call = g_key_file_get_string (key_file,
+                                                  infos[i],
+                                                  NOTIFICATION_GROUP_KEY_ACCOUNT_CALL,
+                                                  NULL);
 
-      group->grouped = g_key_file_get_boolean (key_file,
-                                               groups[i],
-                                               NOTIFICATION_GROUP_KEY_GROUPED,
-                                               NULL);
+      info->pattern = g_key_file_get_string (key_file,
+                                             infos[i],
+                                             NOTIFICATION_GROUP_KEY_LED_PATTERN,
+                                             NULL);
 
-      g_debug ("Add group %s", groups[i]);
-      g_hash_table_insert (ie->priv->groups,
-                           groups[i],
-                           group);
-      
+      info->mapped_category = g_key_file_get_string (key_file,
+                                                     infos[i],
+                                                     NOTIFICATION_GROUP_KEY_GROUPED_CATEGORY,
+                                                     NULL);
+
+      info->mapped = g_key_file_get_boolean (key_file,
+                                             infos[i],
+                                             NOTIFICATION_GROUP_KEY_GROUPED,
+                                             NULL);
+
+      g_debug ("Add category %s", infos[i]);
+      g_hash_table_insert (ie->priv->categories,
+                           infos[i],
+                           info);
+
       continue;
 
 load_key_error:
-      g_warning ("Error loading notification groups file: %s", error->message);
-      group_free (group);
+      g_warning ("Error loading notification infos file: %s", error->message);
+      category_info_free (info);
       g_error_free (error);
-      g_free (groups[i]);
+      g_free (infos[i]);
     }
-  g_free (groups);
+  g_free (infos);
 
   g_key_file_free (key_file);
-  g_object_unref (groups_file);
+  g_object_unref (infos_file);
 }
 
 static void
@@ -1165,10 +1181,10 @@ hd_incoming_events_init (HDIncomingEvents *ie)
 
   priv = ie->priv = HD_INCOMING_EVENTS_GET_PRIVATE (ie);
 
-  priv->groups = g_hash_table_new_full (g_str_hash,
-                                        g_str_equal,
-                                        (GDestroyNotify) g_free,
-                                        (GDestroyNotify) group_free);
+  priv->categories = g_hash_table_new_full (g_str_hash,
+                                            g_str_equal,
+                                            (GDestroyNotify) g_free,
+                                            (GDestroyNotify) category_info_free);
 
   priv->plugins = g_ptr_array_new ();
 
@@ -1186,7 +1202,7 @@ hd_incoming_events_init (HDIncomingEvents *ie)
   /* Connect to notification manager signals */
   g_signal_connect_object (hd_notification_manager_get (), "notified",
                            G_CALLBACK (hd_incoming_events_notified), ie, 0);
-  load_notification_groups (ie);
+  load_category_infos (ie);
 
   /* Get D-Bus proxy for mce calls */
   connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
@@ -1210,7 +1226,7 @@ HDIncomingEvents *
 hd_incoming_events_get (void)
 {
   static HDIncomingEvents *ie = NULL;
-  
+
   if (G_UNLIKELY (!ie))
     ie = g_object_new (HD_TYPE_INCOMING_EVENTS, NULL);
 
