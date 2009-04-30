@@ -1,3 +1,11 @@
+2009-04-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fix Coverity issues.
+	* src/hd-incoming-events.c (group_activate_notifications): Remove
+	unneeded variable 'banner'.
+	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_init):
+	Remove unneeded variable 'current_theme_backgrounds'.
+
 2009-04-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#113822 - Application shortcut label should have hardcoded

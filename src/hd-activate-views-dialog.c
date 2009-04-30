@@ -180,7 +180,6 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   GSList *list = NULL;
   gboolean active_views[HD_MAX_HOME_VIEWS] = { 0,};
   gboolean none_active = TRUE;
-  GKeyFile *current_theme_backgrounds = NULL;
   GKeyFile *default_theme_backgrounds = NULL;
   GList *selected;
   GError *error = NULL;
@@ -352,8 +351,6 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
 /*                     priv->icon_view); */
                     pannable);
 
-  if (current_theme_backgrounds)
-    g_key_file_free (current_theme_backgrounds);
   if (default_theme_backgrounds)
     g_key_file_free (default_theme_backgrounds);
 }

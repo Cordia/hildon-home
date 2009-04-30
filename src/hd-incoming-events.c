@@ -135,14 +135,12 @@ group_activate_notifications (HDIncomingEventGroup *group,
 
   if (osso_mem_in_lowmem_state ())
     {
-      GtkWidget* banner;
-
       g_debug ("%s. Do not activate notification in low mem state.",
                __FUNCTION__);
 
-      banner = hildon_banner_show_information (NULL, NULL,
-                                               dgettext ("ke-recv",
-                                                         "memr_ti_close_applications"));
+      hildon_banner_show_information (NULL, NULL,
+                                      dgettext ("ke-recv",
+                                                "memr_ti_close_applications"));
 
       return FALSE;
     }
