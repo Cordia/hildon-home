@@ -1,5 +1,22 @@
 2009-05-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#109445 - Unable to open received SMS when a dialog is opened
+	in layout mode
+
+	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_response):
+	* src/hd-add-applet-dialog.c (hd_add_applet_dialog_response):
+	* src/hd-add-bookmark-dialog.c (hd_add_bookmark_dialog_response):
+	* src/hd-add-task-dialog.c (hd_add_task_dialog_response):
+	* src/hd-change-background-dialog.c (add_image_dialog_response,
+	  hd_change_background_dialog_response):
+	* src/hd-hildon-home-dbus.c (select_applets_clicked_cb,
+	  select_shortcuts_clicked_cb, select_bookmarks_clicked_cb,
+	  manage_views_clicked_cb): Do not use gtk_dialog_run.
+
+	* debian/changelog: Update.
+
+2009-05-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#110590 - Authorization requests and SMS get truncated
 
 	* src/hd-incoming-event-window.c (hd_incoming_event_window_init): Fix

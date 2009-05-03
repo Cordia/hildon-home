@@ -126,6 +126,8 @@ hd_activate_views_dialog_response (GtkDialog *dialog,
           g_slist_free (list);
         }
     }
+
+  gtk_widget_destroy (GTK_WIDGET (dialog));
 }
 
 static void

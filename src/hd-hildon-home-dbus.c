@@ -190,8 +190,7 @@ select_applets_clicked_cb (GtkButton        *button,
 {
   GtkWidget *dialog = hd_add_applet_dialog_new ();
 
-  gtk_dialog_run (GTK_DIALOG (dialog));
-  gtk_widget_destroy (dialog);
+  gtk_widget_show (dialog);
 }
 
 static void
@@ -200,8 +199,7 @@ select_shortcuts_clicked_cb (GtkButton        *button,
 {
   GtkWidget *dialog = hd_add_task_dialog_new ();
 
-  gtk_dialog_run (GTK_DIALOG (dialog));
-  gtk_widget_destroy (dialog);
+  gtk_widget_show (dialog);
 }
 
 static void
@@ -210,8 +208,7 @@ select_bookmarks_clicked_cb (GtkButton        *button,
 {
   GtkWidget *dialog = hd_add_bookmark_dialog_new ();
 
-  gtk_dialog_run (GTK_DIALOG (dialog));
-  gtk_widget_destroy (dialog);
+  gtk_widget_show (dialog);
 }
 
 static void
@@ -243,8 +240,7 @@ manage_views_clicked_cb (GtkButton        *button,
 {
   GtkWidget *dialog = hd_activate_views_dialog_new ();
 
-  gtk_dialog_run (GTK_DIALOG (dialog));
-  gtk_widget_destroy (dialog);
+  gtk_widget_show (dialog);
 }
 
 static void

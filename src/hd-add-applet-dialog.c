@@ -59,7 +59,10 @@ hd_add_applet_dialog_response (GtkDialog *dialog,
                                             &iter);
         }
     }
+ 
+  gtk_widget_destroy (GTK_WIDGET (dialog));
 }
+
 static void
 hd_add_applet_dialog_class_init (HDAddAppletDialogClass *klass)
 {
@@ -69,7 +72,6 @@ hd_add_applet_dialog_class_init (HDAddAppletDialogClass *klass)
 
   g_type_class_add_private (klass, sizeof (HDAddAppletDialogPrivate));
 }
-
 
 static void
 hd_add_applet_dialog_init (HDAddAppletDialog *dialog)

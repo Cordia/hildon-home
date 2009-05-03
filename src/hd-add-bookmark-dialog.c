@@ -59,6 +59,8 @@ hd_add_bookmark_dialog_response (GtkDialog *dialog,
                                                 &iter);
         }
     }
+
+  gtk_widget_destroy (GTK_WIDGET (dialog)); 
 }
 
 static void

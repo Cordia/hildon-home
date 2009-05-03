@@ -418,6 +418,64 @@ get_image_label_from_uri (const gchar *uri)
 }
 
 static void
+add_image_dialog_response (GtkDialog                *dialog,
+                           gint                      response_id,
+                           HDChangeBackgroundDialog *cb_dialog)
+{
+  HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG (cb_dialog)->priv;
+
+  if (response_id == GTK_RESPONSE_OK)
+    {
+      /* An image was selected */
+      gchar *uri, *label;
+      GtkTreeIter iter;
+
+      uri = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (dialog));
+
+      if (!uri)
+        {
+          g_warning ("No image file selected.");
+        }
+      else
+        {
+          gchar *filename = g_filename_from_uri (uri, NULL, NULL);
+
+          /* Replace the existing custom image or create a new row 
+           * if there is no image yet*/                            
+          if (priv->custom_image)
+            {
+              gtk_tree_model_get_iter (priv->model, &iter, priv->custom_image);
+            }
+          else
+            {
+              gtk_list_store_insert (GTK_LIST_STORE (priv->model), &iter, 0);
+              priv->custom_image = gtk_tree_model_get_path (priv->model, &iter);
+            }
+
+          label = get_image_label_from_uri (uri);
+
+          gtk_list_store_set (GTK_LIST_STORE (priv->model), &iter,
+                              COL_NAME, label,
+                              COL_IMAGE, filename,
+                              COL_ORDER, -1, /* first entry */
+                              -1);
+
+          hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
+                                             0,
+                                             &iter,
+                                             TRUE);
+
+          g_free (uri);
+          g_free (filename);
+          g_free (label);
+        }
+
+    }
+
+  gtk_widget_destroy (GTK_WIDGET (dialog));
+}
+
+static void
 hd_change_background_dialog_response (GtkDialog *dialog,
                                       gint       response_id)
 {
@@ -458,55 +516,13 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                            images_folder);
       g_free (images_folder);
 
+      /* Connect signal handler */
+      g_signal_connect (add_image, "response",
+                        G_CALLBACK (add_image_dialog_response),
+                        dialog);
+
       /* Show Add Image dialog */
-      if (gtk_dialog_run (GTK_DIALOG (add_image)) == GTK_RESPONSE_OK)
-        {
-          /* An image was selected */
-          gchar *uri, *label;
-          GtkTreeIter iter;
-
-          uri = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (add_image));
-
-          if (!uri)
-            {
-              g_warning ("No image file selected.");
-            }
-          else
-            {
-              gchar *filename = g_filename_from_uri (uri, NULL, NULL);
-
-              /* Replace the existing custom image or create a new row 
-               * if there is no image yet*/                            
-              if (priv->custom_image)
-                {
-                  gtk_tree_model_get_iter (priv->model, &iter, priv->custom_image);
-                }
-              else
-                {
-                  gtk_list_store_insert (GTK_LIST_STORE (priv->model), &iter, 0);
-                  priv->custom_image = gtk_tree_model_get_path (priv->model, &iter);
-                }
-
-              label = get_image_label_from_uri (uri);
-
-              gtk_list_store_set (GTK_LIST_STORE (priv->model), &iter,
-                                  COL_NAME, label,
-                                  COL_IMAGE, filename,
-                                  COL_ORDER, -1, /* first entry */
-                                  -1);
-
-              hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
-                                                 0,
-                                                 &iter,
-                                                 TRUE);
-
-              g_free (uri);
-              g_free (filename);
-              g_free (label);
-            }
-        }
-
-      gtk_widget_destroy (GTK_WIDGET (add_image));
+      gtk_dialog_run (GTK_DIALOG (add_image));
     }
   else if (response_id == GTK_RESPONSE_ACCEPT)
     {
