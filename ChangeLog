@@ -1,3 +1,15 @@
+2009-05-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#110590 - Authorization requests and SMS get truncated
+
+	* src/hd-incoming-event-window.c (hd_incoming_event_window_init): Fix
+	margin.
+
+	* src/hd-notification-manager.c (hd_notification_manager_notify):
+	Remove unused code.
+
+	* debian/changelog: Update.
+
 2009-04-30  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#111026 - Notifications, Event notification overview displays

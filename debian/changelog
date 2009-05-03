@@ -5,6 +5,7 @@ hildon-home (0.3.25~unreleased) unstable; urgency=low
   Jan Arne:
   * Fixes: NB#111026 - Notifications, Event notification overview displays
     wrong message
+  * Fixes: NB#110590 - Authorization requests and SMS get truncated
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 30 Apr 2009 14:45:05 +0300
 

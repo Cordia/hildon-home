@@ -526,7 +526,7 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   window->priv = priv;
 
   vbox = gtk_vbox_new (FALSE, HILDON_MARGIN_DEFAULT);
-  gtk_container_set_border_width (GTK_CONTAINER (vbox), HILDON_MARGIN_DEFAULT);
+  gtk_container_set_border_width (GTK_CONTAINER (vbox), HILDON_MARGIN_DOUBLE);
   gtk_widget_show (vbox);
 
   hbox = gtk_hbox_new (FALSE, HILDON_MARGIN_DEFAULT);

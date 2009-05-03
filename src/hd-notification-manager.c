@@ -1150,8 +1150,8 @@ hd_notification_manager_notify (HDNotificationManager *nm,
   gboolean replace = FALSE;
   const gchar *category;
 
-  g_return_val_if_fail (summary != '\0', FALSE);
-  g_return_val_if_fail (body != '\0', FALSE);
+/*  g_return_val_if_fail (summary != '\0', FALSE);
+  g_return_val_if_fail (body != '\0', FALSE);*/
 
   /* Get "persisitent" hint */
   hint = g_hash_table_lookup (hints, "persistent");
@@ -1226,13 +1226,10 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                                           icon,
                                           summary,
                                           body,
-                                          actions,
+                                          actions_copy,
                                           hints_copy,
                                           timeout,
                                           sender);
-/*      nd->removable = TRUE;
-      nd->ack = FALSE;
-      nd->sender = sender;*/
 
       g_hash_table_insert (nm->priv->notifications,
                            GUINT_TO_POINTER (id),
@@ -1264,8 +1261,6 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                     "summary", summary,
                     "body", body,
                     NULL);
-/*      nd->removable = FALSE;
-      nd->ack = FALSE;*/
 
       if (persistent)
         {
