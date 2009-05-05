@@ -5,6 +5,8 @@ hildon-home (0.3.26~unreleased) unstable; urgency=low
   Jan Arne:
   * Fixes: NB#110504 - Unable to restore background image with Backup and
     restore application
+  * Fixes: NB#111148 - Theme-Devel is displayed for two times in choose
+    background image dialog
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  4 May 2009 10:09:42 +0300
 

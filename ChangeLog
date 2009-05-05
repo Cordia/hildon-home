@@ -1,9 +1,14 @@
 2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#111148 - Theme-Devel is displayed for two times in choose
+	background image dialog
+
 	* src/hd-change-background-dialog.c
 	  (hd_change_background_dialog_response,
 	  hd_change_background_dialog_init): Set Change background dialog
 	  height to 404px.
+
+	* debian/changelog: Update.
 
 2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
