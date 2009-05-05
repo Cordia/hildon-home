@@ -135,5 +135,7 @@ org.freedesktop.Notifications.service
 src/Makefile
 src/home.conf
 src/home.plugins
+src/home.safe-set
 src/notification.conf
+src/notification.safe-set
 ])

@@ -1,4 +1,5 @@
 debian/tmp/etc/hildon-desktop/*.conf
 debian/tmp/etc/hildon-desktop/*.plugins
+debian/tmp/etc/hildon-desktop/*.safe-set
 debian/tmp/usr/share/dbus-1/services/*.service
 debian/tmp/usr/bin/hildon-home

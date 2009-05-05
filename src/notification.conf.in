@@ -2,3 +2,4 @@
 X-Plugin-Dir=@hildonnotificationdesktopentrydir@
 X-Load-New-Plugins=true
 X-Load-All-Plugins=true
+X-Safe-Set=notification.safe-set

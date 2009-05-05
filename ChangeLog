@@ -1,5 +1,19 @@
 2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#111752 - No notification sounds after a hildon-home crash
+
+	* configure.ac:
+	* debian/hildon-home.install:
+	* src/Makefile.am:
+	* src/home.conf.in:
+	* src/home.safe-set.in:
+	* src/notification.conf.in:
+	* src/notification.safe-set.in: Add new safe set of plugin defintions.
+
+	* debian/changelog: Update.
+
+2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#110996 - Desktop, Alternative string to §tana_fi_latest§
 	needed for multiple authorization requests
 
