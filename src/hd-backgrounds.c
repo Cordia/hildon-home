@@ -32,8 +32,11 @@
 #include <hildon/hildon.h>
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
+#include <gdk/gdkx.h>
 
 #include <gconf/gconf-client.h>
+
+#include <unistd.h>
 
 #include "hd-background-helper.h"
 
@@ -85,6 +88,10 @@ struct _HDBackgroundsPrivate
 
   GMutex *mutex;
   GQueue *queue;
+
+  gchar *current_theme;
+
+  guint set_theme_idle_id;
 };
 
 static void check_queue (HDBackgrounds *backgrounds);
@@ -697,18 +704,179 @@ load_cache_info_cb (GFile         *file,
                                     FALSE);
         }
     }
+}
 
+/* Only supports themes with four backgrounds set */
+static void
+update_backgrounds_from_theme (HDBackgrounds *backgrounds,
+                               const gchar   *backgrounds_desktop)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  GKeyFile *key_file;
+  gchar *bg_image[4], *current_theme;
+  gint current_view;
+  guint i;
+  GError *error = NULL;
+
+  current_theme = g_new0 (gchar, 2048);
+  if (readlink (CURRENT_THEME_DIR, current_theme, 2047) > 0)
+    {
+      if (g_strcmp0 (priv->current_theme, current_theme) == 0)
+        {
+          g_free (current_theme);
+          return;
+        }
+      else
+        {
+          g_free (priv->current_theme);
+          priv->current_theme = current_theme;
+        }
+    }
+  else
+    {
+      g_free (current_theme);
+      return;
+    }
+
+  key_file = g_key_file_new ();
+  if (!g_key_file_load_from_file (key_file,
+                                  backgrounds_desktop,
+                                  G_KEY_FILE_NONE,
+                                  &error))
+    {
+      g_debug ("%s. Could not load background defintion for theme %s. %s",
+               __FUNCTION__,
+               backgrounds_desktop,
+               error->message);
+      g_error_free (error);
+      g_key_file_free (key_file);
+      return;
+    }
+
+  for (i = 0; i < 4; i++)
+    {
+      gchar *key;
+
+      key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, i + 1);
+
+      bg_image[i] = g_key_file_get_string (key_file,
+                                           G_KEY_FILE_DESKTOP_GROUP,
+                                           key,
+                                           &error);
+
+      if (error)
+        {
+          g_debug ("%s. Could not load background defintion for theme %s. %s",
+                   __FUNCTION__,
+                   backgrounds_desktop,
+                   error->message);
+          g_clear_error (&error);
+          g_free (key);
+          g_key_file_free (key_file);
+          return;
+        }
+
+      g_free (key);
+    }
+
+  g_key_file_free (key_file);
+
+  current_view = gconf_client_get_int (priv->gconf_client,
+                                       GCONF_CURRENT_DESKTOP_KEY,
+                                       &error);
+
+  if (error)
+    {
+      g_debug ("%s. Could not get current view. %s",
+               __FUNCTION__,
+               error->message);
+      g_clear_error (&error);
+    }
+
+  /* Set to 0..3 */
+  current_view--;
+
+  if (current_view >= 0 && current_view < 4)
+    create_cached_background (backgrounds,
+                              current_view + 1,
+                              bg_image[current_view],
+                              FALSE,
+                              TRUE);
+
+  /* Update cache for other views */
+  for (i = 0; i < 4; i++)
+    {
+      if (i != current_view)
+        {
+          create_cached_background (backgrounds,
+                                    i + 1,
+                                    bg_image[i],
+                                    FALSE,
+                                    TRUE);
+        }
+    }
+
+  for (i = 0; i < 4; i++)
+    g_free (bg_image[i]);
+}
+
+static gboolean
+set_theme_idle (gpointer data)
+{
+  HDBackgroundsPrivate *priv = HD_BACKGROUNDS (data)->priv;
+
+  priv->set_theme_idle_id = 0;
+
+  g_warning ("%s", __FUNCTION__);
+
+  update_backgrounds_from_theme (HD_BACKGROUNDS (data),
+                                 CURRENT_BACKGROUNDS_DESKTOP);
+
+  return FALSE;
+}
+
+static GdkFilterReturn
+hd_backgrounds_theme_changed (GdkXEvent *xevent,
+                              GdkEvent *event,
+                              gpointer data)
+{
+  HDBackgroundsPrivate *priv = HD_BACKGROUNDS (data)->priv;
+  XEvent *ev = (XEvent *) xevent;
+
+  if (ev->type == PropertyNotify)
+    {
+      if (ev->xproperty.atom == gdk_x11_get_xatom_by_name ("_MB_THEME"))
+        {
+          if (!priv->set_theme_idle_id)
+            priv->set_theme_idle_id = gdk_threads_add_idle (set_theme_idle,
+                                                            data);
+        }
+    }
+
+  return GDK_FILTER_CONTINUE;
 }
 
 void
 hd_backgrounds_startup (HDBackgrounds *backgrounds)
 {
   HDBackgroundsPrivate *priv = backgrounds->priv;
+  GdkWindow *root_win;
   gchar *cached_dir;
   guint i;
   gchar *cache_info_filename;
   GFile *cache_info_file;
   GError *error = NULL;
+
+  root_win = gdk_window_foreign_new_for_display (gdk_display_get_default (),
+                                                 gdk_x11_get_default_root_xwindow ());
+  gdk_window_set_events (root_win,
+                         gdk_window_get_events (root_win) |
+                         GDK_PROPERTY_CHANGE_MASK);
+
+  gdk_window_add_filter (root_win,
+                         hd_backgrounds_theme_changed,
+                         backgrounds);
+
 
   cached_dir = g_strdup_printf ("%s/" CACHED_DIR,
                                 g_get_home_dir ());
@@ -813,6 +981,11 @@ hd_backgrounds_dipose (GObject *object)
 
   if (priv->queue)
     priv->queue = (g_queue_free (priv->queue), NULL);
+
+  if (priv->set_theme_idle_id)
+    priv->set_theme_idle_id = (g_source_remove (priv->set_theme_idle_id), 0);
+
+  priv->current_theme = (g_free (priv->current_theme), NULL);
 
   G_OBJECT_CLASS (hd_backgrounds_parent_class)->dispose (object);
 }

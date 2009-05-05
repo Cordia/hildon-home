@@ -1,3 +1,17 @@
+2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#110504 - Unable to restore background image with Backup and
+	restore application	
+
+	* src/hd-backgrounds.c (queue, current_theme, set_theme_idle_id,
+	  load_cache_info_cb, update_backgrounds_from_theme, set_theme_idle,
+	  hd_backgrounds_theme_changed, hd_backgrounds_startup,
+	  hd_backgrounds_dipose): Add support for updating backgrounds on
+	  theme change . This is only done when the _MB_THEME window property
+	  on the root window changes.
+
+	* debian/changelog: Update.
+
 2009-05-04  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.25
