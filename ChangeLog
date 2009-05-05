@@ -1,5 +1,15 @@
 2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#110996 - Desktop, Alternative string to §tana_fi_latest§
+	needed for multiple authorization requests
+
+	* src/notification-groups.conf: Use tana_fi_latest_feminine for
+	authorization requests
+
+	* debian/changelog: Update.
+
+2009-05-05  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#111148 - Theme-Devel is displayed for two times in choose
 	background image dialog
 
