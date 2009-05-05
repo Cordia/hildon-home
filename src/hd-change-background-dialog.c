@@ -495,6 +495,7 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                                                   "open-button-text", dgettext ("hildon-libs", "wdgt_bd_done"),
                                                                   "select-multiple", FALSE,
                                                                   "selection-mode", HILDON_FILE_SELECTION_MODE_THUMBNAILS,
+                                                                  "modal", FALSE,
                                                                   NULL);
 
       /* Filter for shown mime-types: JPG, GIF, PNG, BMP, TIFF, sketch.png */
@@ -625,8 +626,6 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   gtk_dialog_add_button (GTK_DIALOG (dialog), dgettext ("hildon-libs", "wdgt_bd_add"), RESPONSE_ADD);
   gtk_dialog_add_button (GTK_DIALOG (dialog), dgettext ("hildon-libs", "wdgt_bd_done"), GTK_RESPONSE_ACCEPT);
 
-  gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
-
   /* Create the touch selector */
   priv->selector = hildon_touch_selector_new ();
 
@@ -655,6 +654,8 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
 
   gtk_widget_show (priv->selector);
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), priv->selector);
+
+  gtk_widget_set_size_request (GTK_WIDGET (dialog), -1, 404);
 }
 
 GtkWidget *
