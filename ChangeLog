@@ -1,6 +1,6 @@
 2009-05-07  Jan Arne Petersen  <jpetersen@openismus.com>
 
-	Fixes: NB#115081, 113751 - Sound broken when a banner is displayed
+	Fixes: NB#115081, NB#113751 - Sound broken when a banner is displayed
 
 	* src/hd-incoming-events.c (hd_incoming_events_notified): Disable
 	plugins support for system.note.* category again. It does not work.
