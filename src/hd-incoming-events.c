@@ -828,15 +828,17 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   /* Get category string */
   category = hd_notification_get_category (notification);
 
-  /* Only call plugins for internal system.note.* notifications */
+  /* Do nothing for system.note.* notifications */
   if (category && g_str_has_prefix (category, "system.note."))
     {
+      /*
       for (i = 0; i < priv->plugins->len; i++)
         {
           HDNotificationPlugin *plugin = g_ptr_array_index (priv->plugins, i);
 
           hd_notification_plugin_notify (plugin, notification);
         }
+      */
       return;
     }
 
