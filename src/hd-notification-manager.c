@@ -272,7 +272,7 @@ hd_notification_manager_load_row (void *data,
   GValue *hint;
   GArray *actions;
   gchar *sql;
-  gchar *error;
+  gchar *error = NULL;
   guint id;
   HDNotification *notification;
 
@@ -342,7 +342,7 @@ hd_notification_manager_load_row (void *data,
 void 
 hd_notification_manager_db_load (HDNotificationManager *nm)
 {
-  gchar *error;
+  gchar *error = NULL;
 
   g_return_if_fail (nm->priv->db != NULL);
 
@@ -361,7 +361,7 @@ static gint
 hd_notification_manager_db_exec (HDNotificationManager *nm,
                                  const gchar *sql)
 {
-  gchar *error;
+  gchar *error = NULL;
 
   g_return_val_if_fail (nm->priv->db != NULL, SQLITE_ERROR);
   g_return_val_if_fail (sql != NULL, SQLITE_ERROR);
@@ -563,7 +563,7 @@ hd_notification_manager_db_create (HDNotificationManager *nm)
 {
   gchar **results;
   gint nrow, ncol;
-  gchar *error;
+  gchar *error = NULL;
   gint result = SQLITE_OK;
 
   sqlite3_get_table (nm->priv->db, 
@@ -864,7 +864,7 @@ hd_notification_manager_init (HDNotificationManager *nm)
   DBusGProxy *bus_proxy;
   GError *error = NULL;
   gchar *config_dir;
-  gchar *notifications_db;
+  gchar *notifications_db = NULL;
   guint result;
 
   nm->priv = HD_NOTIFICATION_MANAGER_GET_PRIVATE (nm);
