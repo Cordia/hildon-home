@@ -864,7 +864,6 @@ hd_notification_manager_init (HDNotificationManager *nm)
   DBusGProxy *bus_proxy;
   GError *error = NULL;
   gchar *config_dir;
-  gchar *notifications_db = NULL;
   guint result;
 
   nm->priv = HD_NOTIFICATION_MANAGER_GET_PRIVATE (nm);
@@ -932,6 +931,8 @@ hd_notification_manager_init (HDNotificationManager *nm)
                              S_IRGRP | S_IXGRP |
                              S_IROTH | S_IXOTH))
     {
+      gchar *notifications_db = NULL;
+
       notifications_db = g_build_filename (g_get_home_dir (), 
                                            ".config",
                                            "hildon-desktop",
@@ -1231,6 +1232,8 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                                           timeout,
                                           sender);
 
+      g_object_ref (notification);
+
       g_hash_table_insert (nm->priv->notifications,
                            GUINT_TO_POINTER (id),
                            notification);
@@ -1251,6 +1254,7 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                                              sender);
         }
 
+      g_object_unref (notification);
       g_free (sender);
     }
   else 

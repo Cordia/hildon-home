@@ -68,21 +68,11 @@ show_next_system_dialog (HDSystemNotifications *sn)
 {
   GtkWidget *next_dialog = NULL;
 
-  g_queue_pop_head (sn->priv->dialog_queue);
+  next_dialog = (GtkWidget *) g_queue_peek_head (sn->priv->dialog_queue);
 
-  while (!g_queue_is_empty (sn->priv->dialog_queue))
+  if (GTK_IS_WIDGET (next_dialog))
     {
-      next_dialog = (GtkWidget *) g_queue_peek_head (sn->priv->dialog_queue);
-
-      if (GTK_IS_WIDGET (next_dialog))
-        {
-          gtk_widget_show_all (next_dialog);
-          break;
-        }
-      else
-        {
-          g_queue_pop_head (sn->priv->dialog_queue);
-        }
+      gtk_widget_show_all (next_dialog);
     }
 }
 
@@ -95,8 +85,6 @@ system_notification_dialog_response (GtkWidget      *widget,
 
   hd_notification_manager_call_action (nm, notification, "default");
   hd_notification_manager_close_notification (nm, hd_notification_get_id (notification), NULL);
-
-  gtk_widget_destroy (widget);
 }
 
 static gboolean
@@ -165,6 +153,20 @@ create_note_dialog (const gchar  *summary,
   return note;
 }
 
+typedef struct
+{
+  GtkWidget *dialog;
+  GQueue *queue;
+} DialogNotificationClosedData;
+
+static void
+dialog_notification_closed (HDNotification               *notification,
+                            DialogNotificationClosedData *data)
+{
+  g_queue_remove_all (data->queue, data->dialog);
+  gtk_widget_destroy (data->dialog);
+}
+
 static void
 system_notifications_notified (HDNotificationManager *nm,
                                HDNotification        *notification,
@@ -186,10 +188,16 @@ system_notifications_notified (HDNotificationManager *nm,
                                       hd_notification_get_body (notification), 
                                       hd_notification_get_icon (notification));
 
+      g_signal_connect_object (notification, "closed",
+                               G_CALLBACK (gtk_widget_destroy), dialog,
+                               G_CONNECT_SWAPPED);
+
       gtk_widget_show_all (dialog);
     }
   else if (category && g_str_equal (category, "system.note.dialog")) 
     {
+      DialogNotificationClosedData *data;
+
       g_return_if_fail (!replayed_event);
       dialog = create_note_dialog (hd_notification_get_summary (notification),
                                    hd_notification_get_body (notification), 
@@ -207,6 +215,15 @@ system_notifications_notified (HDNotificationManager *nm,
                                 G_CALLBACK (show_next_system_dialog),
                                 sn);
 
+      data = g_new (DialogNotificationClosedData, 1);
+      data->queue = sn->priv->dialog_queue;
+      data->dialog = dialog;
+      g_signal_connect_data (notification, "closed",
+                             G_CALLBACK (dialog_notification_closed),
+                             data,
+                             (GClosureNotify) g_free,
+                             G_CONNECT_AFTER);
+
       if (g_queue_is_empty (sn->priv->dialog_queue))
         gtk_widget_show_all (dialog);
 
@@ -214,10 +231,6 @@ system_notifications_notified (HDNotificationManager *nm,
     } 
   else
     return;
-
-  g_signal_connect_object (notification, "closed",
-                           G_CALLBACK (gtk_widget_destroy), dialog,
-                           G_CONNECT_SWAPPED);
 }
 
 static void
