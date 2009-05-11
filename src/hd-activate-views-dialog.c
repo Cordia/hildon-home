@@ -182,7 +182,6 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   GSList *list = NULL;
   gboolean active_views[HD_MAX_HOME_VIEWS] = { 0,};
   gboolean none_active = TRUE;
-  GKeyFile *default_theme_backgrounds = NULL;
   GList *selected;
   GError *error = NULL;
 
@@ -352,9 +351,6 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox),
 /*                     priv->icon_view); */
                     pannable);
-
-  if (default_theme_backgrounds)
-    g_key_file_free (default_theme_backgrounds);
 }
 
 GtkWidget *
