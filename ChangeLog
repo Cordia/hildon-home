@@ -1,3 +1,8 @@
+2009-05-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.26
+	* configure.ac: 0.3.26
+
 2009-05-07  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#115257 - hildon-home crash observed

@@ -1,6 +1,4 @@
-hildon-home (0.3.26~unreleased) unstable; urgency=low
-
-  * writeme
+hildon-home (0.3.26) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#110504 - Unable to restore background image with Backup and
@@ -10,10 +8,11 @@ hildon-home (0.3.26~unreleased) unstable; urgency=low
   * Fixes: NB#110996 - Desktop, Alternative string to §tana_fi_latest§ needed
     for multiple authorization requests
   * Fixes: NB#111752 - No notification sounds after a hildon-home crash
-  * Fixes: NB#115081, NB#113751 - Sound broken when a banner is displayed
-  * Fixes: NB#115257 - hildon-home crash observ
+  * Fixes: NB#113751 - Incoming call ring notification is heard while
+    plug-in/unplugin usb cable
+  * Fixes: NB#115257 - hildon-home crash observed
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  4 May 2009 10:09:42 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 11 May 2009 15:17:54 +0300
 
 hildon-home (0.3.25) unstable; urgency=low
 
