@@ -38,8 +38,6 @@
 
 #include <unistd.h>
 
-#include "hd-background-helper.h"
-
 #include "hd-backgrounds.h"
 
 #define SCREEN_WIDTH 800
@@ -64,438 +62,652 @@
 #define DEFAULT_BACKGROUNDS_DESKTOP  DEFAULT_THEME_DIR "/backgrounds/theme_bg.desktop"
 #define BACKGROUNDS_DESKTOP_KEY_FILE "X-File%u"
 
+#define VIEWS 4
+
+#define THUMBNAIL_WIDTH 125
+#define THUMBNAIL_HEIGHT 75
+#define THUMBNAIL_TYPE "png"
+
 #define HD_BACKGROUNDS_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_BACKGROUNDS, HDBackgroundsPrivate))
 
 typedef struct
 {
-  gchar *uri;
+  GFile *file;
   guint view;
   GCancellable *cancellable;
-  GtkWidget *cancel_note;
-  gboolean write_to_gconf;
+  gboolean write_to_gconf : 1;
+  gboolean display_banner : 1;
+  gboolean image_set : 1;
 } HDBackgroundData;
 
 struct _HDBackgroundsPrivate
 {
   GConfClient *gconf_client;
 
-  HDBackgroundData *current_data;
+  /* GConf notify handlers */
+  guint bg_image_notify[VIEWS];
 
-  guint bg_image_notify[4];
-  gchar *bg_image[4];
-  gchar *cache_info_contents;
+  /* Data used for the thread which creates the cached images */
+  GThreadPool      *caching_thread_pool;
+  GMutex           *mutex;
 
-  GMutex *mutex;
-  GQueue *queue;
+  HDBackgroundData *current_requests[VIEWS];
+  GFile            *current_bg_image[VIEWS];
 
+  /* Theme change support */
   gchar *current_theme;
-
   guint set_theme_idle_id;
-};
 
-static void check_queue (HDBackgrounds *backgrounds);
+  GVolumeMonitor *volume_monitor;
+};
 
 G_DEFINE_TYPE (HDBackgrounds, hd_backgrounds, G_TYPE_OBJECT);
 
 static void
-finish_image_caching (HDBackgrounds *backgrounds)
+background_data_free (HDBackgroundData *data)
 {
-  HDBackgroundsPrivate *priv = backgrounds->priv;
+  if (!data)
+    return;
 
-  /* Remove timeout */
-  if (priv->current_data->cancel_note)
-    priv->current_data->cancel_note = (gtk_widget_destroy (priv->current_data->cancel_note),
-                                       NULL);
-
-  g_mutex_lock (priv->mutex);
-  priv->current_data = (g_free (priv->current_data), NULL);
-  g_mutex_unlock (priv->mutex);
-
-  check_queue (backgrounds);
-}
-
-static void
-replace_cache_info_cb (GFile         *file,
-                       GAsyncResult  *res,
-                       HDBackgrounds *backgrounds)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-  GError *error = NULL;
-
-  if (g_file_replace_contents_finish (file, res, NULL, &error))
-    {
-      if (priv->current_data->write_to_gconf)
-        {
-          guint view = priv->current_data->view;
-          gchar *gconf_key;
-          GError *error = NULL;
-
-          /* Store background to GConf */
-          gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY, view);
-          gconf_client_set_string (priv->gconf_client,
-                                   gconf_key,
-                                   priv->bg_image[view - 1],
-                                   &error);
-
-          if (error)
-            {
-              g_debug ("%s. Could not set background in GConf for view %u. %s",
-                       __FUNCTION__,
-                       view,
-                       error->message);
-              g_error_free (error);
-            }
-
-          g_free (gconf_key);
-        }
-    }
-  else if (error)
-    {
-      g_debug ("%s, Could not save cache info file. %s",
-               __FUNCTION__,
-               error->message);
-    }
-
-  finish_image_caching (backgrounds);
-}
-  
-static void
-save_cached_background_cb (GFile         *file,
-                           GAsyncResult  *res,
-                           HDBackgrounds *backgrounds)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-  GError *error = NULL;
-
-  hd_background_helper_save_pvr_texture_finish (file, res, &error);
-
-  if (error)
-    {
-      g_debug ("%s, Could not save cached pixbuf. %s",
-               __FUNCTION__,
-               error->message);
-
-      if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NO_SPACE))
-        {
-          GtkWidget *note;
-
-          note = hildon_note_new_information (NULL,
-                                              dgettext ("hildon-common-strings",
-                                                        "sfil_ni_not_enough_memory"));
-          gtk_widget_show (note);
-        }
-      g_clear_error (&error);
-
-      finish_image_caching (backgrounds);
-    }
-  else
-    {
-      gchar *cache_info_filename;
-      GFile *cache_info_file;
-      guint view = priv->current_data->view;
-      GString *buffer;
-      guint i;
-
-      g_free (priv->bg_image[view - 1]);
-      priv->bg_image[view - 1] = priv->current_data->uri;
-
-      cache_info_filename = g_strdup_printf ("%s/" CACHE_INFO_FILE,
-                                            g_get_home_dir ());
-      cache_info_file = g_file_new_for_path (cache_info_filename);
-
-      g_free (priv->cache_info_contents);
-      buffer = g_string_sized_new (512);
-      for (i = 0; i < 4; i++)
-        {
-          g_string_append (buffer, priv->bg_image[i] ? priv->bg_image[i] : "");
-          g_string_append_c (buffer, '\n');
-        }
-      priv->cache_info_contents = g_string_free (buffer, FALSE);
-
-      g_file_replace_contents_async (cache_info_file,
-                                     priv->cache_info_contents,
-                                     strlen (priv->cache_info_contents),
-                                     NULL,
-                                     FALSE,
-                                     G_FILE_CREATE_NONE,
-                                     priv->current_data->cancellable,
-                                     (GAsyncReadyCallback) replace_cache_info_cb,
-                                     backgrounds);
-
-/*      g_free (contents); */
-      g_free (cache_info_filename);
-      g_object_unref (cache_info_file);
-    }
-}
-
-static void
-save_thumbnail_cb (GFile         *file,
-                   GAsyncResult  *result,
-                   HDBackgrounds *backgrounds)
-{
-  GError *error = NULL;
-
-  if (!hd_background_helper_save_thumbnail_finish (file, result, &error))
-    {
-      g_debug ("%s, Could not save thumbnail. %s",
-               __FUNCTION__,
-               error->message);
-
-      g_error_free (error);
-    }
-}
-
-static void
-read_pixbuf_cb (GFile         *file,
-                GAsyncResult  *res,
-                HDBackgrounds *backgrounds)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-  GdkPixbuf *pixbuf;
-  GError *error = NULL;
-  gchar *cached_filename, *thumb_filename;
-  GFile *cached_file, *thumb_file;
-
-  pixbuf = hd_background_helper_read_pixbuf_finish (file,
-                                                    res,
-                                                    &error);
-
-  if (!pixbuf)
-    {
-      if (g_error_matches (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE))
-        {
-          GtkWidget *note;
-
-          note = hildon_note_new_information (NULL,
-                                              dgettext ("hildon-common-strings",
-                                                        "ckct_ni_unable_to_open_file_corrupted"));
-          gtk_widget_show (note);
-        }
-      g_clear_error (&error);
-
-      finish_image_caching (backgrounds);
-      return;
-    }
-
-  cached_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED,
-                                     g_get_home_dir (),
-                                     priv->current_data->view);
-  cached_file = g_file_new_for_path (cached_filename);
-
-  thumb_filename = g_strdup_printf ("%s/" THUMBNAIL_CACHED,
-                                    g_get_home_dir (),
-                                    priv->current_data->view);
-  thumb_file = g_file_new_for_path (thumb_filename);
-
-  hd_background_helper_save_pvr_texture_async (cached_file,
-                                               pixbuf,
-                                               G_PRIORITY_DEFAULT,
-                                               priv->current_data->cancellable,
-                                               (GAsyncReadyCallback) save_cached_background_cb,
-                                               backgrounds);
-
-  hd_background_helper_save_thumbnail_async (thumb_file,
-                                             pixbuf,
-                                             G_PRIORITY_LOW,
-                                             NULL,
-                                             (GAsyncReadyCallback) save_thumbnail_cb,
-                                             backgrounds);
-
-  g_free (cached_filename);
-  g_object_unref (cached_file);
-  g_free (thumb_filename);
-  g_object_unref (thumb_file);
-  g_object_unref (pixbuf);
-}
-
-static void
-copy_pvr_cb (GFile         *file,
-             GAsyncResult  *res,
-             HDBackgrounds *backgrounds)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-  GError *error = NULL;
-
-  if (g_file_copy_finish (file, res, &error))
-    {
-      gchar *cache_info_filename;
-      GFile *cache_info_file;
-      guint view = priv->current_data->view;
-      GString *buffer;
-      guint i;
-
-      g_free (priv->bg_image[view - 1]);
-      priv->bg_image[view - 1] = priv->current_data->uri;
-
-      cache_info_filename = g_strdup_printf ("%s/" CACHE_INFO_FILE,
-                                            g_get_home_dir ());
-      cache_info_file = g_file_new_for_path (cache_info_filename);
-
-      g_free (priv->cache_info_contents);
-      buffer = g_string_sized_new (512);
-      for (i = 0; i < 4; i++)
-        {
-          g_string_append (buffer, priv->bg_image[i] ? priv->bg_image[i] : "");
-          g_string_append_c (buffer, '\n');
-        }
-      priv->cache_info_contents = g_string_free (buffer, FALSE);
-
-      g_file_replace_contents_async (cache_info_file,
-                                     priv->cache_info_contents,
-                                     strlen (priv->cache_info_contents),
-                                     NULL,
-                                     FALSE,
-                                     G_FILE_CREATE_NONE,
-                                     priv->current_data->cancellable,
-                                     (GAsyncReadyCallback) replace_cache_info_cb,
-                                     backgrounds);
-
-/*      g_free (contents); */
-      g_free (cache_info_filename);
-      g_object_unref (cache_info_file);
-    }
-  else
-    {
-      GFile *file;
-
-      g_debug ("%s. Could not copy pre generated pvr file. %s",
-               __FUNCTION__,
-               error->message);
-      g_error_free (error);
-
-      if (g_path_is_absolute (priv->current_data->uri))
-        file = g_file_new_for_path (priv->current_data->uri);
-      else
-        file = g_file_new_for_uri (priv->current_data->uri);
-
-      hd_background_helper_read_pixbuf_async (file,
-                                              G_PRIORITY_DEFAULT,
-                                              priv->current_data->cancellable,
-                                              (GAsyncReadyCallback) read_pixbuf_cb,
-                                              backgrounds);
-
-      g_object_unref (file);
-    }
-}
-
-static void
-check_queue (HDBackgrounds *backgrounds)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-  HDBackgroundData *data = NULL;
-
-  g_mutex_lock (priv->mutex);
-  if (!priv->current_data)
-    {
-      data = g_queue_pop_head (priv->queue);
-      priv->current_data = data;
-    }
-  g_mutex_unlock (priv->mutex);
-
-  if (data)
-    {
-      /* Check if current image is already the cached one */
-      if (g_strcmp0 (priv->bg_image[data->view - 1],
-                     data->uri) == 0)
-        {
-          g_debug ("%s. Does not need to create cached image %s for view %u.",
-                   __FUNCTION__,
-                   data->uri,
-                   data->view);
-
-          finish_image_caching (backgrounds);
-        }
-      else
-        {
-          gchar *pvr_filename, *cached_filename;
-          GFile *file, *cached_file;
-
-          pvr_filename = g_strdup_printf ("%s.pvr", data->uri);
-
-          if (g_path_is_absolute (pvr_filename))
-            file = g_file_new_for_path (pvr_filename);
-          else
-            file = g_file_new_for_uri (pvr_filename);
-
-          cached_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED,
-                                             g_get_home_dir (),
-                                             data->view);
-          cached_file = g_file_new_for_path (cached_filename);
-
-          g_debug ("%s. Create cached image %s for view %u.",
-                   __FUNCTION__,
-                   data->uri,
-                   data->view);
-
-          g_file_copy_async (file,
-                             cached_file,
-                             G_FILE_COPY_OVERWRITE,
-                             G_PRIORITY_DEFAULT,
-                             data->cancellable,
-                             NULL, NULL,
-                             (GAsyncReadyCallback) copy_pvr_cb,
-                             backgrounds);
-
-          g_free (pvr_filename);
-          g_free (cached_filename);
-          g_object_unref (file);
-          g_object_unref (cached_file);
-        }
-    }
-}
-
-static void
-cancel_response_cb (GtkDialog    *dialog,
-                    gint          response_id,
-                    GCancellable *cancellable)
-{
-  if (response_id == GTK_RESPONSE_CANCEL)
-    g_cancellable_cancel (cancellable);
+  g_object_unref (data->file);
+  g_object_unref (data->cancellable);
+  g_slice_free (HDBackgroundData, data);
 }
 
 static void
 create_cached_background (HDBackgrounds *backgrounds,
+                          GFile         *file,
                           guint          view,
-                          const gchar   *uri,
                           gboolean       display_note,
                           gboolean       write_to_gconf)
 {
   HDBackgroundsPrivate *priv = backgrounds->priv;
-  HDBackgroundData *data = g_new0 (HDBackgroundData, 1);
+  HDBackgroundData *data, *current;
+  
+  data = g_slice_new0 (HDBackgroundData);
 
-  data->uri = g_strdup (uri);
+  data->file = g_object_ref (file);
   data->view = view;
-
   data->write_to_gconf = write_to_gconf;
-
+  data->display_banner = display_note;
   data->cancellable = g_cancellable_new ();
-  if (display_note)
-    {
-      data->cancel_note = hildon_note_new_cancel_with_progress_bar (NULL,
-                                                                    dgettext ("hildon-common-strings",
-                                                                              "ckdg_pb_updating"),
-                                                                    NULL);
-      g_signal_connect_object (data->cancel_note, "response",
-                               G_CALLBACK (cancel_response_cb), data->cancellable, 0);
-      gtk_widget_show (data->cancel_note);
-    }
 
   g_mutex_lock (priv->mutex);
-  g_queue_push_tail (priv->queue, data);
-  g_mutex_unlock (priv->mutex);
+  current = priv->current_requests[view];
+  if (current)
+    {
+      if (g_file_equal (current->file, file))
+        {
+          background_data_free (data);
+          data = NULL;
+        }
+      else
+        {
+          g_cancellable_cancel (current->cancellable);
+          priv->current_requests[view] = NULL;
+        }
+    }
 
-  check_queue (backgrounds);
+  if (data)
+    {
+      priv->current_requests[view] = data;
+
+      g_thread_pool_push (priv->caching_thread_pool,
+                          data,
+                          NULL);
+    }
+  g_mutex_unlock (priv->mutex);
 }
 
-static gchar *
+static void
+size_prepared_cb (GdkPixbufLoader *loader,
+                  gint             width,
+                  gint             height,
+                  gboolean        *scaling_required)
+{
+  double w, h;
+
+  /*
+   * Background image should be resized and cropped. That means the image
+   * is centered and scaled to make sure the shortest side fit the home 
+   * background exactly with keeping the aspect ratio of the original image
+   */
+
+  /* FIXME
+  w = 1. * width / SCREEN_WIDTH;
+  h = 1. * height / SCREEN_HEIGHT;
+
+  if (w >= h)
+    {
+      width = SCREEN_WIDTH * 1. / h;
+      height = SCREEN_HEIGHT;
+    }
+  else
+    {
+      width = SCREEN_WIDTH;
+      height = SCREEN_HEIGHT * 1. / w;
+    }
+    */
+
+  if (scaling_required)
+    {
+      *scaling_required = (width != SCREEN_WIDTH) ||
+                          (height != SCREEN_HEIGHT);
+    }
+
+  w = SCREEN_WIDTH;
+  h = SCREEN_HEIGHT;
+
+  gdk_pixbuf_loader_set_size (loader, w, h);
+}
+
+static GdkPixbuf *
+read_pixbuf (GFile         *file,
+             GCancellable  *cancellable,
+             gboolean      *scaling_required,
+             GError       **error)
+{
+  GFileInputStream *stream = NULL;
+  GdkPixbufLoader *loader = NULL;
+  guchar buffer[8192];
+  gssize read_bytes;
+  GdkPixbuf *pixbuf = NULL;
+
+  /* Open file for read */
+  stream = g_file_read (file, cancellable, error);
+
+  if (!stream)
+    {
+      goto cleanup;
+    }
+
+  /* Create pixbuf loader */
+  loader = gdk_pixbuf_loader_new ();
+  g_signal_connect (loader, "size-prepared",
+                    G_CALLBACK (size_prepared_cb), scaling_required);
+
+  /* Parse input stream into the loader */
+  do
+    {
+      read_bytes = g_input_stream_read (G_INPUT_STREAM (stream),
+                                        buffer,
+                                        sizeof (buffer),
+                                        cancellable,
+                                        error);
+      if (read_bytes < 0)
+        {
+          gdk_pixbuf_loader_close (loader, NULL);
+          goto cleanup;
+        }
+
+      if (!gdk_pixbuf_loader_write (loader,
+                                    buffer,
+                                    read_bytes,
+                                    error))
+        {
+          gdk_pixbuf_loader_close (loader, NULL);
+          goto cleanup;
+        }
+    } while (read_bytes > 0);
+
+  /* Close pixbuf loader */
+  if (!gdk_pixbuf_loader_close (loader, error))
+    {
+      goto cleanup;
+    }
+
+  /* Close input stream */
+  if (!g_input_stream_close (G_INPUT_STREAM (stream),
+                             cancellable,
+                             error))
+    {
+      goto cleanup;
+    }
+
+  /* Set resulting pixbuf */
+  pixbuf = gdk_pixbuf_loader_get_pixbuf (loader);
+  if (pixbuf)
+    g_object_ref (pixbuf);
+  else
+    g_set_error_literal (error,
+                         GDK_PIXBUF_ERROR,
+                         GDK_PIXBUF_ERROR_FAILED,
+                         "NULL Pixbuf returned from loader");
+
+cleanup:
+  if (stream)
+    g_object_unref (stream);
+  if (loader)
+    g_object_unref (loader);
+
+  return pixbuf;
+}
+
+static GFile *
+get_precreated_thumbnail_file (GFile *file)
+{
+  gchar *uri, *thumbnail_uri, *p;
+  GFile *thumbnail_file;
+
+  uri = g_file_get_uri (file);
+  p = g_strrstr (uri, ".");
+  if (p)
+    *p = '\0';
+
+  thumbnail_uri = g_strdup_printf ("%s-thumb.png", uri);
+  thumbnail_file = g_file_new_for_uri (thumbnail_uri);
+
+  g_free (uri);
+  g_free (thumbnail_uri);
+
+  return thumbnail_file;
+}
+
+static gboolean
+save_pixbuf_to_file (GFile         *file,
+                     GdkPixbuf     *pixbuf,
+                     const gchar   *type,
+                     GCancellable  *cancellable,
+                     GError       **error)
+{
+  gchar *buffer = NULL;
+  gsize buffer_size;
+  gboolean result;
+
+  if (!gdk_pixbuf_save_to_buffer (pixbuf,
+                                  &buffer,
+                                  &buffer_size,
+                                  type,
+                                  error,
+                                  NULL))
+    return FALSE;
+
+  result = g_file_replace_contents (file,
+                                    buffer,
+                                    buffer_size,
+                                    NULL,
+                                    FALSE,
+                                    G_FILE_CREATE_NONE,
+                                    NULL,
+                                    cancellable,
+                                    error);
+
+  g_free (buffer);
+
+  return result;
+}
+
+static void
+update_cache_info_file (HDBackgrounds *backgrounds,
+                        GCancellable  *cancellable)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  gchar *cache_info_filename, *contents;
+  GFile *cache_info_file;
+  GString *buffer;
+  guint i;
+  GError *error = NULL;
+
+  cache_info_filename = g_strdup_printf ("%s/" CACHE_INFO_FILE,
+                                         g_get_home_dir ());
+  cache_info_file = g_file_new_for_path (cache_info_filename);
+
+  buffer = g_string_sized_new (512);
+  g_mutex_lock (priv->mutex);
+  for (i = 0; i < VIEWS; i++)
+    {
+      gchar *uri = priv->current_bg_image[i] ? g_file_get_uri (priv->current_bg_image[i]) : NULL;
+      if (uri)
+        g_string_append (buffer, uri);
+      g_free (uri);
+      g_string_append_c (buffer, '\n');
+    }
+  g_mutex_unlock (priv->mutex);
+  contents = g_string_free (buffer, FALSE);
+
+  if (!g_file_replace_contents (cache_info_file,
+                                contents,
+                                strlen (contents),
+                                NULL,
+                                FALSE,
+                                G_FILE_CREATE_NONE,
+                                NULL,
+                                cancellable,
+                                &error))
+    {
+      g_warning ("%s. Could not write cache info file. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_error_free (error); 
+    }
+
+  g_free (contents);
+  g_free (cache_info_filename);
+  g_object_unref (cache_info_file);
+}
+
+static gboolean
+idle_show_banner (gchar *summary)
+{
+  GtkWidget *note;
+
+  g_debug ("%s. %s", __FUNCTION__, summary);
+
+  note = hildon_note_new_information (NULL,
+                                      summary);
+  gtk_widget_show (note);
+
+  return FALSE;
+}
+
+static void
+show_banner (const gchar *summary)
+{
+  gdk_threads_add_idle_full (G_PRIORITY_HIGH_IDLE,
+                             (GSourceFunc) idle_show_banner,
+                             g_strdup (summary),
+                             g_free);
+}
+
+static void
+create_cached_image (HDBackgroundData *data,
+                     HDBackgrounds    *backgrounds)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  GdkPixbuf *pixbuf;
+  gboolean scaling_required = FALSE, thumbnail_created = FALSE;
+  gchar *dest_filename;
+  GFile *dest_file, *dest_thumbnail = NULL;
+  GError *error = NULL;
+
+  /* Cancel if it is already the current background image */
+  g_mutex_lock (priv->mutex);
+  if (priv->current_bg_image[data->view] &&
+      g_file_equal (data->file,
+                    priv->current_bg_image[data->view]))
+    g_cancellable_cancel (data->cancellable);
+  g_mutex_unlock (priv->mutex);
+
+  /* Check if the queued request was already cancelled */
+  if (g_cancellable_is_cancelled (data->cancellable))
+    goto cleanup;
+
+  /* Read pixbuf from background image, check if the
+   * image needs to be scaled */
+  pixbuf = read_pixbuf (data->file,
+                        data->cancellable,
+                        &scaling_required,
+                        &error);
+
+  if (error)
+    {
+      gchar *uri;
+
+      /* Display corrupt image notification banner */
+      if (data->display_banner &&
+          (g_error_matches (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE) ||
+           g_error_matches (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE)))
+        {
+          show_banner (dgettext ("hildon-common-strings",
+                                 "ckct_ni_unable_to_open_file_corrupted"));
+        }
+
+      /* Print warning to syslog */
+      uri = g_file_get_uri (data->file);
+      g_warning ("%s. Could not read pixbuf from file %s. %s",
+                 __FUNCTION__,
+                 uri,
+                 error->message);
+      g_free (uri);
+
+      g_error_free (error);
+      goto cleanup;
+    }
+
+  /* Create the file objects for the cached background image and thumbnail */
+  dest_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED,
+                                   g_get_home_dir (),
+                                   data->view + 1);
+  dest_file = g_file_new_for_path (dest_filename);
+  g_free (dest_filename);
+
+  dest_filename = g_strdup_printf ("%s/" THUMBNAIL_CACHED,
+                                   g_get_home_dir (),
+                                   data->view + 1);
+  dest_thumbnail = g_file_new_for_path (dest_filename);
+  g_free (dest_filename);
+
+  /* Create the cached background image */
+  if (!scaling_required)
+    {
+      /* If no scaling is required just copy the original background
+       * image to the cached background image */
+      if (!g_file_copy (data->file,
+                        dest_file,
+                        G_FILE_COPY_OVERWRITE,
+                        data->cancellable,
+                        NULL,
+                        NULL,
+                        &error))
+        {
+          gchar *uri, *dest_uri;
+
+          /* Display not enough space notification banner */
+          if (data->display_banner &&
+              g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NO_SPACE))
+            {
+              show_banner (dgettext ("hildon-common-strings",
+                                     "sfil_ni_not_enough_memory"));
+            }
+
+          uri = g_file_get_uri (data->file);
+          dest_uri = g_file_get_uri (dest_file);
+
+          g_warning ("%s. Could not copy file %s to file %s. %s",
+                     __FUNCTION__,
+                     uri,
+                     dest_uri,
+                     error->message);
+
+          g_free (uri);
+          g_free (dest_uri);
+          g_error_free (error);
+          goto cleanup;
+        }
+    }
+  else
+    {
+      /* Else scale the pixbuf and write it to the cached
+       * background image */
+
+      /* FIXME: wrong */
+      if (!save_pixbuf_to_file (dest_file,
+                                pixbuf,
+                                "jpeg",
+                                data->cancellable,
+                                &error))
+        {
+          gchar *uri = g_file_get_uri (dest_file);
+
+          /* Display not enough space notification banner */
+          if (data->display_banner &&
+              g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NO_SPACE))
+            {
+              show_banner (dgettext ("hildon-common-strings",
+                                     "sfil_ni_not_enough_memory"));
+            }
+
+          g_warning ("%s. Could not create cached background image %s. %s",
+                     __FUNCTION__,
+                     uri,
+                     error->message);
+          g_free (uri);
+          g_error_free (error);
+          goto cleanup;
+        }
+    }
+
+  /* Remove not uptodate thumbnail it will be recreated later */
+  if (!g_file_delete (dest_thumbnail,
+                      data->cancellable,
+                      &error))
+    {
+      gchar *uri = g_file_get_uri (dest_thumbnail);
+      g_warning ("%s. Could not delete old cached thumbnail %s. %s",
+                 __FUNCTION__,
+                 uri,
+                 error->message);
+      g_free (uri);
+      g_clear_error (&error);
+    }
+
+  /* Update cache info at this point thumbnail might not be created 
+   * yet but background is */
+  g_mutex_lock (priv->mutex);
+  if (priv->current_bg_image[data->view])
+    g_object_unref (priv->current_bg_image[data->view]);
+  priv->current_bg_image[data->view] = g_object_ref (data->file);
+  g_mutex_unlock (priv->mutex);
+
+  update_cache_info_file (backgrounds,
+                          data->cancellable);
+
+  /* Update GConf if requested */
+  if (data->write_to_gconf)
+    {
+      gchar *gconf_key, *path;
+
+      path = g_file_get_path (data->file);
+
+      /* Store background to GConf */
+      gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY, data->view + 1);
+      gconf_client_set_string (priv->gconf_client,
+                               gconf_key,
+                               path,
+                               &error);
+      if (error)
+        {
+          g_debug ("%s. Could not set background in GConf for view %u. %s",
+                   __FUNCTION__,
+                   data->view,
+                   error->message);
+          g_clear_error (&error);
+        }
+
+      g_free (gconf_key);
+      g_free (path);
+    }
+
+  /* Check if cancelled */
+  if (g_cancellable_is_cancelled (data->cancellable))
+    goto cleanup;
+
+  /* Try to copy a precreated thumbnail to cache */
+  if (data->image_set)
+    {
+      GFile *thumbnail;
+
+      thumbnail = get_precreated_thumbnail_file (data->file);
+
+      if (g_file_copy (thumbnail,
+                       dest_thumbnail,
+                       G_FILE_COPY_OVERWRITE,
+                       data->cancellable,
+                       NULL,
+                       NULL,
+                       &error))
+        {
+          thumbnail_created = TRUE;
+        }
+      else if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NO_SPACE))
+        {
+          gchar *uri, *dest_uri;
+
+          if (data->display_banner)
+            {
+              show_banner (dgettext ("hildon-common-strings",
+                                     "sfil_ni_not_enough_memory"));
+            }
+
+          uri = g_file_get_uri (data->file);
+          dest_uri = g_file_get_uri (dest_file);
+
+          g_warning ("%s. Could not copy thumbnail file %s to file %s. %s",
+                     __FUNCTION__,
+                     uri,
+                     dest_uri,
+                     error->message);
+
+          g_free (uri);
+          g_free (dest_uri);
+          g_error_free (error);
+          goto cleanup;
+        }
+      else if (!g_error_matches (error,
+                                 G_IO_ERROR,
+                                 G_IO_ERROR_NOT_FOUND))
+        {
+          gchar *uri, *dest_uri;
+
+          uri = g_file_get_uri (data->file);
+          dest_uri = g_file_get_uri (dest_file);
+
+          g_warning ("%s. Could not copy thumbnail file %s to file %s. %s",
+                     __FUNCTION__,
+                     uri,
+                     dest_uri,
+                     error->message);
+
+          g_free (uri);
+          g_free (dest_uri);
+          g_error_free (error);
+          goto cleanup;
+        }
+    }
+
+  /* Create a cached thumbnail from parsed pixbuf */
+  if (!thumbnail_created)
+    {
+      GdkPixbuf *thumbnail_pixbuf;
+
+      thumbnail_pixbuf = gdk_pixbuf_scale_simple (pixbuf,
+                                                  THUMBNAIL_WIDTH,
+                                                  THUMBNAIL_HEIGHT,
+                                                  GDK_INTERP_BILINEAR);
+
+      if (!save_pixbuf_to_file (dest_thumbnail,
+                                thumbnail_pixbuf,
+                                THUMBNAIL_TYPE,
+                                data->cancellable,
+                                &error))
+        {
+          gchar *uri = g_file_get_uri (dest_thumbnail);
+          g_warning ("%s. Could not create cached thumbnail file %s. %s",
+                     __FUNCTION__,
+                     uri,
+                     error->message);
+          g_free (uri);
+          g_error_free (error);
+          goto cleanup;
+        }
+    }
+
+cleanup:
+  if (priv->current_requests[data->view] == data)
+    priv->current_requests[data->view] = NULL;
+
+  background_data_free (data);
+}
+
+static GFile *
 get_background_for_view_from_theme (HDBackgrounds *backgrounds,
                                     guint          view,
                                     const gchar   *backgrounds_desktop)
 {
   GKeyFile *key_file;
-  gchar *bg_image[4];
-  gchar *background = NULL;
+  gchar *bg_image[VIEWS];
+  GFile *background = NULL;
   guint i;
   GError *error = NULL;
 
@@ -514,7 +726,7 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
       return NULL;
     }
 
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < VIEWS; i++)
     {
       gchar *key;
 
@@ -541,38 +753,29 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
 
   if (bg_image[view - 1])
     {
-      background = g_strdup (bg_image[view - 1]);
-    }
-  else if (bg_image[0])
-    {
-      /* Fallback */
-
-      if (view == 4 && bg_image[1] && !bg_image[2])
-        background = g_strdup (bg_image[1]);
-      else
-        background = g_strdup (bg_image[0]);
+      background = g_file_new_for_path (bg_image[view - 1]);
     }
 
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < VIEWS; i++)
     g_free (bg_image[i]);
 
   return background;
 }
 
-static gchar *
+static GFile *
 get_background_for_view (HDBackgrounds *backgrounds,
                          guint          view)
 {
   HDBackgroundsPrivate *priv = backgrounds->priv;
-  gchar *gconf_key;
-  gchar *bg_image;
+  gchar *gconf_key, *path;
+  GFile *bg_image = NULL;
   GError *error = NULL;
 
   /* First try to get the background image from GConf */
   gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY, view);
-  bg_image = gconf_client_get_string (priv->gconf_client,
-                                      gconf_key,
-                                      &error);
+  path = gconf_client_get_string (priv->gconf_client,
+                                  gconf_key,
+                                  &error);
 
   if (error)
     {
@@ -585,9 +788,15 @@ get_background_for_view (HDBackgrounds *backgrounds,
 
   g_free (gconf_key);
 
+  if (path && *path)
+    bg_image = g_file_new_for_path (path);
+
   /* Return bg image if it was stored in GConf */
   if (bg_image)
-    return bg_image;
+    {
+      g_free (path);
+      return bg_image;
+    }
 
   /* Fallback to current theme */
   bg_image = get_background_for_view_from_theme (backgrounds,
@@ -618,16 +827,19 @@ gconf_bgimage_notify (GConfClient *client,
                       gpointer     user_data)
 {
   HDBackgrounds *backgrounds = hd_backgrounds_get ();
-  gchar *bg_image;
+  GFile *bg_image;
 
   bg_image = get_background_for_view (backgrounds,
                                       GPOINTER_TO_UINT (user_data));
-  create_cached_background (backgrounds,
-                            GPOINTER_TO_UINT (user_data),
-                            bg_image,
-                            FALSE,
-                            FALSE);
-  g_free (bg_image);
+  if (bg_image)
+    {
+      create_cached_background (backgrounds,
+                                bg_image,
+                                GPOINTER_TO_UINT (user_data) - 1,
+                                TRUE,
+                                FALSE);
+      g_object_unref (bg_image);
+    }
 }
 
 static void
@@ -638,7 +850,7 @@ load_cache_info_cb (GFile         *file,
   HDBackgroundsPrivate *priv = backgrounds->priv;
   gchar *contents;
   guint current_view, i;
-  gchar *bg_image;
+  GFile *bg_image;
   GError *error = NULL;
 
   if (g_file_load_contents_finish (file, result,
@@ -647,16 +859,20 @@ load_cache_info_cb (GFile         *file,
     {
       gchar **cache_info;
 
-      for (i = 0; i < 4; i++)
-        priv->bg_image[i] = (g_free (priv->bg_image[i]), NULL);
+      g_mutex_lock (priv->mutex);
+      for (i = 0; i < VIEWS; i++)
+        if (priv->current_bg_image[i])
+          priv->current_bg_image[i] = (g_object_unref (priv->current_bg_image[i]), NULL);
 
       cache_info = g_strsplit (contents, "\n", 0);
       if (cache_info)
         {
-          for (i = 0; i < 4 && cache_info[i]; i++)
-            priv->bg_image[i] = g_strdup (cache_info[i]);
+          for (i = 0; i < VIEWS && cache_info[i]; i++)
+            priv->current_bg_image[i] = g_file_new_for_uri (cache_info[i]);
           g_strfreev (cache_info);
         }
+      g_mutex_unlock (priv->mutex);
+
       g_free (contents);
     }
   else if (error)
@@ -679,29 +895,36 @@ load_cache_info_cb (GFile         *file,
       g_clear_error (&error);
     }
 
-  current_view = CLAMP (current_view, 1, 4);
+  current_view = CLAMP (current_view, 1, VIEWS);
 
   /* Update cache for current view */
   bg_image = get_background_for_view (backgrounds,
                                       current_view);
-  create_cached_background (backgrounds,
-                            current_view,
-                            bg_image,
-                            FALSE,
-                            FALSE);
+  if (bg_image)
+    {
+      create_cached_background (backgrounds,
+                                bg_image,
+                                current_view - 1,
+                                FALSE,
+                                FALSE);
+      g_object_unref (bg_image);
+    }
 
   /* Update cache for other views */
-  for (i = 1; i <= 4; i++)
+  for (i = 1; i <= VIEWS; i++)
     {
       if (i != current_view)
         {
           bg_image = get_background_for_view (backgrounds,
                                               i);
-          create_cached_background (backgrounds,
-                                    i,
-                                    bg_image,
-                                    FALSE,
-                                    FALSE);
+          if (bg_image)
+            {
+              create_cached_background (backgrounds,
+                                        bg_image,
+                                        i - 1,
+                                        FALSE,
+                                        FALSE);
+            }
         }
     }
 }
@@ -713,7 +936,8 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
 {
   HDBackgroundsPrivate *priv = backgrounds->priv;
   GKeyFile *key_file;
-  gchar *bg_image[4], *current_theme;
+  gchar *current_theme;
+  GFile *bg_image[VIEWS];
   gint current_view;
   guint i;
   GError *error = NULL;
@@ -753,16 +977,17 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
       return;
     }
 
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < VIEWS; i++)
     {
       gchar *key;
+      gchar *path;
 
       key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, i + 1);
 
-      bg_image[i] = g_key_file_get_string (key_file,
-                                           G_KEY_FILE_DESKTOP_GROUP,
-                                           key,
-                                           &error);
+      path = g_key_file_get_string (key_file,
+                                    G_KEY_FILE_DESKTOP_GROUP,
+                                    key,
+                                    &error);
 
       if (error)
         {
@@ -776,6 +1001,10 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
           return;
         }
 
+      if (path)
+        bg_image[i] = g_file_new_for_path (path);
+
+      g_free (path);
       g_free (key);
     }
 
@@ -796,28 +1025,28 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
   /* Set to 0..3 */
   current_view--;
 
-  if (current_view >= 0 && current_view < 4)
+  if (current_view >= 0 && current_view < VIEWS)
     create_cached_background (backgrounds,
-                              current_view + 1,
                               bg_image[current_view],
+                              current_view,
                               FALSE,
                               TRUE);
 
   /* Update cache for other views */
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < VIEWS; i++)
     {
       if (i != current_view)
         {
           create_cached_background (backgrounds,
-                                    i + 1,
                                     bg_image[i],
+                                    i,
                                     FALSE,
                                     TRUE);
         }
     }
 
-  for (i = 0; i < 4; i++)
-    g_free (bg_image[i]);
+  for (i = 0; i < VIEWS; i++)
+    g_object_unref (bg_image[i]);
 }
 
 static gboolean
@@ -906,7 +1135,7 @@ hd_backgrounds_startup (HDBackgrounds *backgrounds)
 
 
   /* Listen to GConf changes */
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < VIEWS; i++)
     {
       gchar *gconf_key;
 
@@ -942,9 +1171,57 @@ hd_backgrounds_startup (HDBackgrounds *backgrounds)
 }
 
 static void
+mount_pre_unmount_cb (GVolumeMonitor *monitor,
+                      GMount         *mount,
+                      HDBackgrounds  *backgrounds)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  GFile *mount_root;
+  guint i;
+  gboolean display_banner = FALSE;
+
+  mount_root = g_mount_get_root (mount);
+
+  g_mutex_lock (priv->mutex);
+  for (i = 0; i < VIEWS; i++)
+    {
+      HDBackgroundData *data = priv->current_requests[i];
+
+      if (!data)
+        continue;
+
+      if (g_file_has_prefix (data->file,
+                             mount_root))
+        {
+          /* Display banner if the background image was user initiated */
+          display_banner = (display_banner || data->display_banner);
+
+          /* Cancel the request */
+          g_cancellable_cancel (data->cancellable);
+          priv->current_requests[i] = NULL;
+        }
+    }
+  g_mutex_unlock (priv->mutex);
+
+  g_object_unref (mount_root);
+
+  /* Display "Opening interrupted.\n Memory card cover open" banner */
+  if (display_banner)
+    {
+      GtkWidget *note;
+
+      note = hildon_note_new_information (NULL,
+                                          dgettext ("hildon-common-strings",
+                                                    "sfil_ni_cannot_open_mmc_cover_open"));
+      gtk_widget_show (note);
+    }
+}
+
+static void
 hd_backgrounds_init (HDBackgrounds *backgrounds)
 {
   HDBackgroundsPrivate *priv;
+  GError *error = NULL;
 
   backgrounds->priv = HD_BACKGROUNDS_GET_PRIVATE (backgrounds);
   priv = backgrounds->priv;
@@ -952,7 +1229,23 @@ hd_backgrounds_init (HDBackgrounds *backgrounds)
   priv->gconf_client = gconf_client_get_default ();
 
   priv->mutex = g_mutex_new ();
-  priv->queue = g_queue_new ();
+
+  priv->caching_thread_pool = g_thread_pool_new ((GFunc) create_cached_image,
+                                                 backgrounds,
+                                                 1,
+                                                 TRUE,
+                                                 &error);
+  if (error)
+    {
+      g_warning ("%s. Could not create thread pool. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_error_free (error);
+    }
+
+  priv->volume_monitor = g_volume_monitor_get ();
+  g_signal_connect (priv->volume_monitor, "mount-pre-unmount",
+                    G_CALLBACK (mount_pre_unmount_cb), backgrounds);
 }
 
 static void
@@ -963,24 +1256,25 @@ hd_backgrounds_dipose (GObject *object)
 
   if (priv->gconf_client)
     {
-      for (i = 0; i < 4; i++)
+      for (i = 0; i < VIEWS; i++)
         {
           if (priv->bg_image_notify[i])
             priv->bg_image_notify[i] = (gconf_client_notify_remove (priv->gconf_client,
                                                                     priv->bg_image_notify[i]), 0);
-          priv->bg_image[i] = (g_free (priv->bg_image[i]), NULL);
         }
       priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
     }
 
-  if (priv->cache_info_contents)
-    priv->cache_info_contents = (g_free (priv->cache_info_contents), NULL);
+  if (priv->caching_thread_pool)
+    priv->caching_thread_pool = (g_thread_pool_free (priv->caching_thread_pool,
+                                                     FALSE,
+                                                     TRUE), NULL);
+
+  for (i = 0; i < VIEWS; i++)
+    priv->current_bg_image[i] = (g_object_unref (priv->current_bg_image[i]), NULL);
 
   if (priv->mutex)
     priv->mutex = (g_mutex_free (priv->mutex), NULL);
-
-  if (priv->queue)
-    priv->queue = (g_queue_free (priv->queue), NULL);
 
   if (priv->set_theme_idle_id)
     priv->set_theme_idle_id = (g_source_remove (priv->set_theme_idle_id), 0);
@@ -1019,34 +1313,23 @@ hd_backgrounds_set_background (HDBackgrounds *backgrounds,
                                guint          view,
                                const gchar   *uri)
 {
-  gchar *bg_image;
+  GFile *file;
 
   g_return_if_fail (HD_IS_BACKGROUNDS (backgrounds));
-  g_return_if_fail (view < 4);
+  g_return_if_fail (view < VIEWS);
 
   if (g_path_is_absolute (uri))
-    {
-      bg_image = g_strdup (uri);
-    }
+    file = g_file_new_for_path (uri);
   else
-    {
-      GFile *file = g_file_new_for_uri (uri);
-
-      if (g_file_is_native (file))
-        bg_image = g_file_get_path (file);
-      else
-        bg_image = g_file_get_uri (file);
-
-      g_object_unref (file);
-    }
+    file = g_file_new_for_uri (uri);
 
   create_cached_background (backgrounds,
-                            view + 1,
-                            bg_image,
+                            file,
+                            view,
                             TRUE,
                             TRUE);
 
-   g_free (bg_image);
+  g_object_unref (file);
 }
 
 const gchar *
@@ -1056,9 +1339,9 @@ hd_backgrounds_get_background (HDBackgrounds *backgrounds,
   HDBackgroundsPrivate *priv;
 
   g_return_val_if_fail (HD_IS_BACKGROUNDS (backgrounds), NULL);
-  g_return_val_if_fail (view < 4, NULL);
+  g_return_val_if_fail (view < VIEWS, NULL);
 
   priv = backgrounds->priv;
 
-  return priv->bg_image[view];
+  return g_file_get_path (priv->current_bg_image[view]);
 }

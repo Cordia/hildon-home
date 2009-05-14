@@ -1,3 +1,20 @@
+2009-05-14  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#106158 - Wrong info note is displayed when back cover is
+	opened while loading a image as a background
+	Fixes: NB#109265 - Home- 'Unable to open.\nFile corrupted'
+	§ckct_ni_unable_to_open_file_corrupted§  is not displayed when
+	changing background using a corrupted image
+
+	* src/hd-backgrounds.c:
+	* src/Makefile.am:
+	* src/hd-background-helper.c (deleted):
+	* src/hd-background-helper.h (deleted): Rewrite background caching to
+	also support png and jpeg images in cache. Started to implement
+	changes for Home UI spec 2.3.
+
+	* debian/changelog: Update.
+
 2009-05-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/hd-activate-views-dialog.c (hd_activate_views_dialog_init):

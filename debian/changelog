@@ -1,6 +1,11 @@
 hildon-home (0.3.27~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#106158 - Wrong info note is displayed when back cover is opened
+    while loading a image as a background
+  * Fixes: NB#109265 - Home- 'Unable to open.\nFile corrupted'
+    §ckct_ni_unable_to_open_file_corrupted§  is not displayed when changing
+    background using a corrupted image
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 11 May 2009 16:13:03 +0300
 

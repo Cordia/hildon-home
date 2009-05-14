@@ -393,7 +393,10 @@ visit_func (const char        *f_path,
           }
         break;
       case FTW_F:
-        hd_task_manager_load_desktop_file (f_path);
+        g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+                         (GSourceFunc) hd_task_manager_load_desktop_file,
+                         g_strdup (f_path),
+                         (GDestroyNotify) g_free);
         break;
       default:
         g_debug ("%s, %d", f_path, type_flag);
