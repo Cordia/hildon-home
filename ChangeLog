@@ -1,5 +1,11 @@
 2009-05-14  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-backgrounds.c (volume_monitor2, mount_pre_unmount_cb,
+	  volume_pre_unmount_cb, hd_backgrounds_init): Uses GnomeVFS for
+	  volume monitoring to make NB#106158 really work.
+
+2009-05-14  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#106158 - Wrong info note is displayed when back cover is
 	opened while loading a image as a background
 	Fixes: NB#109265 - Home- 'Unable to open.\nFile corrupted'

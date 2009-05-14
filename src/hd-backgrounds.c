@@ -36,6 +36,8 @@
 
 #include <gconf/gconf-client.h>
 
+#include <libgnomevfs/gnome-vfs.h>
+
 #include <unistd.h>
 
 #include "hd-backgrounds.h"
@@ -100,6 +102,7 @@ struct _HDBackgroundsPrivate
   guint set_theme_idle_id;
 
   GVolumeMonitor *volume_monitor;
+  GnomeVFSVolumeMonitor *volume_monitor2;
 };
 
 G_DEFINE_TYPE (HDBackgrounds, hd_backgrounds, G_TYPE_OBJECT);
@@ -1182,6 +1185,8 @@ mount_pre_unmount_cb (GVolumeMonitor *monitor,
 
   mount_root = g_mount_get_root (mount);
 
+  g_warning ("%s. Mount: %s", __FUNCTION__, g_file_get_path (mount_root));
+
   g_mutex_lock (priv->mutex);
   for (i = 0; i < VIEWS; i++)
     {
@@ -1193,6 +1198,8 @@ mount_pre_unmount_cb (GVolumeMonitor *monitor,
       if (g_file_has_prefix (data->file,
                              mount_root))
         {
+          g_warning ("%s. Mount: %s, File: %s", __FUNCTION__, g_file_get_path (mount_root), g_file_get_path (data->file));
+
           /* Display banner if the background image was user initiated */
           display_banner = (display_banner || data->display_banner);
 
@@ -1210,6 +1217,8 @@ mount_pre_unmount_cb (GVolumeMonitor *monitor,
     {
       GtkWidget *note;
 
+      g_warning ("%s. Display banner", __FUNCTION__);
+
       note = hildon_note_new_information (NULL,
                                           dgettext ("hildon-common-strings",
                                                     "sfil_ni_cannot_open_mmc_cover_open"));
@@ -1217,6 +1226,60 @@ mount_pre_unmount_cb (GVolumeMonitor *monitor,
     }
 }
 
+static void
+volume_pre_unmount_cb (GnomeVFSVolumeMonitor *monitor,
+                       GnomeVFSVolume        *volume,
+                       HDBackgrounds         *backgrounds)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  gchar *uri;
+  guint i;
+  gboolean display_banner = FALSE;
+
+  uri = gnome_vfs_volume_get_activation_uri (volume);
+
+  g_warning ("%s. Volume: %s", __FUNCTION__, uri);
+
+  g_mutex_lock (priv->mutex);
+  for (i = 0; i < VIEWS; i++)
+    {
+      HDBackgroundData *data = priv->current_requests[i];
+      gchar *path;
+      GnomeVFSVolume *other;
+
+      if (!data)
+        continue;
+
+      path = g_file_get_path (data->file);
+      other = gnome_vfs_volume_monitor_get_volume_for_path (priv->volume_monitor2,
+                                                            path);
+      g_free (path);
+
+      if (!gnome_vfs_volume_compare (volume, other))
+        {
+          /* Display banner if the background image was user initiated */
+          display_banner = (display_banner || data->display_banner);
+
+          /* Cancel the request */
+          g_cancellable_cancel (data->cancellable);
+          priv->current_requests[i] = NULL;
+        }
+    }
+  g_mutex_unlock (priv->mutex);
+
+  /* Display "Opening interrupted.\n Memory card cover open" banner */
+  if (display_banner)
+    {
+      GtkWidget *note;
+
+      g_warning ("%s. Display banner", __FUNCTION__);
+
+      note = hildon_note_new_information (NULL,
+                                          dgettext ("hildon-common-strings",
+                                                    "sfil_ni_cannot_open_mmc_cover_open"));
+      gtk_widget_show (note);
+    }
+}
 static void
 hd_backgrounds_init (HDBackgrounds *backgrounds)
 {
@@ -1246,6 +1309,11 @@ hd_backgrounds_init (HDBackgrounds *backgrounds)
   priv->volume_monitor = g_volume_monitor_get ();
   g_signal_connect (priv->volume_monitor, "mount-pre-unmount",
                     G_CALLBACK (mount_pre_unmount_cb), backgrounds);
+
+  priv->volume_monitor2 = gnome_vfs_get_volume_monitor ();
+  g_signal_connect (priv->volume_monitor2, "volume-pre-unmount",
+                    G_CALLBACK (volume_pre_unmount_cb), backgrounds);
+
 }
 
 static void
