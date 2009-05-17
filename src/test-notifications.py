@@ -12,7 +12,7 @@ emitted = 0
 def emit_notification(iface):
 	global emitted
 	emitted += 1
-	id = iface.Notify ('test-send.py', '0', '', '%dsms' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'sms-message', 'persistent': dbus.Byte(1) }, 0)
+	id = iface.Notify ('test-send.py', '0', '', '%dsms' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'sms-message', 'persistent': dbus.Byte(0) }, 0)
 	print "%dsms (id %d)" % (emitted, id) 
 
 	return True
@@ -37,11 +37,11 @@ if __name__ == '__main__':
 #	iface.SystemNoteInfoprint ('foo2');
 #	iface.SystemNoteInfoprint ('foo3');
 
-	iface.SystemNoteDialog ('message', 0, 'label');
+#	iface.SystemNoteDialog ('message', 0, 'label');
 
 # iface.Notify ('test-send.py', '0', 'qgn_list_messagin', 'Jan Arne Petersen', 'Subject', ['default', 'default'], { 'category': 'email' }, 0)
 
-#	gobject.timeout_add(250, emit_notification, iface)
+	gobject.timeout_add(50, emit_notification, iface)
 	
 
 	loop = gobject.MainLoop()

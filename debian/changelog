@@ -6,6 +6,8 @@ hildon-home (0.3.27~unreleased) unstable; urgency=low
   * Fixes: NB#109265 - Home- 'Unable to open.\nFile corrupted'
     §ckct_ni_unable_to_open_file_corrupted§  is not displayed when changing
     background using a corrupted image
+  * Fixes: NB#112403 - Applets are added to config automatically when
+    installed
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 11 May 2009 16:13:03 +0300
 

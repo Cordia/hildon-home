@@ -56,6 +56,8 @@ struct _HDAppletManagerPrivate
 
   GHashTable *installed;
 
+  GHashTable *replaced_modules;
+
   GKeyFile *applets_key_file;
 };
 
@@ -262,8 +264,27 @@ plugin_module_added_cb (HDPluginConfiguration *pc,
                         const gchar           *desktop_file,
                         HDAppletManager       *manager)
 {
-  hd_applet_manager_install_applet_from_desktop_file (manager,
-                                                      desktop_file);
+  HDAppletManagerPrivate *priv = manager->priv;
+
+  /* Check if the widget was previously removed */
+  if (!g_hash_table_lookup (priv->replaced_modules,
+                            desktop_file))
+    {
+      hd_applet_manager_install_applet_from_desktop_file (manager,
+                                                          desktop_file);
+    }
+}
+
+static void
+plugin_module_removed_cb (HDPluginConfiguration *pc,
+                          const gchar           *desktop_file,
+                          HDAppletManager       *manager)
+{
+  HDAppletManagerPrivate *priv = manager->priv;
+
+  g_hash_table_insert (priv->replaced_modules,
+                       g_strdup (desktop_file),
+                       GUINT_TO_POINTER (1));
 }
 
 static gboolean
@@ -288,6 +309,7 @@ hd_applet_manager_init (HDAppletManager *manager)
   priv->used_ids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   priv->installed = g_hash_table_new_full (g_str_hash, g_str_equal,
                                            g_free, (GDestroyNotify) hd_plugin_info_free);
+  priv->replaced_modules = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
   priv->model = GTK_TREE_MODEL (gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING));
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
@@ -302,6 +324,8 @@ hd_applet_manager_init (HDAppletManager *manager)
                     G_CALLBACK (plugin_removed_cb), manager);
   g_signal_connect (priv->plugin_manager, "plugin-module-added",
                     G_CALLBACK (plugin_module_added_cb), manager);
+  g_signal_connect (priv->plugin_manager, "plugin-module-removed",
+                    G_CALLBACK (plugin_module_removed_cb), manager);
 
   gdk_threads_add_idle (run_idle, priv->plugin_manager);
 }
@@ -333,6 +357,9 @@ hd_applet_manager_finalize (GObject *object)
 
   if (priv->installed)
     priv->installed = (g_hash_table_destroy (priv->installed), NULL);
+
+  if (priv->replaced_modules)
+    priv->replaced_modules = (g_hash_table_destroy (priv->replaced_modules), NULL);
 
   if  (priv->applets_key_file)
     priv->applets_key_file = (g_key_file_free (priv->applets_key_file), NULL);

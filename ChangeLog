@@ -1,3 +1,15 @@
+2009-05-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#112403 - Applets are added to config automatically when
+	installed
+
+	* src/hd-applet-manager.c (replaced_modules, plugin_module_added_cb,
+	  plugin_module_removed_cb, hd_applet_manager_init,
+	  hd_applet_manager_finalize): Do not automatically install an applet
+	  when the module is just replaced.
+
+	* debian/changelog: Update.
+
 2009-05-14  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-backgrounds.c (volume_monitor2, mount_pre_unmount_cb,
