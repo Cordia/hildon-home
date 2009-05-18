@@ -1,4 +1,4 @@
-hildon-home (0.3.27~unreleased) unstable; urgency=low
+hildon-home (0.3.27) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#106158 - Wrong info note is displayed when back cover is opened
@@ -9,7 +9,7 @@ hildon-home (0.3.27~unreleased) unstable; urgency=low
   * Fixes: NB#112403 - Applets are added to config automatically when
     installed
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 11 May 2009 16:13:03 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 11:31:31 +0300
 
 hildon-home (0.3.26) unstable; urgency=low
 

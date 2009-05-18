@@ -1,3 +1,9 @@
+2009-05-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.27
+
+	* configure.ac: 0.3.27
+
 2009-05-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#112403 - Applets are added to config automatically when
