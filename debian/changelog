@@ -2,6 +2,13 @@ hildon-home (0.3.28~unreleased) unstable; urgency=low
 
   * write_something_here
 
+  Jan Arne:
+  * Fixes: NB#110647 - Incoming Event Style Update
+  * Fixes: NB#112267 - Time for received notification is not matching with
+    device time
+  * Fixes: NB#115818 - Second text line of incoming notification preview goes
+    out of box
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 11:32:44 +0300
 
 hildon-home (0.3.27) unstable; urgency=low

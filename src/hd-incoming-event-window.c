@@ -36,14 +36,23 @@
 #include "hd-incoming-event-window.h"
 
 /* Pixel sizes */
-#define INCOMING_EVENT_WINDOW_WIDTH 342
-#define INCOMING_EVENT_WINDOW_HEIGHT 80
+#define WINDOW_WIDTH 366
+#define WINDOW_HEIGHT 88
 
-#define INCOMING_EVENT_WINDOW_CLOSE  43
-#define INCOMING_EVENT_WINDOW_ICON  24
+#define WINDOW_MARGIN HILDON_MARGIN_DOUBLE
 
-#define MARGIN_DEFAULT 8
-#define MARGIN_HALF 4
+#define ICON_SIZE 32
+
+#define ICON_SPACING HILDON_MARGIN_DEFAULT
+
+#define TITLE_TEXT_PADDING 1
+#define TITLE_TEXT_WIDTH (WINDOW_WIDTH - WINDOW_MARGIN - ICON_SIZE - ICON_SPACING - WINDOW_MARGIN)
+#define TITLE_TEXT_HEIGHT 30
+#define TITLE_TEXT_FONT "SystemFont"
+
+#define SECONDARY_TEXT_WIDTH TITLE_TEXT_WIDTH
+#define SECONDARY_TEXT_HEIGHT 24
+#define SECONDARY_TEXT_FONT "SmallSystemFont"
 
 #define IMAGES_DIR                   "/etc/hildon/theme/images/"
 #define BACKGROUND_IMAGE_FILE        IMAGES_DIR "wmIncomingEvent.png"
@@ -79,7 +88,7 @@ struct _HDIncomingEventWindowPrivate
 
   GtkWidget *icon;
   GtkWidget *title;
-  GtkWidget *time_label;
+  GtkWidget *count_label;
   GtkWidget *cbox;
   GtkWidget *message;
 
@@ -236,7 +245,7 @@ hd_incoming_event_window_realize (GtkWidget *widget)
                              icon);
   hd_incoming_event_window_set_string_xwindow_property (widget,
                              "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
-                             gtk_label_get_label (GTK_LABEL (priv->time_label)));
+                             gtk_label_get_label (GTK_LABEL (priv->count_label)));
   hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
                           gtk_label_get_text (GTK_LABEL (priv->title)));
@@ -273,16 +282,6 @@ hd_incoming_event_window_expose_event (GtkWidget *widget,
 
   return GTK_WIDGET_CLASS (hd_incoming_event_window_parent_class)->expose_event (widget,
                                                                                  event);
-}
-
-static void
-hd_incoming_event_window_size_request (GtkWidget      *widget,
-                                       GtkRequisition *requisition)
-{
-  GTK_WIDGET_CLASS (hd_incoming_event_window_parent_class)->size_request (widget, requisition);
-
-  requisition->width = INCOMING_EVENT_WINDOW_WIDTH;
-  requisition->height = INCOMING_EVENT_WINDOW_HEIGHT;
 }
 
 static void
@@ -388,7 +387,7 @@ hd_incoming_event_window_set_property (GObject      *object,
     case PROP_ICON:
       gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
                                     g_value_get_string (value),
-                                    HILDON_ICON_SIZE_SMALL);
+                                    HILDON_ICON_SIZE_STYLUS);
       hd_incoming_event_window_set_string_xwindow_property (
                              GTK_WIDGET (object),
                              "_HILDON_INCOMING_EVENT_NOTIFICATION_ICON",
@@ -410,7 +409,6 @@ hd_incoming_event_window_set_property (GObject      *object,
           priv->time = g_value_get_int64 (value);
           if (priv->time >= 0)
             strftime (buf, 20, "%H:%M", localtime (&(priv->time)));
-          gtk_label_set_text (GTK_LABEL (priv->time_label), buf);
           hd_incoming_event_window_set_string_xwindow_property (
                               GTK_WIDGET (object),
                               "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
@@ -442,7 +440,6 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
   widget_class->map_event = hd_incoming_event_window_map_event;
   widget_class->realize = hd_incoming_event_window_realize;
   widget_class->expose_event = hd_incoming_event_window_expose_event;
-  widget_class->size_request = hd_incoming_event_window_size_request;
 
   object_class->dispose = hd_incoming_event_window_dispose;
   object_class->finalize = hd_incoming_event_window_finalize;
@@ -505,14 +502,12 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
                                                         G_PARAM_READWRITE));
 
   /* Add shadow to label */
-  gtk_rc_parse_string ("style \"HDIncomingEventWindow-Label\" = \"osso-color-themeing\" {\n"
-                       "  fg[NORMAL] = @ReversedTextColor\n"
-                       "  text[NORMAL] = @ReversedTextColor\n"
-                       "  engine \"sapwood\" {\n"
-                       "    shadowcolor = @DefaultTextColor\n"
-                       "  }\n"
-                       "} widget \"*.HDIncomingEventWindow-Label\" style \"HDIncomingEventWindow-Label\"");
-
+  gtk_rc_parse_string ("style \"HDIncomingEventWindow-Text\" = \"osso-color-themeing\" {\n"
+                       "  fg[NORMAL] = @NotificationTextColor\n"
+                       "} widget \"*.HDIncomingEventWindow-Text\" style \"HDIncomingEventWindow-Text\"\n"
+                       "style \"HDIncomingEventWindow-Secondary\" = \"osso-color-themeing\" {\n"
+                       "  fg[NORMAL] = @NotificationSecondaryColor\n"
+                       "} widget \"*.HDIncomingEventWindow-Secondary\" style \"HDIncomingEventWindow-Secondary\"");
   g_type_class_add_private (klass, sizeof (HDIncomingEventWindowPrivate));
 }
 
@@ -520,71 +515,68 @@ static void
 hd_incoming_event_window_init (HDIncomingEventWindow *window)
 {
   HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW_GET_PRIVATE (window);
-  GtkWidget *vbox, *hbox, *title_box, *message_box, *fbox, *hsep;
-  GtkSizeGroup *icon_size_group;
+  GtkWidget *main_table;
 
   window->priv = priv;
 
-  vbox = gtk_vbox_new (FALSE, HILDON_MARGIN_DEFAULT);
-  gtk_container_set_border_width (GTK_CONTAINER (vbox), HILDON_MARGIN_DOUBLE);
-  gtk_widget_show (vbox);
-
-  hbox = gtk_hbox_new (FALSE, HILDON_MARGIN_DEFAULT);
-  gtk_widget_show (hbox);
-
-  title_box = gtk_hbox_new (FALSE, HILDON_MARGIN_HALF);
-  gtk_widget_show (title_box);
-
-  message_box = gtk_hbox_new (FALSE, HILDON_MARGIN_DEFAULT);
-  gtk_widget_show (message_box);
-
-  icon_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+  main_table = gtk_table_new (2, 2, FALSE);
+  gtk_table_set_col_spacings (GTK_TABLE (main_table), ICON_SPACING);
+  gtk_container_set_border_width (GTK_CONTAINER (main_table), WINDOW_MARGIN);
+  gtk_widget_set_size_request (GTK_WIDGET (main_table), WINDOW_WIDTH, WINDOW_HEIGHT);
+  gtk_widget_show (main_table);
 
   priv->icon = gtk_image_new ();
+/*  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), HILDON_ICON_SIZE_STYLUS); */
+  gtk_widget_set_size_request (priv->icon, ICON_SIZE, ICON_SIZE);
   gtk_widget_show (priv->icon);
-  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), INCOMING_EVENT_WINDOW_ICON);
-/*  gtk_widget_set_size_request (priv->icon, INCOMING_EVENT_WINDOW_ICON, INCOMING_EVENT_WINDOW_ICON); */
-  gtk_size_group_add_widget (icon_size_group, priv->icon);
-
-  /* fill box for the left empty space in the message row */
-  fbox = gtk_hbox_new (FALSE, 0);
-  gtk_widget_show (fbox);
-  gtk_size_group_add_widget (icon_size_group, fbox);
+  gtk_table_attach (GTK_TABLE (main_table),
+                    priv->icon,
+                    0, 1,
+                    0, 1,
+                    0, 0,
+                    0, 0);
 
   priv->title = gtk_label_new (NULL);
-  gtk_widget_set_name (GTK_WIDGET (priv->title), "HDIncomingEventWindow-Label");
-  gtk_widget_show (priv->title);
+  gtk_widget_set_name (GTK_WIDGET (priv->title), "HDIncomingEventWindow-Text");
   gtk_misc_set_alignment (GTK_MISC (priv->title), 0.0, 0.5);
+  gtk_widget_set_size_request (priv->title, TITLE_TEXT_WIDTH, TITLE_TEXT_HEIGHT);
+  hildon_helper_set_logical_font (priv->title, TITLE_TEXT_FONT);
+  gtk_widget_show (priv->title);
+  gtk_table_attach (GTK_TABLE (main_table),
+                    priv->title,
+                    1, 2,
+                    0, 1,
+                    GTK_EXPAND | GTK_FILL, GTK_FILL,
+                    0, TITLE_TEXT_PADDING);
 
-  priv->time_label = gtk_label_new (NULL);
-  gtk_widget_set_name (GTK_WIDGET (priv->time_label), "HDIncomingEventWindow-Label");
-  gtk_widget_show (priv->time_label);
-
-  /* fill box for the close button in the title row */
-  priv->cbox = gtk_hbox_new (FALSE, 0);
-  gtk_widget_show (priv->cbox);
-  gtk_widget_set_size_request (priv->cbox, INCOMING_EVENT_WINDOW_CLOSE, -1);
+  priv->count_label = gtk_label_new (NULL);
+  gtk_widget_set_name (GTK_WIDGET (priv->count_label), "HDIncomingEventWindow-Text");
+  gtk_misc_set_alignment (GTK_MISC (priv->count_label), 0.5, 0.5);
+  gtk_widget_set_size_request (priv->count_label, ICON_SIZE, SECONDARY_TEXT_HEIGHT);
+  hildon_helper_set_logical_font (priv->count_label, SECONDARY_TEXT_FONT);
+  gtk_widget_show (priv->count_label);
+  gtk_table_attach (GTK_TABLE (main_table),
+                    priv->count_label,
+                    0, 1,
+                    1, 2,
+                    GTK_FILL, GTK_FILL,
+                    0, 0);
 
   priv->message = gtk_label_new (NULL);
-  gtk_widget_set_name (GTK_WIDGET (priv->message), "HDIncomingEventWindow-Label");
-  gtk_widget_show (priv->message);
+  gtk_widget_set_name (GTK_WIDGET (priv->message), "HDIncomingEventWindow-Secondary");
   gtk_misc_set_alignment (GTK_MISC (priv->message), 0.0, 0.5);
-
-  hsep = gtk_hseparator_new ();
-/*  gtk_widget_show (hsep);*/
+  gtk_widget_set_size_request (priv->message, SECONDARY_TEXT_WIDTH, SECONDARY_TEXT_HEIGHT);
+  hildon_helper_set_logical_font (priv->message, SECONDARY_TEXT_FONT);
+  gtk_widget_show (priv->message);
+  gtk_table_attach (GTK_TABLE (main_table),
+                    priv->message,
+                    1, 2,
+                    1, 2,
+                    GTK_EXPAND | GTK_FILL, GTK_FILL,
+                    0, 0);
 
   /* Pack containers */
-  gtk_container_add (GTK_CONTAINER (window), vbox);
-  gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), hsep, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (vbox), message_box, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (hbox), priv->icon, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (hbox), title_box, TRUE, TRUE, 0);
-  gtk_box_pack_start (GTK_BOX (title_box), priv->title, TRUE, TRUE, 0);
-  gtk_box_pack_start (GTK_BOX (title_box), priv->time_label, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (title_box), priv->cbox, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (message_box), fbox, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (message_box), priv->message, TRUE, TRUE, 0);
+  gtk_container_add (GTK_CONTAINER (window), main_table);
 
   /* Enable handling of button press events */
   gtk_widget_add_events (GTK_WIDGET (window), GDK_BUTTON_PRESS_MASK);

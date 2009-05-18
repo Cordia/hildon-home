@@ -1,3 +1,15 @@
+2009-05-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#110647 - Incoming Event Style Update
+	Fixes: NB#112267 - Time for received notification is not matching with
+	device time
+	Fixes: NB#115818 - Second text line of incoming notification preview
+	goes out of box
+
+	* src/hd-incoming-event-window.c: Use new layout for incoming events.
+
+	* debian/changelog: Update.
+
 2009-05-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.27
