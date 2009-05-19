@@ -12,7 +12,7 @@ emitted = 0
 def emit_notification(iface):
 	global emitted
 	emitted += 1
-	id = iface.Notify ('test-send.py', '0', '', '%dsms' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'sms-message', 'persistent': dbus.Byte(0) }, 0)
+	id = iface.Notify ('test-send.py', '0', '', '%dsms' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'sms-message', 'persistent': dbus.Byte(1) }, 0)
 	print "%dsms (id %d)" % (emitted, id) 
 
 	return True

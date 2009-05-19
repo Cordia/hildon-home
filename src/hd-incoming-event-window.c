@@ -71,6 +71,7 @@ enum
   PROP_ICON,
   PROP_TITLE,
   PROP_TIME,
+  PROP_AMOUNT,
   PROP_MESSAGE
 };
 
@@ -88,11 +89,12 @@ struct _HDIncomingEventWindowPrivate
 
   GtkWidget *icon;
   GtkWidget *title;
-  GtkWidget *count_label;
-  GtkWidget *cbox;
+  GtkWidget *amount_label;
   GtkWidget *message;
 
   time_t time;
+
+  gulong amount;
 
   guint timeout_id;
 
@@ -207,6 +209,30 @@ hd_incoming_event_window_set_string_xwindow_property (GtkWidget *widget,
 }
 
 static void
+hd_incoming_event_window_set_cardinal_xwindow_property (GtkWidget *widget,
+                                                        const gchar *prop,
+                                                        gulong value)
+{
+  Atom atom;
+  GdkWindow *window;
+  GdkDisplay *dpy;
+
+  /* Check if widget is realized. */
+  if (!GTK_WIDGET_REALIZED (widget))
+    return;
+
+  window = widget->window;
+
+  dpy = gdk_drawable_get_display (window);
+  atom = gdk_x11_get_xatom_by_name_for_display (dpy, prop);
+
+  /* Set property to given value */
+  XChangeProperty (GDK_WINDOW_XDISPLAY (window), GDK_WINDOW_XID (window),
+                   atom, XA_CARDINAL, 32, PropModeReplace,
+                   (const guchar *)&value, 1);
+}
+
+static void
 hd_incoming_event_window_realize (GtkWidget *widget)
 {
   HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (widget)->priv;
@@ -245,7 +271,7 @@ hd_incoming_event_window_realize (GtkWidget *widget)
                              icon);
   hd_incoming_event_window_set_string_xwindow_property (widget,
                              "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
-                             gtk_label_get_label (GTK_LABEL (priv->count_label)));
+                             gtk_label_get_label (GTK_LABEL (priv->amount_label)));
   hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
                           gtk_label_get_text (GTK_LABEL (priv->title)));
@@ -345,6 +371,10 @@ hd_incoming_event_window_get_property (GObject      *object,
       g_value_set_int64 (value, priv->time);
       break;
 
+    case PROP_AMOUNT:
+      g_value_set_ulong (value, priv->amount);
+      break;
+
     case PROP_MESSAGE:
       g_value_set_string (value, gtk_label_get_label (GTK_LABEL (priv->message)));
       break;
@@ -368,11 +398,6 @@ hd_incoming_event_window_set_property (GObject      *object,
       /* NOTE Neither we nor the wm supports changing the preview
        * property of an incoming event window. */
       priv->preview = g_value_get_boolean (value);
-      /* Close button is not shown in preview windows */
-      if (priv->preview)
-        gtk_widget_hide (priv->cbox);
-      else
-        gtk_widget_show (priv->cbox);
       break;
 
     case PROP_DESTINATION:
@@ -413,6 +438,30 @@ hd_incoming_event_window_set_property (GObject      *object,
                               GTK_WIDGET (object),
                               "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
                               buf);
+        }
+      break;
+
+    case PROP_AMOUNT:
+        {
+          priv->amount = g_value_get_ulong (value);
+          if (priv->amount > 1)
+            {
+              gchar *display_amount;
+
+              display_amount = g_strdup_printf ("%lu", priv->amount);
+              gtk_label_set_text (GTK_LABEL (priv->amount_label),
+                                  display_amount);
+              g_free (display_amount);
+            }
+          else
+            {
+              gtk_label_set_text (GTK_LABEL (priv->amount_label), "");
+            }
+
+          hd_incoming_event_window_set_cardinal_xwindow_property (
+                              GTK_WIDGET (object),
+                              "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
+                              priv->amount);
         }
       break;
 
@@ -494,6 +543,16 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
                                                        G_PARAM_READWRITE));
 
   g_object_class_install_property (object_class,
+                                   PROP_AMOUNT,
+                                   g_param_spec_ulong ("amount",
+                                                       "Amount",
+                                                       "The amount of incoming events",
+                                                       1,
+                                                       G_MAXULONG,
+                                                       1,
+                                                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+
+  g_object_class_install_property (object_class,
                                    PROP_MESSAGE,
                                    g_param_spec_string ("message",
                                                         "Message",
@@ -504,9 +563,15 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
   /* Add shadow to label */
   gtk_rc_parse_string ("style \"HDIncomingEventWindow-Text\" = \"osso-color-themeing\" {\n"
                        "  fg[NORMAL] = @NotificationTextColor\n"
+                       "  engine \"sapwood\" {\n"
+                       "    shadowcolor = @DefaultTextColor\n"
+                       "  }\n"
                        "} widget \"*.HDIncomingEventWindow-Text\" style \"HDIncomingEventWindow-Text\"\n"
                        "style \"HDIncomingEventWindow-Secondary\" = \"osso-color-themeing\" {\n"
-                       "  fg[NORMAL] = @NotificationSecondaryColor\n"
+                       "  fg[NORMAL] = @NotificationSecondaryTextColor\n"
+                       "  engine \"sapwood\" {\n"
+                       "    shadowcolor = @DefaultTextColor\n"
+                       "  }\n"
                        "} widget \"*.HDIncomingEventWindow-Secondary\" style \"HDIncomingEventWindow-Secondary\"");
   g_type_class_add_private (klass, sizeof (HDIncomingEventWindowPrivate));
 }
@@ -549,14 +614,14 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
                     GTK_EXPAND | GTK_FILL, GTK_FILL,
                     0, TITLE_TEXT_PADDING);
 
-  priv->count_label = gtk_label_new (NULL);
-  gtk_widget_set_name (GTK_WIDGET (priv->count_label), "HDIncomingEventWindow-Text");
-  gtk_misc_set_alignment (GTK_MISC (priv->count_label), 0.5, 0.5);
-  gtk_widget_set_size_request (priv->count_label, ICON_SIZE, SECONDARY_TEXT_HEIGHT);
-  hildon_helper_set_logical_font (priv->count_label, SECONDARY_TEXT_FONT);
-  gtk_widget_show (priv->count_label);
+  priv->amount_label = gtk_label_new (NULL);
+  gtk_widget_set_name (GTK_WIDGET (priv->amount_label), "HDIncomingEventWindow-Text");
+  gtk_misc_set_alignment (GTK_MISC (priv->amount_label), 0.5, 0.5);
+  gtk_widget_set_size_request (priv->amount_label, ICON_SIZE, SECONDARY_TEXT_HEIGHT);
+  hildon_helper_set_logical_font (priv->amount_label, SECONDARY_TEXT_FONT);
+  gtk_widget_show (priv->amount_label);
   gtk_table_attach (GTK_TABLE (main_table),
-                    priv->count_label,
+                    priv->amount_label,
                     0, 1,
                     1, 2,
                     GTK_FILL, GTK_FILL,

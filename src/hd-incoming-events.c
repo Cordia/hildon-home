@@ -519,6 +519,7 @@ notifications_update_window (Notifications *ns,
                     "message", body,
                     "icon", icon,
                     "time", max_time,
+                    "amount", ns->notifications->len,
                     NULL);
 
       g_free (summary);
@@ -571,6 +572,7 @@ notifications_update_window (Notifications *ns,
                     "message", body,
                     "icon", icon,
                     "time", (gint64) hd_notification_get_time (notification),
+                    "amount", 1,
                     NULL);
     }
 

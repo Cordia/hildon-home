@@ -1,3 +1,14 @@
+2009-05-19  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-incoming-event-window.c (PROP_AMOUNT, amount_label, message,
+	  time, amount, hd_incoming_event_window_set_cardinal_xwindow_property,
+	  hd_incoming_event_window_realize,
+	  hd_incoming_event_window_get_property,
+	  hd_incoming_event_window_set_property,
+	  hd_incoming_event_window_class_init, hd_incoming_event_window_init):
+	* src/hd-incoming-events.c (notifications_update_window): Add support
+	to display the amount of notifications in the preview windows.
+
 2009-05-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#110647 - Incoming Event Style Update
