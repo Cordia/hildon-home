@@ -1,5 +1,11 @@
 2009-05-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#108598 - Blank notification after device power up
+
+	* debian/changelog: Update.
+
+2009-05-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#109096 - Blank notification received for multplie messages.
 
 	* src/hd-incoming-event-window.c (hd_incoming_event_window_realize):
