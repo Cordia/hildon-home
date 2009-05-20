@@ -1129,6 +1129,16 @@ copy_hash_table_item (gchar *key, GValue *value, GHashTable *new_hash_table)
   g_hash_table_insert (new_hash_table, g_strdup (key), value_copy);
 }
 
+static gboolean
+idle_emit (gpointer data)
+{
+  HDNotificationManager *nm = hd_notification_manager_get ();
+
+  g_signal_emit (nm, signals[NOTIFIED], 0, data, FALSE);
+
+  return FALSE;
+}
+
 gboolean
 hd_notification_manager_notify (HDNotificationManager *nm,
                                 const gchar           *app_name,
@@ -1238,7 +1248,7 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                            GUINT_TO_POINTER (id),
                            notification);
 
-      g_signal_emit (nm, signals[NOTIFIED], 0, notification, FALSE);
+      gdk_threads_add_idle (idle_emit, notification);
 
       if (persistent && nm->priv->db)
         {

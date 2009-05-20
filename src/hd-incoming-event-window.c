@@ -239,6 +239,8 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   GdkScreen *screen;
   const gchar *notification_type, *icon;
   GtkIconSize icon_size;
+  GdkPixmap *pixmap;
+  cairo_t *cr;
 
   screen = gtk_widget_get_screen (widget);
   gtk_widget_set_colormap (widget,
@@ -281,6 +283,16 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION",
                           priv->destination);
+
+  /* Set background to transparent pixmap */
+  pixmap = gdk_pixmap_new (GDK_DRAWABLE (widget->window), 1, 1, -1);
+  cr = gdk_cairo_create (GDK_DRAWABLE (pixmap));
+  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
+  cairo_paint (cr);
+  cairo_destroy (cr);
+
+  gdk_window_set_back_pixmap (widget->window, pixmap, FALSE);
 }
 
 static gboolean

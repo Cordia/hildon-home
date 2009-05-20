@@ -1,3 +1,15 @@
+2009-05-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#109096 - Blank notification received for multplie messages.
+
+	* src/hd-incoming-event-window.c (hd_incoming_event_window_realize):
+	Make background transparent.
+	* src/hd-notification-manager.c (copy_hash_table_item, idle_emit,
+	  hd_notification_manager_notify): Move new notification signal
+	  emission into idle handler.
+
+	* debian/changelog: Update.
+
 2009-05-19  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-incoming-event-window.c (PROP_AMOUNT, amount_label, message,

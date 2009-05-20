@@ -8,6 +8,7 @@ hildon-home (0.3.28~unreleased) unstable; urgency=low
     device time
   * Fixes: NB#115818 - Second text line of incoming notification preview goes
     out of box
+  * Fixes: NB#109096 - Blank notification received for multplie messages.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 11:32:44 +0300
 
