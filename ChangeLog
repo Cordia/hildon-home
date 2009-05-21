@@ -1,3 +1,12 @@
+2009-05-21  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#111752 - No notification sounds after a hildon-home crash
+
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_init):
+	* src/hd-notification-manager.c (hd_notification_manager_init): Use
+	DBUS_NAME_FLAG_ALLOW_REPLACEMENT and DBUS_NAME_FLAG_REPLACE_EXISTING
+	flags for the name request.
+
 2009-05-20  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#108598 - Blank notification after device power up

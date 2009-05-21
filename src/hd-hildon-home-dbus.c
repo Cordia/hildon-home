@@ -102,6 +102,8 @@ hd_hildon_home_dbus_init (HDHildonHomeDBus *dbus)
 
   if (!org_freedesktop_DBus_request_name (bus_proxy,
                                           HD_HILDON_HOME_DBUS_DBUS_NAME,
+                                          DBUS_NAME_FLAG_ALLOW_REPLACEMENT |
+                                          DBUS_NAME_FLAG_REPLACE_EXISTING |
                                           DBUS_NAME_FLAG_DO_NOT_QUEUE,
                                           &result, 
                                           &error))

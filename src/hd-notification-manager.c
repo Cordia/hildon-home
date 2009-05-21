@@ -896,6 +896,8 @@ hd_notification_manager_init (HDNotificationManager *nm)
 
   if (!org_freedesktop_DBus_request_name (bus_proxy,
                                           HD_NOTIFICATION_MANAGER_DBUS_NAME,
+                                          DBUS_NAME_FLAG_ALLOW_REPLACEMENT |
+                                          DBUS_NAME_FLAG_REPLACE_EXISTING |
                                           DBUS_NAME_FLAG_DO_NOT_QUEUE,
                                           &result, 
                                           &error))
@@ -909,7 +911,23 @@ hd_notification_manager_init (HDNotificationManager *nm)
 
   g_object_unref (bus_proxy);
 
-  if (result == DBUS_REQUEST_NAME_REPLY_EXISTS) return;
+  if (result == DBUS_REQUEST_NAME_REPLY_EXISTS)
+    {
+      g_warning ("%s. %s already exists",
+                 __FUNCTION__,
+                 HD_NOTIFICATION_MANAGER_DBUS_NAME);
+
+      return;
+    }
+
+  if (result == DBUS_REQUEST_NAME_REPLY_IN_QUEUE)
+    {
+      g_warning ("%s. %s already exists",
+                 __FUNCTION__,
+                 HD_NOTIFICATION_MANAGER_DBUS_NAME);
+
+      return;
+    }
 
   dbus_g_object_type_install_info (HD_TYPE_NOTIFICATION_MANAGER,
                                    &dbus_glib_hd_notification_manager_object_info);

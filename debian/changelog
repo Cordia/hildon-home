@@ -10,6 +10,7 @@ hildon-home (0.3.28~unreleased) unstable; urgency=low
     out of box
   * Fixes: NB#109096 - Blank notification received for multplie messages.
   * Fixes: NB#108598 - Blank notification after device power up
+  * Fixes: NB#111752 - No notification sounds after a hildon-home crash
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 11:32:44 +0300
 
