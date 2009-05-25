@@ -1,3 +1,9 @@
+2009-05-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.28
+
+	* configure.ac: 0.3.28
+
 2009-05-21  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#111752 - No notification sounds after a hildon-home crash

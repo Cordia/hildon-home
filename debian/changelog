@@ -1,6 +1,4 @@
-hildon-home (0.3.28~unreleased) unstable; urgency=low
-
-  * write_something_here
+hildon-home (0.3.28) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#110647 - Incoming Event Style Update
@@ -12,7 +10,7 @@ hildon-home (0.3.28~unreleased) unstable; urgency=low
   * Fixes: NB#108598 - Blank notification after device power up
   * Fixes: NB#111752 - No notification sounds after a hildon-home crash
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 18 May 2009 11:32:44 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 25 May 2009 09:49:12 +0300
 
 hildon-home (0.3.27) unstable; urgency=low
 
