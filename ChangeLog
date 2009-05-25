@@ -1,3 +1,11 @@
+2009-05-25  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu): Use
+	5 min timeout for D-Bus call.
+
+	* src/hd-task-shortcut.c (hd_task_shortcut_desktop_file_changed_cb):
+	Fix missing icons.
+
 2009-05-25  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.28

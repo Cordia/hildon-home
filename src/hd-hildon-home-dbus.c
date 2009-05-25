@@ -340,12 +340,13 @@ hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
       hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
                               GTK_BUTTON (button));
       priv->select_contacts_button = button;
-      dbus_g_proxy_begin_call (priv->contact_proxy,
-                               CONTACT_DBUS_CAN_ADD_SHORTCUT,
-                               (DBusGProxyCallNotify) can_add_shortcut_notify,
-                               g_object_ref (dbus),
-                               (GDestroyNotify) g_object_unref,
-                               G_TYPE_INVALID);
+      dbus_g_proxy_begin_call_with_timeout (priv->contact_proxy,
+                                            CONTACT_DBUS_CAN_ADD_SHORTCUT,
+                                            (DBusGProxyCallNotify) can_add_shortcut_notify,
+                                            g_object_ref (dbus),
+                                            (GDestroyNotify) g_object_unref,
+                                            5000,
+                                            G_TYPE_INVALID);
 
       button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_select_bookmarks"));
       g_signal_connect_after (button, "clicked",

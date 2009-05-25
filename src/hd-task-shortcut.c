@@ -72,32 +72,83 @@ hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
 {
   HDTaskShortcutPrivate *priv = shortcut->priv;
   gchar *desktop_id;
-  const gchar *icon_name;
+  const gchar *icon_name, *label;
+  GdkPixbuf *pixbuf = NULL;
 
   desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
 
+  label = hd_task_manager_get_label (manager, desktop_id);
   gtk_label_set_text (GTK_LABEL (priv->label),
-                      hd_task_manager_get_label (manager,
-                                                 desktop_id));
+                      label);
 
   icon_name = hd_task_manager_get_icon (manager, desktop_id);
  
   if (icon_name)
     {
       if (g_path_is_absolute (icon_name))
-        gtk_image_set_from_file (GTK_IMAGE (priv->icon),
-                                 icon_name);
+        {
+          GError *error = NULL;
+
+          pixbuf = gdk_pixbuf_new_from_file_at_size (icon_name,
+                                                     HILDON_ICON_PIXEL_SIZE_THUMB,
+                                                     HILDON_ICON_PIXEL_SIZE_THUMB,
+                                                     &error);
+          if (error)
+            {
+              g_debug ("%s. Could not load icon %s from file. %s",
+                       __FUNCTION__,
+                       icon_name,
+                       error->message);
+              g_error_free (error);
+            }
+        }
       else
-        gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
-                                      icon_name,
-                                      HILDON_ICON_SIZE_THUMB);
+        {
+          GError *error = NULL;
+
+          pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
+                                             icon_name,
+                                             HILDON_ICON_PIXEL_SIZE_THUMB,
+                                             GTK_ICON_LOOKUP_NO_SVG,
+                                             &error);
+
+          if (error)
+            {
+              g_debug ("%s. Could not load icon %s from theme. %s",
+                       __FUNCTION__,
+                       icon_name,
+                       error->message);
+              g_error_free (error);
+            }
+        }
     }
-  else
+
+  if (!pixbuf)
     {
-      gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
-                                    "tasklaunch_default_application",
-                                    HILDON_ICON_SIZE_THUMB);
+      GError *error = NULL;
+
+      pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
+                                         "tasklaunch_default_application",
+                                         HILDON_ICON_PIXEL_SIZE_THUMB,
+                                         GTK_ICON_LOOKUP_NO_SVG,
+                                         &error);
+
+      if (error)
+        {
+          g_warning ("%s. Could not load default application icon from theme. %s",
+                     __FUNCTION__,
+                     error->message);
+          g_error_free (error);
+        }
     }
+
+  gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon),
+                             pixbuf);
+
+  if (label || icon_name)
+    gtk_widget_show (GTK_WIDGET (shortcut));
+  else
+    gtk_widget_hide (GTK_WIDGET (shortcut));
 
   g_free (desktop_id);
 }
