@@ -1,3 +1,10 @@
+2009-05-26  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#118744 - Time is not shown on previews and notifications.
+
+	* src/hd-incoming-event-window.c
+	  (hd_incoming_event_window_set_property): Fix.
+
 2009-05-25  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_show_edit_menu): Use

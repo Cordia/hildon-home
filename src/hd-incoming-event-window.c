@@ -443,9 +443,10 @@ hd_incoming_event_window_set_property (GObject      *object,
         {
           gchar buf[20] = "";
 
-          priv->time = g_value_get_int64 (value);
+          priv->time = (time_t) g_value_get_int64 (value);
           if (priv->time >= 0)
             strftime (buf, 20, "%H:%M", localtime (&(priv->time)));
+
           hd_incoming_event_window_set_string_xwindow_property (
                               GTK_WIDGET (object),
                               "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",

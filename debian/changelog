@@ -2,6 +2,9 @@ hildon-home (0.3.29~unreleased) unstable; urgency=low
 
   * foo
 
+  Jan Arne:
+  * Fixes: NB#118744 - Time is not shown on previews and notifications.
+
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 25 May 2009 10:11:58 +0300
 
 hildon-home (0.3.28) unstable; urgency=low
