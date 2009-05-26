@@ -241,6 +241,7 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   GtkIconSize icon_size;
   GdkPixmap *pixmap;
   cairo_t *cr;
+  gchar time_buf[20] = "";
 
   screen = gtk_widget_get_screen (widget);
   gtk_widget_set_colormap (widget,
@@ -271,9 +272,11 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   hd_incoming_event_window_set_string_xwindow_property (widget,
                              "_HILDON_INCOMING_EVENT_NOTIFICATION_ICON",
                              icon);
+  if (priv->time >= 0)
+    strftime (time_buf, 20, "%H:%M", localtime (&(priv->time)));
   hd_incoming_event_window_set_string_xwindow_property (widget,
                              "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
-                             gtk_label_get_label (GTK_LABEL (priv->amount_label)));
+                             time_buf);
   hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
                           gtk_label_get_text (GTK_LABEL (priv->title)));
