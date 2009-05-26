@@ -1,3 +1,9 @@
+2009-05-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.29
+
+	* configure.ac: 0.3.29
+
 2009-05-26  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#118744 - Time is not shown on previews and notifications.
