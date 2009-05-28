@@ -44,9 +44,12 @@ int
 main (int argc, char **argv)
 {
   GtkWidget *window;
+  time_t current_time;
 
   gtk_init (&argc, &argv);
   hildon_init ();
+
+  time (&current_time);
 
   /* Demo notification window */
   window = hd_incoming_event_window_new (argv[1] == NULL,
@@ -56,7 +59,7 @@ main (int argc, char **argv)
                                          "Papa don't preach, I've been losing sleep "
                                          "But I made up my mind, I'm keeping my baby, "
                                          "oh I'm gonna keep my baby, mmm...",
-                                         12220784,
+                                         current_time,
                                          "qgn_list_messagin");
   g_signal_connect (window, "response", G_CALLBACK (response), NULL);
   gtk_widget_show (window);

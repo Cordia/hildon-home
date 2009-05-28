@@ -1,3 +1,22 @@
+2009-05-29  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#112313 - Required implementation details for attaching
+	message notifications to thumbnails in task switcher by thread.
+
+	* src/hd-incoming-event-window.c: Use relative time instead of
+	absolute time for display.
+
+	* src/hd-incoming-events.c: Changed incoming event display. Add
+	support for splitting in threads. Add support for amount hint.
+
+	* src/notification-groups.conf: Changed incoming event display.
+
+	* src/test-incoming-event.c (main): Add current time.
+
+	* src/test-notifications.py (emit_notification): Add threading test.
+
+	* debian/changelog: Update.
+
 2009-05-26  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.29

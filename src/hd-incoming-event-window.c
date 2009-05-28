@@ -26,6 +26,7 @@
 
 #include <string.h>
 
+#include <glib/gi18n.h>
 #include <gdk/gdkx.h>
 #include <hildon/hildon.h>
 
@@ -56,6 +57,11 @@
 
 #define IMAGES_DIR                   "/etc/hildon/theme/images/"
 #define BACKGROUND_IMAGE_FILE        IMAGES_DIR "wmIncomingEvent.png"
+
+#define MINUTE 60
+#define HOUR   MINUTE * 60
+#define DAY    HOUR * 24
+#define YEAR   DAY * 365
 
 /* Timeout in seconds */
 #define INCOMING_EVENT_WINDOW_PREVIEW_TIMEOUT 4
@@ -97,6 +103,8 @@ struct _HDIncomingEventWindowPrivate
   gulong amount;
 
   guint timeout_id;
+
+  guint update_time_source;
 
   cairo_surface_t *bg_image;
 };
@@ -208,28 +216,86 @@ hd_incoming_event_window_set_string_xwindow_property (GtkWidget *widget,
     }
 }
 
-static void
-hd_incoming_event_window_set_cardinal_xwindow_property (GtkWidget *widget,
-                                                        const gchar *prop,
-                                                        gulong value)
+/*
+ * Update the displayed relative time in the task switcher notification thumbnail window
+ */
+static gboolean
+hd_incoming_event_window_update_time (HDIncomingEventWindow *window)
 {
-  Atom atom;
-  GdkWindow *window;
-  GdkDisplay *dpy;
+  HDIncomingEventWindowPrivate *priv = window->priv;
+  time_t current_time, difference, timeout;
+  gchar *time_text;
 
-  /* Check if widget is realized. */
-  if (!GTK_WIDGET_REALIZED (widget))
-    return;
+  time (&current_time);
 
-  window = widget->window;
+  difference = current_time - priv->time;
 
-  dpy = gdk_drawable_get_display (window);
-  atom = gdk_x11_get_xatom_by_name_for_display (dpy, prop);
+  if (difference < 2 * MINUTE)
+    {
+      time_text = g_strdup (dgettext ("hildon-libs",
+                                      "wdgt_va_ago_one_minute"));
+      timeout = (2 * MINUTE) - difference;
+    }
+  else if (difference < HOUR)
+    {
+      time_text = g_strdup_printf (dgettext ("hildon-libs",
+                                             "wdgt_va_ago_minutes"),
+                                   difference / MINUTE);
+      timeout = MINUTE - (difference % MINUTE);
+    }
+  else if (difference < (2 * HOUR))
+    {
+      time_text = g_strdup (dgettext ("hildon-libs",
+                                      "wdgt_va_ago_one_hour"));
+      timeout = (2 * HOUR) - difference;
+    }
+  else if (difference < DAY)
+    {
+      time_text = g_strdup_printf (dgettext ("hildon-libs",
+                                             "wdgt_va_ago_hours"),
+                                   difference / HOUR);
+      timeout = HOUR - (difference % HOUR);
+    }
+  else if (difference < 2 * DAY)
+    {
+      time_text = g_strdup (dgettext ("hildon-libs",
+                                      "wdgt_va_ago_one_day"));
+      timeout = 2 * DAY - difference;
+    }
+  else if (difference < YEAR)
+    {
+      time_text = g_strdup_printf (dgettext ("hildon-libs",
+                                             "wdgt_va_ago_days"),
+                                   difference / DAY);
+      timeout = DAY - (difference % DAY);
+    }
+  else if (difference < 2 * YEAR)
+    {
+      time_text = g_strdup (dgettext ("hildon-libs",
+                                      "wdgt_va_ago_one_year"));
+      timeout = 2 * YEAR - difference;
+    }
+  else
+    {
+      time_text = g_strdup_printf (dgettext ("hildon-libs",
+                                             "wdgt_va_ago_years"),
+                                   difference / YEAR);
+      timeout = YEAR - (difference % YEAR);
+    }
 
-  /* Set property to given value */
-  XChangeProperty (GDK_WINDOW_XDISPLAY (window), GDK_WINDOW_XID (window),
-                   atom, XA_CARDINAL, 32, PropModeReplace,
-                   (const guchar *)&value, 1);
+  hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (window),
+                                                        "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
+                                                        time_text);
+  if (priv->update_time_source)
+    priv->update_time_source = (g_source_remove (priv->update_time_source), 0);
+
+  priv->update_time_source = g_timeout_add_seconds (timeout,
+                                                    (GSourceFunc) hd_incoming_event_window_update_time,
+                                                    window);
+
+  g_free (time_text);
+
+  return FALSE;
 }
 
 static void
@@ -241,7 +307,6 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   GtkIconSize icon_size;
   GdkPixmap *pixmap;
   cairo_t *cr;
-  gchar time_buf[20] = "";
 
   screen = gtk_widget_get_screen (widget);
   gtk_widget_set_colormap (widget,
@@ -272,11 +337,6 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   hd_incoming_event_window_set_string_xwindow_property (widget,
                              "_HILDON_INCOMING_EVENT_NOTIFICATION_ICON",
                              icon);
-  if (priv->time >= 0)
-    strftime (time_buf, 20, "%H:%M", localtime (&(priv->time)));
-  hd_incoming_event_window_set_string_xwindow_property (widget,
-                             "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
-                             time_buf);
   hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
                           gtk_label_get_text (GTK_LABEL (priv->title)));
@@ -286,6 +346,25 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION",
                           priv->destination);
+  hd_incoming_event_window_update_time (HD_INCOMING_EVENT_WINDOW (widget));
+  if (priv->amount > 1)
+    {
+      gchar *display_amount;
+
+      display_amount = g_strdup_printf ("%lu", priv->amount);
+
+      hd_incoming_event_window_set_string_xwindow_property (widget,
+                                                            "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
+                                                            display_amount);
+
+      g_free (display_amount);
+    }
+  else
+    {
+      hd_incoming_event_window_set_string_xwindow_property (widget,
+                                                            "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
+                                                            NULL);
+    }
 
   /* Set background to transparent pixmap */
   pixmap = gdk_pixmap_new (GDK_DRAWABLE (widget->window), 1, 1, -1);
@@ -335,6 +414,9 @@ hd_incoming_event_window_dispose (GObject *object)
       g_source_remove (priv->timeout_id);
       priv->timeout_id = 0;
     }
+
+  if (priv->update_time_source)
+    priv->update_time_source = (g_source_remove (priv->update_time_source), 0);
 
   if (priv->bg_image)
     priv->bg_image = (cairo_surface_destroy (priv->bg_image), NULL);
@@ -443,41 +525,33 @@ hd_incoming_event_window_set_property (GObject      *object,
       break;
 
     case PROP_TIME:
-        {
-          gchar buf[20] = "";
-
-          priv->time = (time_t) g_value_get_int64 (value);
-          if (priv->time >= 0)
-            strftime (buf, 20, "%H:%M", localtime (&(priv->time)));
-
-          hd_incoming_event_window_set_string_xwindow_property (
-                              GTK_WIDGET (object),
-                              "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
-                              buf);
-        }
+      priv->time = (time_t) g_value_get_int64 (value);
+      hd_incoming_event_window_update_time (HD_INCOMING_EVENT_WINDOW (object));
       break;
 
     case PROP_AMOUNT:
+      priv->amount = g_value_get_ulong (value);
+      if (priv->amount > 1)
         {
-          priv->amount = g_value_get_ulong (value);
-          if (priv->amount > 1)
-            {
-              gchar *display_amount;
+          gchar *display_amount;
 
-              display_amount = g_strdup_printf ("%lu", priv->amount);
-              gtk_label_set_text (GTK_LABEL (priv->amount_label),
-                                  display_amount);
-              g_free (display_amount);
-            }
-          else
-            {
-              gtk_label_set_text (GTK_LABEL (priv->amount_label), "");
-            }
+          display_amount = g_strdup_printf ("%lu", priv->amount);
+          gtk_label_set_text (GTK_LABEL (priv->amount_label),
+                              display_amount);
 
-          hd_incoming_event_window_set_cardinal_xwindow_property (
-                              GTK_WIDGET (object),
-                              "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
-                              priv->amount);
+          hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (object),
+                                                                "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
+                                                                display_amount);
+
+          g_free (display_amount);
+        }
+      else
+        {
+          gtk_label_set_text (GTK_LABEL (priv->amount_label), "");
+
+          hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (object),
+                                                                "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
+                                                                NULL);
         }
       break;
 
