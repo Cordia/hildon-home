@@ -2,6 +2,8 @@
 
 	Fixes: NB#112313 - Required implementation details for attaching
 	message notifications to thumbnails in task switcher by thread.
+	Fixes: NB#98543 - SMS/Chat notification received in switcher view for
+	currently running task is not as expected
 
 	* src/hd-incoming-event-window.c: Use relative time instead of
 	absolute time for display.
