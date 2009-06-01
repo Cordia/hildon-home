@@ -1,3 +1,9 @@
+2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.30
+
+	* configure.ac: 0.3.30
+
 2009-05-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#112313 - Required implementation details for attaching

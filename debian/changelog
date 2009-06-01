@@ -1,6 +1,4 @@
-hildon-home (0.3.30~unreleased) unstable; urgency=low
-
-  * foo
+hildon-home (0.3.30) unstable; urgency=low
 
   Jan Arne
   * Fixes: NB#112313 - Required implementation details for attaching message
@@ -8,7 +6,7 @@ hildon-home (0.3.30~unreleased) unstable; urgency=low
   * Fixes: NB#98543 - SMS/Chat notification received in switcher view for
     currently running task is not as expected
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 26 May 2009 12:21:43 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 01 Jun 2009 08:34:36 +0300
 
 hildon-home (0.3.29) unstable; urgency=low
 
