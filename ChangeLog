@@ -1,3 +1,16 @@
+2009-06-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#118133 - Icon for Maemo in Add bookmark of Desktop menu is
+	large in size
+
+	* src/hd-bookmark-manager.c (hd_bookmark_manager_add_bookmark_item):
+	Scale images to correct size in "Add bookmark" dialog.
+
+	* src/notification-groups.conf: Add definition for class 0 sms message
+	category.
+
+	* debian/changelog: Update.
+
 2009-06-01  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.30

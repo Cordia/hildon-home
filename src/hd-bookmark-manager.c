@@ -101,7 +101,7 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
                                     item->thumbnail_file,
                                     NULL);
 
-      pixbuf = gdk_pixbuf_new_from_file (icon_path, NULL);
+      pixbuf = gdk_pixbuf_new_from_file_at_size (icon_path, 106, 64, NULL);
     }
 
   gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
