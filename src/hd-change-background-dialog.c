@@ -275,6 +275,7 @@ hd_change_background_dialog_constructed (GObject *object)
   GDir *dir;
   const gchar *current_background;
   GtkTreeRowReference *selected_row = NULL;
+  gchar *images_dir;
 
   if (G_OBJECT_CLASS (hd_change_background_dialog_parent_class)->constructed)
     G_OBJECT_CLASS (hd_change_background_dialog_parent_class)->constructed (object);
@@ -317,6 +318,17 @@ hd_change_background_dialog_constructed (GObject *object)
                                                   FALSE,
                                                   current_background,
                                                   &selected_row);
+
+  /* Append backgrounds from /home/user/MyDocs/.images */
+  images_dir = g_build_filename (g_get_home_dir (),
+                                 "MyDocs/.images",
+                                 NULL);
+  hd_change_background_dialog_append_backgrounds (dialog,
+                                                  images_dir,
+                                                  FALSE,
+                                                  current_background,
+                                                  &selected_row);
+  g_free (images_dir);
 
   if (selected_row)
     {
