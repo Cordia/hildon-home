@@ -42,7 +42,7 @@
 #define THUMBNAIL_HEIGHT 96.0
 
 #define BORDER_WIDTH_LEFT 8
-#define BORDER_WIDTH_TOP 6
+#define BORDER_WIDTH_TOP 8
 
 #define LABEL_WIDTH (SHORTCUT_WIDTH -                   \
                      (2 * HILDON_MARGIN_DEFAULT) -      \

@@ -1,5 +1,14 @@
 2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#120135 - bookmark widget thumbnail preview misaligned in
+	allocated space
+
+	* src/hd-bookmark-shortcut.c (BORDER_WIDTH_TOP): Fix border.
+
+	* debian/changelog: Update.
+
+2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#120026 - New notification category needed for foreground
 	sms/chatmessages
 

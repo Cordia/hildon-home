@@ -5,6 +5,10 @@ hildon-home (0.3.31~unreleased) unstable; urgency=low
     in size
   * Fixes: NB#120026 - New notification category needed for foreground
     sms/chatmessages
+  * Fixes: NB#120135 - bookmark widget thumbnail preview misaligned in
+    allocated space
+  * Fixes task shortcut font size.
+  * Support image sets in ~/MyDocs/.images/
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  1 Jun 2009 08:38:21 +0300
 
