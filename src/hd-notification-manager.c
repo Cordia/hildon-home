@@ -1184,11 +1184,18 @@ hd_notification_manager_notify (HDNotificationManager *nm,
 
   /* Get "persisitent" hint */
   hint = g_hash_table_lookup (hints, "persistent");
-  persistent = hint != NULL && g_value_get_uchar (hint);
+  persistent = (G_VALUE_HOLDS_BOOLEAN (hint) && g_value_get_boolean (hint)) ||
+               (G_VALUE_HOLDS_UCHAR (hint) && g_value_get_uchar (hint));
+
+  /* Do not be persistent when "no-notification-window" is used */
+  hint = g_hash_table_lookup (hints, "no-notification-window");
+  if ((G_VALUE_HOLDS_BOOLEAN (hint) && g_value_get_boolean (hint)) ||
+      (G_VALUE_HOLDS_UCHAR (hint) && g_value_get_uchar (hint)))
+    persistent = FALSE;
 
   /* Get "category" hint */
   hint = g_hash_table_lookup (hints, "category");
-  category = hint != NULL ? g_value_get_string (hint) : NULL;
+  category = G_VALUE_HOLDS_STRING (hint) ? g_value_get_string (hint) : NULL;
 
   /* Try to find an existing notification */
   if (id)

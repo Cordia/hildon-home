@@ -947,6 +947,23 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   if (info && info->no_window)
     return;
 
+  /* Check if no notification windows should be shown */
+  p = hd_notification_get_hint (notification, "no-notification-window");
+  if ((G_VALUE_HOLDS_BOOLEAN (p) && g_value_get_boolean (p)) ||
+      (G_VALUE_HOLDS_UCHAR (p) && g_value_get_uchar (p)))
+    {
+      /* Send dbus request to mce to turn display backlight on */
+      if (priv->mce_proxy)
+        {
+          g_debug ("%s. Call %s",
+                   __FUNCTION__,
+                   MCE_DISPLAY_ON_REQ);
+          dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
+                                      G_TYPE_INVALID, G_TYPE_INVALID);
+        }
+      return;      
+    }
+
   if (info)
     {
       GList *l  = g_list_find_custom (priv->preview_list,

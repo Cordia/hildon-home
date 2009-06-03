@@ -1,5 +1,16 @@
 2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#120026 - New notification category needed for foreground
+	sms/chatmessages
+
+	* src/hd-incoming-events.c (hd_incoming_events_notified):
+	* src/hd-notification-manager.c (hd_notification_manager_notify):
+	Support foreground sms/chat massags without notification windows.
+
+	* debian/changelog: Update.
+
+2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-task-shortcut.c (hd_task_shortcut_init): Use 5/6 size of
 	SystemFont as font size (same as in task launcher).
 
