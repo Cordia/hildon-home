@@ -48,7 +48,6 @@
 
 #define LABEL_WIDTH SHORTCUT_WIDTH
 
-#define LABEL_FONT "SmallSystemFont"
 #define LABEL_COLOR "DefaultTextColor"
 
 /* Private definitions */
@@ -342,6 +341,7 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
 {
   HDTaskShortcutPrivate *priv;
   GtkWidget *vbox, *alignment;
+  GtkStyle *font_style;
 
   priv = HD_TASK_SHORTCUT_GET_PRIVATE (applet);
   applet->priv = priv;
@@ -369,7 +369,21 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_widget_set_name (priv->label, "HDTaskShortcut-Label");
   gtk_widget_show (priv->label);
   gtk_widget_set_size_request (priv->label, LABEL_WIDTH, -1);
-  hildon_helper_set_logical_font (priv->label, LABEL_FONT);
+  /* Set font size of label to 5/6 of the SystemFont size (that is 15) */
+  font_style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
+                                          "SystemFont", NULL, G_TYPE_NONE);
+  if (font_style != NULL)
+    {
+      PangoFontDescription *font_desc = font_style->font_desc;
+
+      if (font_desc != NULL)
+        {
+          pango_font_description_set_size (font_desc, (int)
+                                           (pango_font_description_get_size (font_desc) * 5.0 / 6.0));
+
+          gtk_widget_modify_font (priv->label, font_desc);
+        }
+    }
 
   priv->icon = gtk_image_new ();
   gtk_widget_show (priv->icon);

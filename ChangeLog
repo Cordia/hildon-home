@@ -1,5 +1,10 @@
 2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-task-shortcut.c (hd_task_shortcut_init): Use 5/6 size of
+	SystemFont as font size (same as in task launcher).
+
+2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	* src/hd-change-background-dialog.c
 	  (hd_change_background_dialog_constructed): Support image sets in
 	  ~/MyDocs/.images
