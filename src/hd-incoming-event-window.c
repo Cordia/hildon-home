@@ -58,10 +58,10 @@
 #define IMAGES_DIR                   "/etc/hildon/theme/images/"
 #define BACKGROUND_IMAGE_FILE        IMAGES_DIR "wmIncomingEvent.png"
 
-#define MINUTE 60
-#define HOUR   MINUTE * 60
-#define DAY    HOUR * 24
-#define YEAR   DAY * 365
+#define MINUTE (60)
+#define HOUR   (MINUTE * 60)
+#define DAY    (HOUR * 24)
+#define YEAR   (DAY * 365)
 
 /* Timeout in seconds */
 #define INCOMING_EVENT_WINDOW_PREVIEW_TIMEOUT 4
