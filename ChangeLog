@@ -25,6 +25,8 @@
 
 2009-06-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#120622 - Multiple notification is not as expected
+
 	* src/hd-change-background-dialog.c
 	  (hd_change_background_dialog_constructed): Support image sets in
 	  ~/MyDocs/.images

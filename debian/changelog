@@ -7,6 +7,7 @@ hildon-home (0.3.31~unreleased) unstable; urgency=low
     sms/chatmessages
   * Fixes: NB#120135 - bookmark widget thumbnail preview misaligned in
     allocated space
+  * Fixes: NB#120622 - Multiple notification is not as expected
   * Fixes task shortcut font size.
   * Support image sets in ~/MyDocs/.images/
 
