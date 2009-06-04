@@ -1,5 +1,15 @@
 2009-06-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#120772 - Fontsize keep reducing for newly added task
+	shortucts
+
+	* src/hd-task-shortcut.c (hd_task_shortcut_init): Copy
+	PangoFontDescription before modifying.
+
+	* debian/changelog: Update.
+
+2009-06-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#120707 - Time in task switcher for notification not showing
 	properly and not updated
 	

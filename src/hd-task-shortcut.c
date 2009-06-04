@@ -378,10 +378,14 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
 
       if (font_desc != NULL)
         {
+          font_desc = pango_font_description_copy_static (font_desc);
+
           pango_font_description_set_size (font_desc, (int)
                                            (pango_font_description_get_size (font_desc) * 5.0 / 6.0));
 
           gtk_widget_modify_font (priv->label, font_desc);
+
+          pango_font_description_free (font_desc);
         }
     }
 

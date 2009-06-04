@@ -3,6 +3,7 @@ hildon-home (0.3.32~unreleased) unstable; urgency=low
   Jan Arne
   * Fixes: NB#120707 - Time in task switcher for notification not showing
     properly and not updated
+  * Fixes: NB#120772 - Fontsize keep reducing for newly added task shortucts
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  4 Jun 2009 11:03:01 +0300
 
