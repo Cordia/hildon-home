@@ -1,4 +1,4 @@
-hildon-home (0.3.31~unreleased) unstable; urgency=low
+hildon-home (0.3.31) unstable; urgency=low
 
   Jan Arne
   * Fixes: NB#118133 - Icon for Maemo in Add bookmark of Desktop menu is large
@@ -11,7 +11,7 @@ hildon-home (0.3.31~unreleased) unstable; urgency=low
   * Fixes task shortcut font size.
   * Support image sets in ~/MyDocs/.images/
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon,  1 Jun 2009 08:38:21 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 04 Jun 2009 11:01:26 +0300
 
 hildon-home (0.3.30) unstable; urgency=low
 
