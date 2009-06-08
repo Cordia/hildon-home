@@ -1123,14 +1123,26 @@ hd_notification_manager_timeout (guint id)
   return FALSE;
 }
 
-/* Returns the singleton HDNotificationManager instance. Should not be refed or unrefed */
+/**
+ * hd_notification_manager_get:
+ *
+ * Returns %NULL if the singleton instance is finalized.
+ *
+ * Returns: the singleton HDNotificationManager instance or %NULL. Should not be refed or unrefed.
+ */
 HDNotificationManager *
 hd_notification_manager_get (void)
 {
-  static HDNotificationManager *nm = NULL;
+  static gsize initialized = 0;
+  static gpointer nm = NULL;
 
-  if (G_UNLIKELY (nm == NULL))
-    nm = g_object_new (HD_TYPE_NOTIFICATION_MANAGER, NULL);
+  if (g_once_init_enter (&initialized))
+    {
+      nm = g_object_new (HD_TYPE_NOTIFICATION_MANAGER, NULL);
+      g_object_add_weak_pointer (G_OBJECT (nm), &nm);
+
+      g_once_init_leave (&initialized, 1);
+    }
 
   return nm;
 }
@@ -1152,7 +1164,8 @@ idle_emit (gpointer data)
 {
   HDNotificationManager *nm = hd_notification_manager_get ();
 
-  g_signal_emit (nm, signals[NOTIFIED], 0, data, FALSE);
+  if (nm)
+    g_signal_emit (nm, signals[NOTIFIED], 0, data, FALSE);
 
   return FALSE;
 }
