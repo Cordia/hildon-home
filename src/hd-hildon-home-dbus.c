@@ -31,6 +31,7 @@
 #include <hildon/hildon.h>
 
 #include <X11/Xlib.h>
+#include <stdlib.h>
 
 #include "hd-activate-views-dialog.h"
 #include "hd-add-applet-dialog.h"
@@ -50,6 +51,7 @@
 struct _HDHildonHomeDBusPrivate
 {
   DBusGConnection *connection;
+  DBusConnection  *sysbus_conn;
 
   DBusGProxy      *hd_home_proxy;
   DBusGProxy      *contact_proxy;
@@ -72,7 +74,24 @@ struct _HDHildonHomeDBusPrivate
 #define CONTACT_DBUS_ADD_SHORTCUT "add_shortcut"
 #define CONTACT_DBUS_CAN_ADD_SHORTCUT "can_add_shortcut"
 
+#define DSME_SIGNAL_INTERFACE "com.nokia.dsme.signal"
+#define DSME_SHUTDOWN_SIGNAL_NAME "shutdown_ind"
+
 G_DEFINE_TYPE (HDHildonHomeDBus, hd_hildon_home_dbus, G_TYPE_OBJECT);
+
+static DBusHandlerResult
+hd_hildon_home_system_bus_signal_handler (DBusConnection *conn,
+                                          DBusMessage *msg, void *data)
+{
+  if (dbus_message_is_signal(msg, DSME_SIGNAL_INTERFACE,
+                             DSME_SHUTDOWN_SIGNAL_NAME))
+    {
+      g_warning ("%s: " DSME_SHUTDOWN_SIGNAL_NAME " from DSME", __func__);
+      exit (0);
+    }
+
+  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
 
 static void
 hd_hildon_home_dbus_init (HDHildonHomeDBus *dbus)
@@ -80,12 +99,15 @@ hd_hildon_home_dbus_init (HDHildonHomeDBus *dbus)
   DBusGProxy *bus_proxy;
   GError *error = NULL;
   guint result;
+  DBusError derror;
 
   dbus->priv = HD_HILDON_HOME_DBUS_GET_PRIVATE (dbus);
 
   dbus->priv->connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+  dbus_error_init (&derror);
+  dbus->priv->sysbus_conn = dbus_bus_get (DBUS_BUS_SYSTEM, &derror);
 
-  if (error != NULL)
+  if (error != NULL || dbus_error_is_set (&derror))
     {
       g_warning ("Failed to open connection to bus: %s\n",
                  error->message);
@@ -136,6 +158,14 @@ hd_hildon_home_dbus_init (HDHildonHomeDBus *dbus)
                                                          CONTACT_DBUS_NAME,
                                                          CONTACT_DBUS_PATH,
                                                          CONTACT_DBUS_NAME);
+
+  /* listen to shutdown_ind from DSME */
+  dbus_bus_add_match (dbus->priv->sysbus_conn, "type='signal', interface='"
+                      DSME_SIGNAL_INTERFACE "'", NULL);
+
+  dbus_connection_add_filter (dbus->priv->sysbus_conn,
+                              hd_hildon_home_system_bus_signal_handler,
+                              NULL, NULL);
 }
 
 static void 

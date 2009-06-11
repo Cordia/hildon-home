@@ -1,3 +1,11 @@
+2009-06-11  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	* src/hd-hildon-home-dbus.c
+	(hd_hildon_home_system_bus_signal_handler): New function to catch
+	D-Bus signals on the system bus. Exit hildon-home in case of
+	shutdown_ind from DSME.
+	(hd_hildon_home_dbus_init): Start listening to DSME signals.
+
 2009-06-08  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#120367 - hildon-home-76CD-11 crash observed while in layout
