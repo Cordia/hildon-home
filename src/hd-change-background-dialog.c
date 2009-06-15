@@ -174,25 +174,16 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
                                        KEY_FILE_BACKGROUND_KEY_FILE_4,
                                        NULL);
 
-      if (image[1])
+      if (image[1] || image[2] || image[3] || image[4])
         {
           image_set = TRUE;
 
-          /* Fallback images */
-          if (!image[2])
+          if (!image[1] || !image[2] || !image[3] || !image[4])
             {
-              image[2] = g_strdup (image[1]);
-              image[3] = image[3] ? image[3] : g_strdup (image[1]);
-              image[4] = image[4] ? image[4] : g_strdup (image[1]);
-            }
-          else if (!image[3])
-            {
-              image[3] = g_strdup (image[1]);
-              image[4] = image[4] ? image[4] : g_strdup (image[2]);
-            }
-          else if (!image[4])
-            {
-              image[4] = g_strdup (image[1]);
+              g_warning ("%s. Image Set %s must define four images.",
+                         __FUNCTION__,
+                         filename);
+              goto cleanup;
             }
         }
       
@@ -487,6 +478,15 @@ add_image_dialog_response (GtkDialog                *dialog,
   gtk_widget_destroy (GTK_WIDGET (dialog));
 }
 
+static gboolean
+background_set_cb (gpointer data)
+{
+  if (GTK_IS_WIDGET (data))
+    gtk_widget_destroy (GTK_WIDGET (data));
+
+  return FALSE;
+}
+
 static void
 hd_change_background_dialog_response (GtkDialog *dialog,
                                       gint       response_id)
@@ -559,35 +559,48 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                               COL_IMAGE_SET, &image_set,
                               -1);
 
+          hildon_gtk_window_set_progress_indicator (GTK_WINDOW (dialog),
+                                                    TRUE);
+
           if (image_set)
             {
               guint i;
 
               hd_backgrounds_set_background (hd_backgrounds_get (),
                                              priv->current_view,
-                                             image[priv->current_view + 1]);
+                                             image[priv->current_view + 1],
+                                             NULL,
+                                             NULL);
 
               for (i = 0; i < 4; i++)
                 {
                   if (i != priv->current_view)
                     hd_backgrounds_set_background (hd_backgrounds_get (),
                                                    i,
-                                                   image[i + 1]);
+                                                   image[i + 1],
+                                                   i == 3 ||
+                                                   (i == 2 && priv->current_view == 3) ?
+                                                   background_set_cb : NULL,
+                                                   dialog);
                 }
             }
           else
             {
               hd_backgrounds_set_background (hd_backgrounds_get (),
                                              priv->current_view,
-                                             image[0]);
+                                             image[0],
+                                             background_set_cb,
+                                             dialog);
             }
 
           /* free memory */
           for (i = 0; i < 5; i++)
             g_free (image[i]);
         }
-
-      gtk_widget_destroy (GTK_WIDGET (dialog));
+      else
+        {
+          gtk_widget_destroy (GTK_WIDGET (dialog));
+        }
     }
   else
     {
@@ -667,7 +680,7 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   gtk_widget_show (priv->selector);
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), priv->selector);
 
-  gtk_widget_set_size_request (GTK_WIDGET (dialog), -1, 404);
+  gtk_widget_set_size_request (GTK_WIDGET (dialog), -1, 358);
 }
 
 GtkWidget *

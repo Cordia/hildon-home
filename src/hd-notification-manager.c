@@ -1167,6 +1167,8 @@ idle_emit (gpointer data)
   if (nm)
     g_signal_emit (nm, signals[NOTIFIED], 0, data, FALSE);
 
+  g_object_unref (data);
+
   return FALSE;
 }
 
@@ -1286,7 +1288,7 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                            GUINT_TO_POINTER (id),
                            notification);
 
-      gdk_threads_add_idle (idle_emit, notification);
+      gdk_threads_add_idle (idle_emit, g_object_ref (notification));
 
       if (persistent && nm->priv->db)
         {

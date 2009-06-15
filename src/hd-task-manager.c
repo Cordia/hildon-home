@@ -42,6 +42,9 @@
 
 #define TASK_SHORTCUTS_GCONF_KEY "/apps/osso/hildon-home/task-shortcuts"
 
+#define TASK_SHORTCUT_VIEW_GCONF_KEY "/apps/osso/hildon-desktop/applets/TaskShortcut:%s/view"
+#define TASK_SHORTCUT_POSITION_GCONF_KEY "/apps/osso/hildon-desktop/applets/TaskShortcut:%s/position"
+
 /* Task .desktop file keys */
 #define HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN "X-Text-Domain"
 
@@ -617,11 +620,45 @@ hd_task_manager_install_task (HDTaskManager *manager,
   gpointer key;
   GSList *list = NULL;
   GError *error = NULL;
+  gchar *gconf_key;
 
   gtk_tree_model_get (priv->filtered_model, tree_iter,
                       2, &desktop_id,
                       -1);
 
+  /* Reset view and position key because they are explicitly added */
+  gconf_key = g_strdup_printf (TASK_SHORTCUT_VIEW_GCONF_KEY, desktop_id);
+  gconf_client_set_int (priv->gconf_client,
+                        gconf_key,
+                        -1,
+                        &error);
+  if (error)
+    {
+      g_warning ("%s. Could not write view key %s to GConf. %s",
+                 __FUNCTION__,
+                 gconf_key,
+                 error->message);
+      g_clear_error (&error);
+    }
+  g_free (gconf_key);
+
+  gconf_key = g_strdup_printf (TASK_SHORTCUT_POSITION_GCONF_KEY, desktop_id);
+  gconf_client_set_list (priv->gconf_client,
+                         gconf_key,
+                         GCONF_VALUE_INT,
+                         NULL,
+                         &error);
+  if (error)
+    {
+      g_warning ("%s. Could not write position key %s to GConf. %s",
+                 __FUNCTION__,
+                 gconf_key,
+                 error->message);
+      g_clear_error (&error);
+    }
+  g_free (gconf_key);
+
+  /* Add it to installed shortcuts set */
   g_hash_table_insert (priv->installed_shortcuts,
                        desktop_id,
                        GUINT_TO_POINTER (1));
@@ -643,7 +680,7 @@ hd_task_manager_install_task (HDTaskManager *manager,
       g_warning ("Could not write string list to GConf (%s): %s.",
                  TASK_SHORTCUTS_GCONF_KEY,
                  error->message);
-      g_error_free (error);
+      g_clear_error (&error);
     }
 
   /* Free the list, the content is still referenced by the hash table */

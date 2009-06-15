@@ -1,3 +1,48 @@
+2009-06-15  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#120367 - hildon-home-76CD-11 crash observed while in layout
+	mode
+	Fixes: NB#120884 - Dialog for changing wallpaper too high
+	Fixes: NB#110192 - Background Image update 'Stop' button does not work
+	Fixes: NB#120626 - Number of notifications is not coming in task
+	switcher
+	Fixes: NB#121964 - Not able to add mediaplayer shortcut  in anyother
+	homeview except in second
+	Fixes: NB#121635 - Predefined application shortcuts not added to
+	correct Home view
+
+	* src/hd-backgrounds.c (ASPECT_RATIO, CACHED_DIR,
+	  BACKGROUND_CACHED_PVR, BACKGROUND_CACHED_PNG, change_request_cb,
+	  cb_data, background_data_free, pending_requests, size_prepared_cb,
+	  create_cached_image, hd_backgrounds_set_background):
+	* src/hd-backgrounds.h (parent_class):
+	* src/hd-change-background-dialog.c
+	  (hd_change_background_dialog_append_backgrounds,
+	  add_image_dialog_response, background_set_cb,
+	  hd_change_background_dialog_response,
+	  hd_change_background_dialog_init): Fix dialog height. Fix progress
+	  indicator. Implement scaling wrongly sized images according to the
+	  layout guide. Store cached backgrounds with .png extension to fix
+	  warning in hildon-desktop.
+
+	* src/hd-incoming-event-window.c
+	  (hd_incoming_event_window_update_title_and_amount,
+	  hd_incoming_event_window_get_property,
+	  hd_incoming_event_window_set_property,
+	  hd_incoming_event_window_class_init, hd_incoming_event_window_new):
+	  Also set _HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT if there is only
+	  one notification.
+
+	* src/hd-incoming-events.c (notifications_update_window):
+	* src/hd-notification-manager.c (idle_emit,
+	  hd_notification_manager_notify): Fix crash.
+
+	* src/hd-task-manager.c (TASK_SHORTCUT_VIEW_GCONF_KEY,
+	  TASK_SHORTCUT_POSITION_GCONF_KEY, hd_task_manager_install_task):
+	  Reset view and position before explicitly adding a shortcut.
+
+	* debian/changelog: Update.
+
 2009-06-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.33

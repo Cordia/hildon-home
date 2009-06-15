@@ -302,33 +302,22 @@ static void
 hd_incoming_event_window_update_title_and_amount (HDIncomingEventWindow *window)
 {
   HDIncomingEventWindowPrivate *priv = window->priv;
+  gchar *display_amount, *title;
 
-  if (priv->amount > 1)
-    {
-      gchar *display_amount, *title;
+  display_amount = g_strdup_printf ("%lu", priv->amount);
+  title = g_strdup_printf ("%s%s",
+                           priv->amount > 1 ? "... " : "",
+                           gtk_label_get_text (GTK_LABEL (priv->title)));
 
-      display_amount = g_strdup_printf ("%lu", priv->amount);
-      title = g_strdup_printf ("... %s", gtk_label_get_text (GTK_LABEL (priv->title)));
+  hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (window),
+                                                        "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
+                                                        display_amount);
+  hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (window),
+                                                        "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
+                                                        title);
 
-      hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (window),
-                                                            "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
-                                                            display_amount);
-      hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (window),
-                                                            "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
-                                                            title);
-
-      g_free (display_amount);
-      g_free (title);
-    }
-  else
-    {
-      hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (window),
-                                                            "_HILDON_INCOMING_EVENT_NOTIFICATION_AMOUNT",
-                                                            NULL);
-      hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (window),
-                                                            "_HILDON_INCOMING_EVENT_NOTIFICATION_SUMMARY",
-                                                            gtk_label_get_text (GTK_LABEL (priv->title)));
-    }
+  g_free (display_amount);
+  g_free (title);
 }
 
 static void
@@ -481,7 +470,7 @@ hd_incoming_event_window_get_property (GObject      *object,
       break;
 
     case PROP_TIME:
-      g_value_set_int64 (value, priv->time);
+      g_value_set_long (value, priv->time);
       break;
 
     case PROP_AMOUNT:
@@ -538,7 +527,7 @@ hd_incoming_event_window_set_property (GObject      *object,
       break;
 
     case PROP_TIME:
-      priv->time = (time_t) g_value_get_int64 (value);
+      priv->time = g_value_get_long (value);
       hd_incoming_event_window_update_time (HD_INCOMING_EVENT_WINDOW (object));
       break;
 
@@ -628,13 +617,13 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
                                                         G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
                                    PROP_TIME,
-                                   g_param_spec_int64 ("time",
-                                                       "Time",
-                                                       "The time of the incoming event (time_t)",
-                                                       G_MININT64,
-                                                       G_MAXINT64,
-                                                       -1,
-                                                       G_PARAM_READWRITE));
+                                   g_param_spec_long ("time",
+                                                      "Time",
+                                                      "The time of the incoming event (time_t)",
+                                                      G_MINLONG,
+                                                      G_MAXLONG,
+                                                      -1,
+                                                      G_PARAM_READWRITE));
 
   g_object_class_install_property (object_class,
                                    PROP_AMOUNT,
@@ -770,8 +759,8 @@ hd_incoming_event_window_new (gboolean     preview,
                          "destination", destination,
                          "title", summary,
                          "message", body,
-                         "time", (gint64) time,
                          "icon", icon,
+                         "time", time,
                          NULL);
 
   return window;

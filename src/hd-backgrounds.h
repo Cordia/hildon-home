@@ -50,17 +50,19 @@ struct _HDBackgroundsClass
   GObjectClass parent_class;
 };
 
-GType          hd_backgrounds_get_type       (void);
+GType          hd_backgrounds_get_type        (void);
 
-HDBackgrounds *hd_backgrounds_get            (void);
+HDBackgrounds *hd_backgrounds_get             (void);
 
-void           hd_backgrounds_startup        (HDBackgrounds *backgrounds);
-void           hd_backgrounds_set_background (HDBackgrounds *backgrounds,
-                                              guint          view,
-                                              const gchar   *uri);
+void           hd_backgrounds_startup         (HDBackgrounds *backgrounds);
+void           hd_backgrounds_set_background  (HDBackgrounds *backgrounds,
+                                               guint          view,
+                                               const gchar   *uri,
+                                               GSourceFunc    done_callback,
+                                               gpointer       cb_data);
 
-const gchar *  hd_backgrounds_get_background (HDBackgrounds *backgrounds,
-                                              guint          view);
+const gchar *  hd_backgrounds_get_background  (HDBackgrounds  *backgrounds,
+                                               guint           view);
 
 G_END_DECLS
 

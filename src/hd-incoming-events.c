@@ -528,9 +528,9 @@ notifications_update_window (Notifications *ns,
                 "title", title_text,
                 "message", secondary_text,
                 "icon", icon,
-                "time", (gint64) hd_notification_get_time (notification),
                 "amount", notifications_get_amount (ns),
                 "destination", destination,
+                "time", hd_notification_get_time (notification),
                 NULL);
 }
 

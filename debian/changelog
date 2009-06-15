@@ -1,6 +1,12 @@
 hildon-home (0.3.34~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#120367 - hildon-home-76CD-11 crash observed while in layout mode
+  * Fixes: NB#120884 - Dialog for changing wallpaper too high
+  * Fixes: NB#110192 - Background Image update 'Stop' button does not work
+  * Fixes: NB#120626 - Number of notifications is not coming in task switcher
+  * Fixes: NB#121964 - Not able to add mediaplayer shortcut  in anyother homeview except in second
+  * Fixes: NB#121635 - Predefined application shortcuts not added to correct Home view
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 09:21:38 +0300
 

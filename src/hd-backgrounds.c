@@ -44,9 +44,11 @@
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 480
+#define ASPECT_RATIO ((1. * SCREEN_WIDTH) / SCREEN_HEIGHT)
 
 #define CACHED_DIR        ".backgrounds"
-#define BACKGROUND_CACHED CACHED_DIR "/background-%u.pvr"
+#define BACKGROUND_CACHED_PVR CACHED_DIR "/background-%u.pvr"
+#define BACKGROUND_CACHED_PNG CACHED_DIR "/background-%u.png"
 #define THUMBNAIL_CACHED  CACHED_DIR "/thumbnail-%u.png"
 #define INFO_CACHED       CACHED_DIR "/background-%u.info"
 
@@ -97,6 +99,9 @@ struct _HDBackgroundsPrivate
   HDBackgroundData *current_requests[VIEWS];
   GFile            *current_bg_image[VIEWS];
 
+  GSourceFunc       change_request_cb;
+  gpointer          cb_data;
+
   /* Theme change support */
   gchar *current_theme;
   guint set_theme_idle_id;
@@ -116,6 +121,24 @@ background_data_free (HDBackgroundData *data)
   g_object_unref (data->file);
   g_object_unref (data->cancellable);
   g_slice_free (HDBackgroundData, data);
+}
+
+/* pending_requests:
+ *
+ * Must be called with mutex locked
+ *
+ */
+static gboolean
+pending_requests (HDBackgrounds *backgrounds)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  guint i;
+
+  for (i = 0; i < VIEWS; i++)
+    if (priv->current_requests[i])
+      return TRUE;
+
+  return FALSE;
 }
 
 static void
@@ -169,7 +192,7 @@ size_prepared_cb (GdkPixbufLoader *loader,
                   gint             height,
                   gboolean        *scaling_required)
 {
-  double w, h;
+  double ratio, w, h;
 
   /*
    * Background image should be resized and cropped. That means the image
@@ -177,21 +200,18 @@ size_prepared_cb (GdkPixbufLoader *loader,
    * background exactly with keeping the aspect ratio of the original image
    */
 
-  /* FIXME
-  w = 1. * width / SCREEN_WIDTH;
-  h = 1. * height / SCREEN_HEIGHT;
+  ratio = (1. * width) / height;
 
-  if (w >= h)
+  if (ratio > ASPECT_RATIO)
     {
-      width = SCREEN_WIDTH * 1. / h;
-      height = SCREEN_HEIGHT;
+      h = SCREEN_HEIGHT;
+      w = ratio * SCREEN_HEIGHT;
     }
   else
     {
-      width = SCREEN_WIDTH;
-      height = SCREEN_HEIGHT * 1. / w;
+      h = SCREEN_WIDTH / ratio;
+      w = SCREEN_WIDTH;
     }
-    */
 
   if (scaling_required)
     {
@@ -199,8 +219,8 @@ size_prepared_cb (GdkPixbufLoader *loader,
                           (height != SCREEN_HEIGHT);
     }
 
-  w = SCREEN_WIDTH;
-  h = SCREEN_HEIGHT;
+/*  w = SCREEN_WIDTH;
+  h = SCREEN_HEIGHT;*/
 
   gdk_pixbuf_loader_set_size (loader, w, h);
 }
@@ -418,7 +438,7 @@ create_cached_image (HDBackgroundData *data,
                      HDBackgrounds    *backgrounds)
 {
   HDBackgroundsPrivate *priv = backgrounds->priv;
-  GdkPixbuf *pixbuf;
+  GdkPixbuf *pixbuf = NULL;
   gboolean scaling_required = FALSE, thumbnail_created = FALSE;
   gchar *dest_filename;
   GFile *dest_file, *dest_thumbnail = NULL;
@@ -469,7 +489,7 @@ create_cached_image (HDBackgroundData *data,
     }
 
   /* Create the file objects for the cached background image and thumbnail */
-  dest_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED,
+  dest_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED_PNG,
                                    g_get_home_dir (),
                                    data->view + 1);
   dest_file = g_file_new_for_path (dest_filename);
@@ -523,11 +543,20 @@ create_cached_image (HDBackgroundData *data,
     {
       /* Else scale the pixbuf and write it to the cached
        * background image */
+      GdkPixbuf *sub;
+
+      sub = gdk_pixbuf_new_subpixbuf (pixbuf,
+                                      (gdk_pixbuf_get_width (pixbuf) - SCREEN_WIDTH) / 2,
+                                      (gdk_pixbuf_get_height (pixbuf) - SCREEN_HEIGHT) / 2,
+                                      SCREEN_WIDTH,
+                                      SCREEN_HEIGHT);
+      g_object_unref (pixbuf);
+      pixbuf = sub;
 
       /* FIXME: wrong */
       if (!save_pixbuf_to_file (dest_file,
                                 pixbuf,
-                                "jpeg",
+                                "png",
                                 data->cancellable,
                                 &error))
         {
@@ -694,11 +723,31 @@ create_cached_image (HDBackgroundData *data,
           g_error_free (error);
           goto cleanup;
         }
+
+      g_object_unref (thumbnail_pixbuf);
     }
 
 cleanup:
+  g_mutex_lock (priv->mutex);
   if (priv->current_requests[data->view] == data)
     priv->current_requests[data->view] = NULL;
+  if (!pending_requests (backgrounds))
+    {
+      /* Call callback if not called yet */
+      if (priv->change_request_cb)
+        {
+          gdk_threads_add_idle_full (G_PRIORITY_HIGH_IDLE,
+                                     priv->change_request_cb,
+                                     priv->cb_data,
+                                     NULL);
+          priv->change_request_cb = NULL;
+          priv->cb_data = NULL;
+        }
+    }
+  g_mutex_unlock (priv->mutex);
+
+  if (pixbuf)
+    g_object_unref (pixbuf);
 
   background_data_free (data);
 }
@@ -1379,8 +1428,11 @@ hd_backgrounds_get (void)
 void
 hd_backgrounds_set_background (HDBackgrounds *backgrounds,
                                guint          view,
-                               const gchar   *uri)
+                               const gchar   *uri,
+                               GSourceFunc    done_callback,
+                               gpointer       cb_data)
 {
+  HDBackgroundsPrivate *priv = backgrounds->priv;
   GFile *file;
 
   g_return_if_fail (HD_IS_BACKGROUNDS (backgrounds));
@@ -1398,6 +1450,31 @@ hd_backgrounds_set_background (HDBackgrounds *backgrounds,
                             TRUE);
 
   g_object_unref (file);
+
+  if (done_callback)
+    {
+      g_mutex_lock (priv->mutex);
+      if (pending_requests (backgrounds))
+        {
+          /* Call previous callback if not called yet */
+          if (priv->change_request_cb)
+            priv->change_request_cb (priv->cb_data);
+          /* Store new callback to be called */
+          priv->change_request_cb = done_callback;
+          priv->cb_data = cb_data;
+        }
+      else
+        {
+          /* Call previous callback and clear it if not called yet */
+          if (priv->change_request_cb)
+            priv->change_request_cb (priv->cb_data);
+          priv->change_request_cb = NULL;
+          priv->cb_data = NULL;
+          /* Call current callback */
+          done_callback (cb_data);
+        }
+      g_mutex_unlock (priv->mutex);
+    }
 }
 
 const gchar *
