@@ -1,4 +1,4 @@
-hildon-home (0.3.33~unreleased) unstable; urgency=low
+hildon-home (0.3.33) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#120367 - hildon-home-76CD-11 crash observed while in layout mode
@@ -6,7 +6,7 @@ hildon-home (0.3.33~unreleased) unstable; urgency=low
   Kimmo:
   * Exit on shutdown_ind signal.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  4 Jun 2009 16:07:16 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 15 Jun 2009 09:20:07 +0300
 
 hildon-home (0.3.32) unstable; urgency=low
 
