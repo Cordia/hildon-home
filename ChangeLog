@@ -1,3 +1,9 @@
+2009-06-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.34
+
+	* configure.ac: 0.3.34
+
 2009-06-15  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#120367 - hildon-home-76CD-11 crash observed while in layout
