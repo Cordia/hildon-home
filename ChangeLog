@@ -1,3 +1,10 @@
+2009-06-17  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#120369 - theme is not applied in layoutmode after flash
+
+	* src/hd-hildon-home-dbus.c: Create menu when intialized instead of
+	when it is first shown, so it gets notified about theme changes.
+
 2009-06-15  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.34
