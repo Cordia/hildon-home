@@ -1,3 +1,9 @@
+2009-06-22  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.35
+
+	* configure.ac: 0.3.35
+
 2009-06-17  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#120369 - theme is not applied in layoutmode after flash

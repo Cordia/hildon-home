@@ -1,3 +1,10 @@
+hildon-home (0.3.35) unstable; urgency=low
+
+  Jan Arne:
+  * Fixes: NB#120369 - theme is not applied in layoutmode after flash
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 22 Jun 2009 10:20:00 +0300
+
 hildon-home (0.3.34) unstable; urgency=low
 
   Jan Arne:
