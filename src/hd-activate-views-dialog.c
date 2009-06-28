@@ -346,8 +346,8 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
 /*                "size-request-policy", HILDON_SIZE_REQUEST_CHILDREN, */
                 NULL);
   gtk_widget_show (pannable);
-  hildon_pannable_area_add_with_viewport (HILDON_PANNABLE_AREA (pannable),
-                                          priv->icon_view);
+  gtk_container_add (GTK_CONTAINER (pannable),
+                     priv->icon_view);
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox),
 /*                     priv->icon_view); */
                     pannable);

@@ -56,8 +56,6 @@ struct _HDAppletManagerPrivate
 
   GHashTable *installed;
 
-  GHashTable *replaced_modules;
-
   GKeyFile *applets_key_file;
 };
 
@@ -266,13 +264,11 @@ plugin_module_added_cb (HDPluginConfiguration *pc,
 {
   HDAppletManagerPrivate *priv = manager->priv;
 
-  /* Check if the widget was previously removed */
-  if (!g_hash_table_lookup (priv->replaced_modules,
+  /* Install new applet if not installed yet */
+  if (!g_hash_table_lookup (priv->displayed_applets,
                             desktop_file))
-    {
-      hd_applet_manager_install_applet_from_desktop_file (manager,
-                                                          desktop_file);
-    }
+    hd_applet_manager_install_applet_from_desktop_file (manager,
+                                                        desktop_file);
 }
 
 static void
@@ -281,10 +277,56 @@ plugin_module_removed_cb (HDPluginConfiguration *pc,
                           HDAppletManager       *manager)
 {
   HDAppletManagerPrivate *priv = manager->priv;
+  gchar **groups;
+  guint i;
+  gboolean changed = FALSE;
+  GError *error = NULL;
 
-  g_hash_table_insert (priv->replaced_modules,
-                       g_strdup (desktop_file),
-                       GUINT_TO_POINTER (1));
+  /* 
+   * Iterate over all groups and remove plugin instance of the removed module
+   * from the configuration. (the plugins itself are automatically removed)
+   */
+  groups = g_key_file_get_groups (priv->applets_key_file, NULL);
+
+  for (i = 0; groups && groups[i]; i++)
+    {
+      gchar *desktop_file_value;
+
+      desktop_file_value = g_key_file_get_string (priv->applets_key_file,
+                                                  groups[i],
+                                                  ITEMS_KEY_DESKTOP_FILE,
+                                                  &error);
+      if (error)
+        {
+          g_warning ("%s. Group %s from widgets key file does not contain X-Desktop-File key. %s",
+                     __FUNCTION__,
+                     groups[i],
+                     error->message);
+          g_clear_error (&error);
+        }
+
+      if (!g_strcmp0 (desktop_file_value, desktop_file))
+        {
+          changed = TRUE;
+
+          g_key_file_remove_group (priv->applets_key_file,
+                                   groups[i],
+                                   &error);
+          if (error)
+            {
+              g_warning ("%s. Could not remove group %s from widgets key file. %s",
+                         __FUNCTION__,
+                         groups[i],
+                         error->message);
+              g_clear_error (&error);
+            }
+        }
+    }
+
+  g_strfreev (groups);
+
+  if (changed)
+    hd_plugin_configuration_store_items_key_file (HD_PLUGIN_CONFIGURATION (priv->plugin_manager));
 }
 
 static gboolean
@@ -309,7 +351,6 @@ hd_applet_manager_init (HDAppletManager *manager)
   priv->used_ids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   priv->installed = g_hash_table_new_full (g_str_hash, g_str_equal,
                                            g_free, (GDestroyNotify) hd_plugin_info_free);
-  priv->replaced_modules = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
   priv->model = GTK_TREE_MODEL (gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING));
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
@@ -357,9 +398,6 @@ hd_applet_manager_finalize (GObject *object)
 
   if (priv->installed)
     priv->installed = (g_hash_table_destroy (priv->installed), NULL);
-
-  if (priv->replaced_modules)
-    priv->replaced_modules = (g_hash_table_destroy (priv->replaced_modules), NULL);
 
   if  (priv->applets_key_file)
     priv->applets_key_file = (g_key_file_free (priv->applets_key_file), NULL);
