@@ -4,7 +4,7 @@ hildon-home (0.3.36) unstable; urgency=low
   * Fixes: NB#110233 - Possible memory leak in hildon-home
   * Fixes for update of libhildondesktop regarding NB#123171 and NB#123195.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 22 Jun 2009 10:21:44 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 29 Jun 2009 10:13:24 +0300
 
 hildon-home (0.3.35) unstable; urgency=low
 
