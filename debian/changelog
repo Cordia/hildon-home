@@ -1,3 +1,9 @@
+hildon-home (0.3.37~unreleased) unstable; urgency=low
+
+  * foo
+
+ -- Aapo Kojo <aapo.kojo@nokia.com>  Mon, 29 Jun 2009 10:18:47 +0300
+
 hildon-home (0.3.36) unstable; urgency=low
 
   Jan Arne:

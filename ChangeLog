@@ -1,3 +1,7 @@
+2009-06-20  Aapo Kojo <aapo.kojo@nokia.com>
+
+	Released 0.3.36
+
 2009-06-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#110233 - Possible memory leak in hildon-home
