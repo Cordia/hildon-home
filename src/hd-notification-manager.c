@@ -393,16 +393,19 @@ hd_notification_manager_db_prepare (HDNotificationManager *nm,
   if (G_UNLIKELY (!nm->priv->prepared_statements))
     /* We can use `direct' operations on the key because we know
      * they will be string literals. */
-    nm->priv->prepared_statements = g_hash_table_new_full(
-                                   g_direct_hash, g_direct_equal,
-                                   NULL, (GDestroyNotify)sqlite3_finalize);
+    nm->priv->prepared_statements = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                                           NULL, (GDestroyNotify) sqlite3_finalize);
   else if ((stmt = g_hash_table_lookup (nm->priv->prepared_statements, sql)))
     return stmt;
 
   g_return_val_if_fail (nm->priv->db != NULL, NULL);
   if ((ret = sqlite3_prepare_v2 (nm->priv->db, sql, -1,
                                  &stmt, NULL)) != SQLITE_OK)
-    g_critical("sqlite3_prepare_v2(%s): %d", sql, ret);
+    g_critical ("sqlite3_prepare_v2(%s): %d", sql, ret);
+
+  g_hash_table_insert (nm->priv->prepared_statements,
+                       (gpointer) sql,
+                       stmt);
 
   return stmt;
 }
@@ -1304,6 +1307,7 @@ hd_notification_manager_notify (HDNotificationManager *nm,
                                              sender);
         }
 
+      g_strfreev (actions_copy);
       g_object_unref (notification);
       g_free (sender);
     }

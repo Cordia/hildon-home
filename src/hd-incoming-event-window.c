@@ -432,7 +432,9 @@ hd_incoming_event_window_dispose (GObject *object)
 static void
 hd_incoming_event_window_finalize (GObject *object)
 {
-  /* HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (object)->priv; */
+  HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW (object)->priv;
+
+  priv->destination = (g_free (priv->destination), NULL);
 
   G_OBJECT_CLASS (hd_incoming_event_window_parent_class)->finalize (object);
 }

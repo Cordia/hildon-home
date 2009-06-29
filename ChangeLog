@@ -1,5 +1,18 @@
 2009-06-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#110233 - Possible memory leak in hildon-home
+
+	* src/hd-incoming-event-window.c (hd_incoming_event_window_finalize):
+	Fix leaking prov->destination.
+
+	* src/hd-notification-manager.c (hd_notification_manager_db_prepare):
+	Fix leaking sqlite prepared statements. Really reuse them.
+	  (hd_notification_manager_notify): Fix leaking actions_copy.
+
+	* debian/changelog: Update.
+
+2009-06-29  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes for update of libhildondesktop regarding NB#123171 and
 	NB#123195.
 
