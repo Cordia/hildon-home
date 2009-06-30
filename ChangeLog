@@ -1,5 +1,12 @@
 2009-06-30  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-notification-manager.c (hd_notification_manager_load_row,
+	  hd_notification_manager_db_load, hd_notification_manager_db_exec,
+	  hd_notification_manager_db_create): Fix wrong g_free of sqlite3
+	  errors. FIx crashes.
+
+2009-06-30  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#122957 - There is warning message in console when engine
 	cannot load bookmark file
 

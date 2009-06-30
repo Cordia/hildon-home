@@ -291,7 +291,7 @@ hd_notification_manager_load_row (void *data,
                     &error) != SQLITE_OK)
     {
       g_warning ("Unable to load actions: %s", error);
-      g_free (error);
+      sqlite3_free (error);
     }
 
   sqlite3_free (sql);
@@ -316,7 +316,7 @@ hd_notification_manager_load_row (void *data,
                     &error) != SQLITE_OK)
     {
       g_warning ("Unable to load hints: %s", error);
-      g_free (error);
+      sqlite3_free (error);
     }
 
   sqlite3_free (sql);
@@ -353,7 +353,7 @@ hd_notification_manager_db_load (HDNotificationManager *nm)
                     &error) != SQLITE_OK)
     {
       g_warning ("Unable to load notifications: %s", error);
-      g_free (error);
+      sqlite3_free (error);
     }
 }
 
@@ -368,8 +368,11 @@ hd_notification_manager_db_exec (HDNotificationManager *nm,
 
   if (sqlite3_exec (nm->priv->db, sql, NULL, 0, &error) != SQLITE_OK)
     {
-      g_warning ("Unable to execute the query: %s", error);
-      g_free (error);
+      g_warning ("%s. Unable to execute the query %s: %s",
+                 __FUNCTION__,
+                 sql,
+                 error);
+      sqlite3_free (error);
 
       return SQLITE_ERROR;
     }
@@ -605,7 +608,11 @@ hd_notification_manager_db_create (HDNotificationManager *nm)
     }
 
   sqlite3_free_table (results);
-  g_free (error);
+  if (error)
+    {
+      g_warning ("%s: SQL error: %s", __func__, error);
+      sqlite3_free (error);
+    }
 
   return result; 
 }
