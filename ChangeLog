@@ -1,3 +1,14 @@
+2009-06-30  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#122957 - There is warning message in console when engine
+	cannot load bookmark file
+
+	* src/hd-bookmark-manager.c
+	  (hd_bookmark_manager_monitor_bookmark_files): Do not use operator
+	  bookmark file.
+
+	* debian/changelog: Update.
+
 2009-06-29  Aapo Kojo <aapo.kojo@nokia.com>
 
 	Released 0.3.36
