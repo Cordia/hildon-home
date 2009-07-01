@@ -1,10 +1,10 @@
-hildon-home (0.3.37~unreleased) unstable; urgency=low
+hildon-home (0.3.37) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#122957 - There is warning message in console when engine cannot
     load bookmark file
 
- -- Aapo Kojo <aapo.kojo@nokia.com>  Mon, 29 Jun 2009 10:18:47 +0300
+ -- Aapo Kojo <aapo.kojo@nokia.com>  Wed, 01 Jul 2009 14:22:45 +0300
 
 hildon-home (0.3.36) unstable; urgency=low
 
