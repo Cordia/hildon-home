@@ -1,6 +1,7 @@
 hildon-home (0.3.38~unreleased) unstable; urgency=low
 
-  * new
+  Jan Arne:
+  * Fixes: NB#123987 - Fix plural localization of notification time
 
  -- Aapo Kojo <aapo.kojo@nokia.com>  Wed, 01 Jul 2009 14:28:36 +0300
 

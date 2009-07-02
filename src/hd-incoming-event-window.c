@@ -230,55 +230,44 @@ hd_incoming_event_window_update_time (HDIncomingEventWindow *window)
 
   difference = current_time - priv->time;
 
-  if (difference < 2 * MINUTE)
+  if (difference < HOUR)
     {
-      time_text = g_strdup (dgettext ("hildon-libs",
-                                      "wdgt_va_ago_one_minute"));
-      timeout = (2 * MINUTE) - difference;
-    }
-  else if (difference < HOUR)
-    {
-      time_text = g_strdup_printf (dgettext ("hildon-libs",
-                                             "wdgt_va_ago_minutes"),
-                                   difference / MINUTE);
+      time_text = g_strdup_printf (dngettext ("hildon-libs",
+                                              "wdgt_va_ago_one_minute",
+                                              "wdgt_va_ago_minutes",
+                                              MAX (difference / MINUTE, 1)),
+                                   MAX (difference / MINUTE, 1));
       timeout = MINUTE - (difference % MINUTE);
-    }
-  else if (difference < (2 * HOUR))
-    {
-      time_text = g_strdup (dgettext ("hildon-libs",
-                                      "wdgt_va_ago_one_hour"));
-      timeout = (2 * HOUR) - difference;
+      g_debug ("%s. n: %ld, difference: %ld, timeout: %ld",
+               __FUNCTION__,
+               MAX (difference / MINUTE, 1),
+               difference,
+               timeout);
     }
   else if (difference < DAY)
     {
-      time_text = g_strdup_printf (dgettext ("hildon-libs",
-                                             "wdgt_va_ago_hours"),
+      time_text = g_strdup_printf (dngettext ("hildon-libs",
+                                              "wdgt_va_ago_one_hour",
+                                              "wdgt_va_ago_hours",
+                                              difference / HOUR),
                                    difference / HOUR);
       timeout = HOUR - (difference % HOUR);
     }
-  else if (difference < 2 * DAY)
-    {
-      time_text = g_strdup (dgettext ("hildon-libs",
-                                      "wdgt_va_ago_one_day"));
-      timeout = 2 * DAY - difference;
-    }
   else if (difference < YEAR)
     {
-      time_text = g_strdup_printf (dgettext ("hildon-libs",
-                                             "wdgt_va_ago_days"),
+      time_text = g_strdup_printf (dngettext ("hildon-libs",
+                                              "wdgt_va_ago_one_day",
+                                              "wdgt_va_ago_days",
+                                              difference / DAY),
                                    difference / DAY);
       timeout = DAY - (difference % DAY);
     }
-  else if (difference < 2 * YEAR)
-    {
-      time_text = g_strdup (dgettext ("hildon-libs",
-                                      "wdgt_va_ago_one_year"));
-      timeout = 2 * YEAR - difference;
-    }
   else
     {
-      time_text = g_strdup_printf (dgettext ("hildon-libs",
-                                             "wdgt_va_ago_years"),
+      time_text = g_strdup_printf (dngettext ("hildon-libs",
+                                              "wdgt_va_ago_one_year",
+                                              "wdgt_va_ago_years",
+                                              difference / YEAR),
                                    difference / YEAR);
       timeout = YEAR - (difference % YEAR);
     }
