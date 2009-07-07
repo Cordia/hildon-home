@@ -1,4 +1,4 @@
-hildon-home (0.3.38~unreleased) unstable; urgency=low
+hildon-home (0.3.38) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#123987 - Fix plural localization of notification time
