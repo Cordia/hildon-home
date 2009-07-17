@@ -1,6 +1,8 @@
 hildon-home (0.3.39~unreleased) unstable; urgency=low
 
-  * new
+  Kimmo:
+  * Have the Notifications interface on the system bus as well. Needed for
+    newest changes in ke-recv.
 
  -- Aapo Kojo <aapo.kojo@nokia.com>  Tue, 07 Jul 2009 13:27:37 +0300
 

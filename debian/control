@@ -15,6 +15,6 @@ Package: hildon-home-dbg
 Section: devel
 Architecture: any
 Priority: extra
-Depends: hildon-home (= ${binary:Version})
+Depends: hildon-home (= ${Source-Version})
 Description: Debug symbols for Home application
 

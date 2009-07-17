@@ -83,7 +83,7 @@ static guint signals[N_SIGNALS];
 
 struct _HDNotificationManagerPrivate
 {
-  DBusGConnection *connection;
+  DBusGConnection *connection, *sys_conn;
   GMutex          *mutex;
   guint            current_id;
   GHashTable      *notifications;
@@ -869,9 +869,57 @@ rollback:
 }
 
 static void
-hd_notification_manager_init (HDNotificationManager *nm)
+hd_notification_manager_setup_interface (HDNotificationManager *nm,
+                                         DBusGConnection *conn)
 {
   DBusGProxy *bus_proxy;
+  guint result;
+  GError *error = NULL;
+
+  bus_proxy = dbus_g_proxy_new_for_name (conn,
+                                         DBUS_SERVICE_DBUS,
+                                         DBUS_PATH_DBUS,
+                                         DBUS_INTERFACE_DBUS);
+
+  if (!org_freedesktop_DBus_request_name (bus_proxy,
+                                          HD_NOTIFICATION_MANAGER_DBUS_NAME,
+                                          DBUS_NAME_FLAG_ALLOW_REPLACEMENT |
+                                          DBUS_NAME_FLAG_REPLACE_EXISTING |
+                                          DBUS_NAME_FLAG_DO_NOT_QUEUE,
+                                          &result, 
+                                          &error))
+    {
+      g_warning ("Could not register name: %s", error->message);
+      g_error_free (error);
+      return;
+    }
+
+  g_object_unref (bus_proxy);
+
+  if (result == DBUS_REQUEST_NAME_REPLY_EXISTS)
+    {
+      g_warning ("%s. %s already exists",
+                 __FUNCTION__,
+                 HD_NOTIFICATION_MANAGER_DBUS_NAME);
+      return;
+    }
+
+  if (result == DBUS_REQUEST_NAME_REPLY_IN_QUEUE)
+    {
+      g_warning ("%s. %s already exists",
+                 __FUNCTION__,
+                 HD_NOTIFICATION_MANAGER_DBUS_NAME);
+      return;
+    }
+
+  dbus_g_connection_register_g_object (conn,
+                                       HD_NOTIFICATION_MANAGER_DBUS_PATH,
+                                       G_OBJECT (nm));
+}
+
+static void
+hd_notification_manager_init (HDNotificationManager *nm)
+{
   GError *error = NULL;
   gchar *config_dir;
   guint result;
@@ -888,65 +936,31 @@ hd_notification_manager_init (HDNotificationManager *nm)
                                                    (GDestroyNotify) g_object_unref);
 
   nm->priv->connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-
   if (error != NULL)
     {
-      g_warning ("Failed to open connection to bus: %s\n",
+      g_warning ("Failed to open connection to session bus: %s\n",
                  error->message);
-
       g_error_free (error);
-
       return;
     }
 
-  bus_proxy = dbus_g_proxy_new_for_name (nm->priv->connection,
-                                         DBUS_SERVICE_DBUS,
-                                         DBUS_PATH_DBUS,
-                                         DBUS_INTERFACE_DBUS);
-
-  if (!org_freedesktop_DBus_request_name (bus_proxy,
-                                          HD_NOTIFICATION_MANAGER_DBUS_NAME,
-                                          DBUS_NAME_FLAG_ALLOW_REPLACEMENT |
-                                          DBUS_NAME_FLAG_REPLACE_EXISTING |
-                                          DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                                          &result, 
-                                          &error))
+  nm->priv->sys_conn = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
+  if (error != NULL)
     {
-      g_warning ("Could not register name: %s", error->message);
-
+      g_warning ("Failed to open connection to system bus: %s\n",
+                 error->message);
       g_error_free (error);
-
-      return;
-    }
-
-  g_object_unref (bus_proxy);
-
-  if (result == DBUS_REQUEST_NAME_REPLY_EXISTS)
-    {
-      g_warning ("%s. %s already exists",
-                 __FUNCTION__,
-                 HD_NOTIFICATION_MANAGER_DBUS_NAME);
-
-      return;
-    }
-
-  if (result == DBUS_REQUEST_NAME_REPLY_IN_QUEUE)
-    {
-      g_warning ("%s. %s already exists",
-                 __FUNCTION__,
-                 HD_NOTIFICATION_MANAGER_DBUS_NAME);
-
       return;
     }
 
   dbus_g_object_type_install_info (HD_TYPE_NOTIFICATION_MANAGER,
-                                   &dbus_glib_hd_notification_manager_object_info);
+                    &dbus_glib_hd_notification_manager_object_info);
 
-  dbus_g_connection_register_g_object (nm->priv->connection,
-                                       HD_NOTIFICATION_MANAGER_DBUS_PATH,
-                                       G_OBJECT (nm));
+  hd_notification_manager_setup_interface (nm, nm->priv->connection);
+  hd_notification_manager_setup_interface (nm, nm->priv->sys_conn);
 
-  g_debug ("%s registered to session bus at %s", HD_NOTIFICATION_MANAGER_DBUS_NAME, HD_NOTIFICATION_MANAGER_DBUS_PATH);
+  g_debug ("%s registered to dbus at %s", HD_NOTIFICATION_MANAGER_DBUS_NAME,
+           HD_NOTIFICATION_MANAGER_DBUS_PATH);
 
   nm->priv->db = NULL;
 
