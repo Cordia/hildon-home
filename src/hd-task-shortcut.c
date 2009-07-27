@@ -27,28 +27,20 @@
 
 #include <gtk/gtk.h>
 #include <hildon/hildon.h>
-#include <dbus/dbus.h>
 
-#include <glib/gi18n.h>
-
+#include "hd-cairo-surface-cache.h"
 #include "hd-task-manager.h"
-
 #include "hd-task-shortcut.h"
 
 /* Layout from Task navigation layout guide 1.2 */
-#define SHORTCUT_WIDTH 142
-#define SHORTCUT_HEIGHT 100
-
+#define SHORTCUT_WIDTH 96
+#define SHORTCUT_HEIGHT 96
 #define ICON_WIDTH 64
 #define ICON_HEIGHT 64
 
-#define ICON_BORDER HILDON_MARGIN_HALF
-
-#define BORDER_WIDTH HILDON_MARGIN_DEFAULT
-
-#define LABEL_WIDTH SHORTCUT_WIDTH
-
-#define LABEL_COLOR "DefaultTextColor"
+#define IMAGES_DIR                   "/etc/hildon/theme/images/"
+#define BACKGROUND_IMAGE_FILE        IMAGES_DIR "ApplicationShortcutApplet.png"
+#define BACKGROUND_ACTIVE_IMAGE_FILE IMAGES_DIR "ApplicationShortcutAppletPressed.png"
 
 /* Private definitions */
 #define HD_TASK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
@@ -57,10 +49,12 @@
 
 struct _HDTaskShortcutPrivate
 {
-  GtkWidget *label;
   GtkWidget *icon;
 
   gboolean button_pressed;
+
+  cairo_surface_t *bg_image;
+  cairo_surface_t *bg_active;
 };
 
 G_DEFINE_TYPE (HDTaskShortcut, hd_task_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
@@ -71,14 +65,10 @@ hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
 {
   HDTaskShortcutPrivate *priv = shortcut->priv;
   gchar *desktop_id;
-  const gchar *icon_name, *label;
+  const gchar *icon_name;
   GdkPixbuf *pixbuf = NULL;
 
   desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
-
-  label = hd_task_manager_get_label (manager, desktop_id);
-  gtk_label_set_text (GTK_LABEL (priv->label),
-                      label);
 
   icon_name = hd_task_manager_get_icon (manager, desktop_id);
  
@@ -141,10 +131,14 @@ hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
         }
     }
 
-  gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon),
-                             pixbuf);
+  if (pixbuf)
+    {
+      gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon),
+                                 pixbuf);
+      g_object_unref (pixbuf);
+    }
 
-  if (label || icon_name)
+  if (icon_name)
     gtk_widget_show (GTK_WIDGET (shortcut));
   else
     gtk_widget_hide (GTK_WIDGET (shortcut));
@@ -200,6 +194,20 @@ hd_task_shortcut_constructed (GObject *object)
 }
 
 static void
+hd_task_shortcut_dispose (GObject *object)
+{
+  HDTaskShortcutPrivate *priv = HD_TASK_SHORTCUT (object)->priv;
+ 
+  if (priv->bg_image)
+    priv->bg_image = (cairo_surface_destroy (priv->bg_image), NULL);
+
+  if (priv->bg_active)
+    priv->bg_active = (cairo_surface_destroy (priv->bg_active), NULL);
+
+  G_OBJECT_CLASS (hd_task_shortcut_parent_class)->dispose (object);
+}
+
+static void
 hd_task_shortcut_finalize (GObject *object)
 {
   G_OBJECT_CLASS (hd_task_shortcut_parent_class)->finalize (object);
@@ -238,15 +246,29 @@ static gboolean
 hd_task_shortcut_expose_event (GtkWidget *widget,
                                GdkEventExpose *event)
 {
+  HDTaskShortcutPrivate *priv = HD_TASK_SHORTCUT (widget)->priv; 
   cairo_t *cr;
+  cairo_surface_t *bg;
 
   cr = gdk_cairo_create (GDK_DRAWABLE (widget->window));
   gdk_cairo_region (cr, event->region);
   cairo_clip (cr);
+  
+  if (priv->button_pressed)
+    bg = priv->bg_active;
+  else
+    bg = priv->bg_image;
 
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
   cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
   cairo_paint (cr);
+
+  if (bg)
+    {
+      cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+      cairo_set_source_surface (cr, bg, 0.0, 0.0);
+      cairo_paint (cr);
+    }
 
   cairo_destroy (cr);
 
@@ -264,18 +286,11 @@ hd_task_shortcut_class_init (HDTaskShortcutClass *klass)
   home_plugin_class->get_applet_id = hd_task_shortcut_get_applet_id;
 
   object_class->constructed = hd_task_shortcut_constructed;
+  object_class->dispose = hd_task_shortcut_dispose;
   object_class->finalize = hd_task_shortcut_finalize;
 
   widget_class->realize = hd_task_shortcut_realize;
   widget_class->expose_event = hd_task_shortcut_expose_event;
-
-  /* Add shadow to label */
-  gtk_rc_parse_string ("style \"HDTaskShortcut-Label\" = \"osso-color-themeing\" {\n"
-                       "  fg[NORMAL] = \"#FFFFFF\"\n"
-                       "  engine \"sapwood\" {\n"
-                       "    shadowcolor = \"#000000\"\n"
-                       "  }\n"
-                       "} widget \"*.HDTaskShortcut-Label\" style \"HDTaskShortcut-Label\"");
 
   g_type_class_add_private (klass, sizeof (HDTaskShortcutPrivate));
 }
@@ -290,6 +305,8 @@ button_press_event_cb (GtkWidget      *widget,
   if (event->button == 1)
     {
       priv->button_pressed = TRUE;
+
+      gtk_widget_queue_draw (widget);
 
       return TRUE;
     }
@@ -310,6 +327,8 @@ button_release_event_cb (GtkWidget      *widget,
       gchar *desktop_id;
 
       priv->button_pressed = FALSE;
+
+      gtk_widget_queue_draw (widget);
 
       desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
 
@@ -333,6 +352,8 @@ leave_notify_event_cb (GtkWidget        *widget,
 
   priv->button_pressed = FALSE;
 
+  gtk_widget_queue_draw (widget);
+
   return FALSE;
 }
 
@@ -340,8 +361,7 @@ static void
 hd_task_shortcut_init (HDTaskShortcut *applet)
 {
   HDTaskShortcutPrivate *priv;
-  GtkWidget *vbox, *alignment;
-  GtkStyle *font_style;
+  GtkWidget *alignment;
 
   priv = HD_TASK_SHORTCUT_GET_PRIVATE (applet);
   applet->priv = priv;
@@ -357,48 +377,23 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   g_signal_connect (applet, "leave-notify-event",
                     G_CALLBACK (leave_notify_event_cb), applet);
 
-  vbox = gtk_vbox_new (FALSE, 0);
-  gtk_widget_show (vbox);
-
   alignment = gtk_alignment_new (0.5, 0.5, 0.0, 0.0);
   gtk_widget_show (alignment);
-  gtk_widget_set_size_request (alignment, ICON_WIDTH + (ICON_BORDER * 2), ICON_HEIGHT + (ICON_BORDER * 2));
-  gtk_container_set_border_width (GTK_CONTAINER (alignment), ICON_BORDER);
-
-  priv->label = gtk_label_new (NULL);
-  gtk_widget_set_name (priv->label, "HDTaskShortcut-Label");
-  gtk_widget_show (priv->label);
-  gtk_widget_set_size_request (priv->label, LABEL_WIDTH, -1);
-  /* Set font size of label to 5/6 of the SystemFont size (that is 15) */
-  font_style = gtk_rc_get_style_by_paths (gtk_settings_get_default (),
-                                          "SystemFont", NULL, G_TYPE_NONE);
-  if (font_style != NULL)
-    {
-      PangoFontDescription *font_desc = font_style->font_desc;
-
-      if (font_desc != NULL)
-        {
-          font_desc = pango_font_description_copy_static (font_desc);
-
-          pango_font_description_set_size (font_desc, (int)
-                                           (pango_font_description_get_size (font_desc) * 5.0 / 6.0));
-
-          gtk_widget_modify_font (priv->label, font_desc);
-
-          pango_font_description_free (font_desc);
-        }
-    }
 
   priv->icon = gtk_image_new ();
   gtk_widget_show (priv->icon);
   gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), ICON_WIDTH);
   gtk_widget_set_size_request (priv->icon, ICON_WIDTH, ICON_HEIGHT);
 
-  gtk_container_add (GTK_CONTAINER (applet), vbox);
-  gtk_box_pack_start (GTK_BOX (vbox), alignment, FALSE, FALSE, 0);
+  gtk_container_add (GTK_CONTAINER (applet), alignment);
   gtk_container_add (GTK_CONTAINER (alignment), priv->icon);
-  gtk_box_pack_start (GTK_BOX (vbox), priv->label, TRUE, TRUE, 0);
 
-  gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH + (BORDER_WIDTH * 2), SHORTCUT_HEIGHT + (BORDER_WIDTH * 2));
-  gtk_container_set_border_width (GTK_CONTAINER (applet), BORDER_WIDTH);
+  gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
+
+  priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                       BACKGROUND_IMAGE_FILE);
+  priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                        BACKGROUND_ACTIVE_IMAGE_FILE);
+  g_signal_connect_object (hd_cairo_surface_cache_get (), "changed",
+                           G_CALLBACK (gtk_widget_queue_draw), applet, G_CONNECT_SWAPPED);
 }

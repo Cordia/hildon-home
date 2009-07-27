@@ -4,6 +4,10 @@ hildon-home (0.3.39~unreleased) unstable; urgency=low
   * Have the Notifications interface on the system bus as well. Needed for
     newest changes in ke-recv.
 
+  Jan Arne:
+  * Fixes: NB#129876 - App shortcuts on the Desktop not according to latest
+    spec
+
  -- Aapo Kojo <aapo.kojo@nokia.com>  Tue, 07 Jul 2009 13:27:37 +0300
 
 hildon-home (0.3.38) unstable; urgency=low

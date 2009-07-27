@@ -1,3 +1,11 @@
+2009-07-27  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#129876 - App shortcuts on the Desktop not according to
+	latest spec
+
+	* src/hd-task-shortcut.c: Remove label. Add background image. Fix
+	leaked pixbuf.
+
 2009-07-17  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	* src/hd-notification-manager.c
