@@ -33,6 +33,7 @@
 
 #include <dbus/dbus-glib-bindings.h>
 #include <mce/dbus-names.h>
+#include <mce/mode-names.h>
 
 #include <osso-mem.h>
 
@@ -130,6 +131,8 @@ struct _HDIncomingEventsPrivate
   HDPluginManager *plugin_manager;
 
   DBusGProxy      *mce_proxy;
+
+  gboolean         device_locked;
 };
 
 G_DEFINE_TYPE (HDIncomingEvents, hd_incoming_events, G_TYPE_OBJECT);
@@ -805,6 +808,21 @@ show_preview_window (HDIncomingEvents *ie)
   if (priv->preview_window || !priv->preview_list)
     return;
 
+  /* If device is locked do not show preview windows but just add
+   * notifications to switcher */
+  if (priv->device_locked)
+    {
+      while (priv->preview_list)
+        {
+          ns = priv->preview_list->data;
+          priv->preview_list = g_list_delete_link (priv->preview_list,
+                                                   priv->preview_list);
+          notifications_add_to_switcher (ns);
+        }
+
+      return;
+    }
+
   /* Pop first notification from preview ns */
   ns = priv->preview_list->data;
   priv->preview_list = g_list_delete_link (priv->preview_list,
@@ -1258,6 +1276,90 @@ load_plugins_idle (gpointer data)
   return FALSE;
 }
 
+static DBusHandlerResult
+hd_incoming_events_system_bus_signal_handler (DBusConnection *conn,
+                                              DBusMessage    *msg,
+                                              void           *data)
+{
+  HDIncomingEventsPrivate *priv = HD_INCOMING_EVENTS (data)->priv;
+
+  if (dbus_message_is_signal(msg,
+                             MCE_SIGNAL_IF,
+                             MCE_DEVLOCK_MODE_SIG))
+    {
+      DBusMessageIter iter;
+
+      if (dbus_message_iter_init (msg, &iter))
+        if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING)
+          {
+            const char *value;
+            gboolean locked = FALSE;
+
+            dbus_message_iter_get_basic(&iter, &value);
+            if (strcmp (value, MCE_DEVICE_LOCKED) == 0)
+              locked = TRUE;
+            else if (strcmp (value, MCE_DEVICE_UNLOCKED) == 0)
+              locked = FALSE;
+            else
+              g_warning ("%s. Unknown value %s for signal %s.%s",
+                         __FUNCTION__,
+                         value,
+                         MCE_SIGNAL_IF,
+                         MCE_DEVLOCK_MODE_SIG);
+
+            priv->device_locked = locked;
+            if (priv->device_locked && priv->preview_window)
+              gtk_dialog_response (GTK_DIALOG (priv->preview_window),
+                                   GTK_RESPONSE_DELETE_EVENT);
+          }
+    }
+
+  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+
+static void
+devlock_mode_get_notify (DBusGProxy       *proxy,
+                         DBusGProxyCall   *call,
+                         HDIncomingEvents *ie)
+{
+  HDIncomingEventsPrivate *priv = ie->priv;
+  const gchar *value;
+  GError *error = NULL;
+
+  if (dbus_g_proxy_end_call (proxy,
+                             call,
+                             &error,
+                             G_TYPE_STRING, &value,
+                             G_TYPE_INVALID))
+    {
+      gboolean locked = FALSE;
+
+      if (strcmp (value, MCE_DEVICE_LOCKED) == 0)
+        locked = TRUE;
+      else if (strcmp (value, MCE_DEVICE_UNLOCKED) == 0)
+        locked = FALSE;
+      else
+        g_warning ("%s. Unknown value %s for method %s.%s",
+                   __FUNCTION__,
+                   value,
+                   MCE_REQUEST_IF,
+                   MCE_DEVLOCK_MODE_GET);
+
+      priv->device_locked = locked;
+      if (priv->device_locked && priv->preview_window)
+        gtk_dialog_response (GTK_DIALOG (priv->preview_window),
+                             GTK_RESPONSE_DELETE_EVENT);
+    }
+  else
+    {
+      g_warning ("%s. Error calling devlock_mode_get. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_error_free (error);
+    }
+}
+
 static void
 hd_incoming_events_init (HDIncomingEvents *ie)
 {
@@ -1304,10 +1406,31 @@ hd_incoming_events_init (HDIncomingEvents *ie)
     }
   else
     {
+      DBusConnection *sysbus_conn;
+
       priv->mce_proxy = dbus_g_proxy_new_for_name (connection,
                                                    MCE_SERVICE,
                                                    MCE_REQUEST_PATH,
                                                    MCE_REQUEST_IF);
+
+      /* The proxy for signals */
+      sysbus_conn = dbus_g_connection_get_connection (connection);
+      
+      dbus_bus_add_match (sysbus_conn, "type='signal', interface='"
+                          MCE_SIGNAL_IF "'", NULL);
+      dbus_connection_add_filter (sysbus_conn,
+                                  hd_incoming_events_system_bus_signal_handler,
+                                  ie,
+                                  NULL);
+
+      /* Get current lock mode */
+      dbus_g_proxy_begin_call (priv->mce_proxy,
+                               MCE_DEVLOCK_MODE_GET,
+                               (DBusGProxyCallNotify) devlock_mode_get_notify,
+                               g_object_ref (ie),
+                               (GDestroyNotify) g_object_unref,
+                               G_TYPE_INVALID);
+
       g_debug ("%s. Got mce Proxy", __FUNCTION__);
     }
 }

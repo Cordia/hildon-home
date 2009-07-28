@@ -1,3 +1,15 @@
+2009-07-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#124888 - Notifications are shown on a locked device
+
+	* src/hd-incoming-events.c (_HDIncomingEventsPrivate::device_locked):
+	  Add device locked field.
+	  (show_preview_window): Do not show preview windows when device is
+	  locked.
+	  (hd_incoming_events_system_bus_signal_handler,
+	  devlock_mode_get_notify, hd_incoming_events_init): Listen to mce for
+	  device locking/unlocking.
+
 2009-07-27  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#129876 - App shortcuts on the Desktop not according to
