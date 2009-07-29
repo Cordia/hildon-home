@@ -1,3 +1,10 @@
+2009-07-29  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#130489 - moving Hildon-Home start forward
+
+	* debian/rules: use 18 instead of 20 for hildon-home session start
+	script priority.
+
 2009-07-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#124888 - Notifications are shown on a locked device
