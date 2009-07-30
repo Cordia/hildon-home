@@ -1,4 +1,4 @@
-hildon-home (0.3.39~unreleased) unstable; urgency=low
+hildon-home (0.3.39) unstable; urgency=low
 
   Kimmo:
   * Have the Notifications interface on the system bus as well. Needed for
@@ -10,7 +10,7 @@ hildon-home (0.3.39~unreleased) unstable; urgency=low
   * Fixes: NB#124888 - Notifications are shown on a locked device
   * Fixes: NB#130489 - moving Hildon-Home start forward
 
- -- Aapo Kojo <aapo.kojo@nokia.com>  Tue, 07 Jul 2009 13:27:37 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 30 Jul 2009 10:09:36 +0300
 
 hildon-home (0.3.38) unstable; urgency=low
 

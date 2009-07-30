@@ -1,3 +1,9 @@
+2009-07-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Released 0.3.39
+
+	* configure.ac: 0.3.39
+
 2009-07-29  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#130489 - moving Hildon-Home start forward
