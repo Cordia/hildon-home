@@ -1,3 +1,25 @@
+2009-08-06  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#127303 - Very late or almost unsuccessful ringtone/vibra
+	playback on loaded system
+
+	* com.nokia.HildonSVNotificationDaemon.service.in:
+	* configure.ac:
+	* Makefile.am:
+	* src/Makefile.am:
+	* src/hd-sv-notification-daemon.xml:
+	* src/hd-sv-notification-daemon.c:
+	* src/hd-sv-notification-daemon.h: Add new mlocked daemon for the
+	sound/vibra plugin.
+
+	* debian/hildon-home.install:
+	* debian/hildon-home.xsession:
+	* debian/rules (DEB_CONFIGURE_EXTRA_FLAGS):
+
+	* src/hd-incoming-events.c: Use new daemon to play sound/vibra.
+
+	* debian/changelog: Update.
+
 2009-07-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Released 0.3.39

@@ -6,7 +6,7 @@ hildondesktopconf_DATA = \
 	notification.safe-set   \
 	notification-groups.conf
 
-bin_PROGRAMS = hildon-home
+bin_PROGRAMS = hildon-home hildon-sv-notification-daemon
 
 hildon_home_CFLAGS = \
 	$(HILDON_HOME_CFLAGS)							\
@@ -15,10 +15,11 @@ hildon_home_CFLAGS = \
 	-DHD_APPLICATIONS_DIR=\"$(datadir)/applications/hildon\"		\
 	$(MAEMO_LAUNCHER_CFLAGS)
 
-BUILT_SOURCES =				\
-	hd-hildon-home-dbus-glue.h	\
-	hd-notification-manager-glue.h	\
-	hd-marshal.c			\
+BUILT_SOURCES =				 \
+	hd-hildon-home-dbus-glue.h	 \
+	hd-notification-manager-glue.h	 \
+	hd-sv-notification-daemon-glue.h \
+	hd-marshal.c			 \
 	hd-marshal.h
 
 hd-hildon-home-dbus-glue.h: hd-hildon-home-dbus.xml
@@ -28,6 +29,16 @@ hd-hildon-home-dbus-glue.h: hd-hildon-home-dbus.xml
 
 hd-notification-manager-glue.h: hd-notification-manager.xml
 	$(DBUS_BINDING_TOOL) --prefix=hd_notification_manager --mode=glib-server $< > xgen-$(@F)	\
+	&& ( cmp -s xgen-$(@F) $@ || cp xgen-$(@F) $@ )							\
+	&& rm -f xgen-$(@F)
+
+hd-sv-notification-daemon-glue.h: hd-sv-notification-daemon.xml
+	$(DBUS_BINDING_TOOL) --prefix=hd_sv_notification_daemon --mode=glib-server $< > xgen-$(@F)	\
+	&& ( cmp -s xgen-$(@F) $@ || cp xgen-$(@F) $@ )							\
+	&& rm -f xgen-$(@F)
+
+hd-sv-notification-daemon-client.h: hd-sv-notification-daemon.xml
+	$(DBUS_BINDING_TOOL) --prefix=hd_sv_notification_daemon --mode=glib-client $< > xgen-$(@F)	\
 	&& ( cmp -s xgen-$(@F) $@ || cp xgen-$(@F) $@ )							\
 	&& rm -f xgen-$(@F)
 
@@ -42,7 +53,6 @@ hd-marshal.h: hd-marshal.list
 	&& rm -f xgen-$(@F)
 
 hildon_home_SOURCES = \
-	$(BUILT_SOURCES)		\
 	hd-activate-views-dialog.c	\
 	hd-activate-views-dialog.h	\
 	hd-add-applet-dialog.c		\
@@ -79,9 +89,28 @@ hildon_home_SOURCES = \
 	hd-bookmark-manager.h		\
 	hildon-home.c
 
+nodist_hildon_home_SOURCES = \
+	hd-hildon-home-dbus-glue.h	\
+	hd-notification-manager-glue.h	\
+	hd-marshal.c			\
+	hd-marshal.h
+
 hildon_home_LDFLAGS = \
 	$(HILDON_HOME_LIBS)		\
 	$(MAEMO_LAUNCHER_LIBS)
+
+hildon_sv_notification_daemon_CFLAGS = \
+	$(HILDON_SV_NOTIFICATION_DAEMON_CFLAGS)
+
+hildon_sv_notification_daemon_LDFLAGS = \
+	$(HILDON_SV_NOTIFICATION_DAEMON_LIBS)
+
+hildon_sv_notification_daemon_SOURCES = \
+	hd-sv-notification-daemon.h		\
+	hd-sv-notification-daemon.c
+
+nodist_hildon_sv_notification_daemon_SOURCES = \
+	hd-sv-notification-daemon-glue.h
 
 noinst_PROGRAMS = test-incoming-event
 
@@ -100,7 +129,9 @@ test_incoming_event_SOURCES = \
 	test-incoming-event.c
 
 EXTRA_DIST = \
-	hd-notification-manager.xml
+	hd-notification-manager.xml \
+	hd-hildon-home-dbus.xml \
+	hildon-sv-notification-daemon.xml
 
 CLEANFILES = \
 	$(BUILT_SOURCES)

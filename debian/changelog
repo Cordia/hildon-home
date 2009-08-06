@@ -1,6 +1,8 @@
 hildon-home (0.3.40~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#127303 - Very late or almost unsuccessful ringtone/vibra
+    playback on loaded system
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 30 Jul 2009 10:12:55 +0300
 

@@ -60,6 +60,9 @@
 #define NOTIFICATION_GROUP_KEY_GROUP "Group"
 #define NOTIFICATION_GROUP_KEY_SPLIT_IN_THREADS "Split-In-Threads"
 
+#define HD_SV_NOTIFICATION_DAEMON_DBUS_NAME  "com.nokia.HildonSVNotificationDaemon" 
+#define HD_SV_NOTIFICATION_DAEMON_DBUS_PATH  "/com/nokia/HildonSVNotificationDaemon"
+
 typedef struct _Notifications Notifications;
 
 
@@ -131,6 +134,7 @@ struct _HDIncomingEventsPrivate
   HDPluginManager *plugin_manager;
 
   DBusGProxy      *mce_proxy;
+  DBusGProxy      *sv_daemon_proxy;
 
   gboolean         device_locked;
 };
@@ -889,6 +893,80 @@ preview_list_notifications_cb (Notifications *ns,
 }
 
 static void
+notification_closed_sv_cb (HDNotification   *notification,
+                           HDIncomingEvents *ie)
+{
+  static GQuark quark_id = 0;
+  HDIncomingEventsPrivate *priv = ie->priv;
+  guint id;
+
+  if (G_UNLIKELY (!quark_id))
+    quark_id = g_quark_from_static_string ("hd-sv-notification-id");
+
+  id = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (notification),
+                                             quark_id));
+  if (id)
+    {
+      dbus_g_proxy_call_no_reply (priv->sv_daemon_proxy,
+                                  "StopEvent",
+                                  G_TYPE_INT,
+                                  id,
+                                  G_TYPE_INVALID);
+    }
+  else
+    {
+      g_object_set_qdata (G_OBJECT (notification),
+                          quark_id,
+                          GUINT_TO_POINTER (1));
+    }
+}
+
+static void
+play_event_notify (DBusGProxy     *proxy,
+                   DBusGProxyCall *call,
+                   HDNotification *notification)
+{
+  static GQuark quark_id = 0;
+  guint id;
+  GError *error = NULL;
+
+  if (G_UNLIKELY (!quark_id))
+    quark_id = g_quark_from_static_string ("hd-sv-notification-id");
+
+  if (dbus_g_proxy_end_call (proxy,
+                             call,
+                             &error,
+                             G_TYPE_INT, &id,
+                             G_TYPE_INVALID))
+    {
+      /* If the id is set the notification is
+       * already closed else set the id
+       */
+      if (g_object_get_qdata (G_OBJECT (notification),
+                              quark_id))
+        {
+          dbus_g_proxy_call_no_reply (proxy,
+                                      "StopEvent",
+                                      G_TYPE_INT,
+                                      id,
+                                      G_TYPE_INVALID);
+        }
+      else
+        {
+          g_object_set_qdata (G_OBJECT (notification),
+                              quark_id,
+                              GUINT_TO_POINTER (id));
+        }
+    }
+  else
+    {
+      g_warning ("Error calling PlayEvent. %s", error->message);
+      g_error_free (error);
+    }  
+}
+
+
+static void
 hd_incoming_events_notified (HDNotificationManager  *nm,
                              HDNotification         *notification,
                              gboolean                replayed_event,
@@ -896,7 +974,7 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
 {
   HDIncomingEventsPrivate *priv = ie->priv;
   const gchar *category;
-  guint i;
+/*  guint i; */
   GValue *p;
   const gchar *pattern = NULL;
   Notifications *ns;
@@ -932,13 +1010,37 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
       return;
     }
 
+  /* Call sound/vibra daemon */
+  if (priv->sv_daemon_proxy)
+    {
+      GHashTable *hints;
+      const gchar *sender;
+
+      hints = hd_notification_get_hints (notification);
+      sender = hd_notification_get_sender (notification);
+
+      g_signal_connect (notification, "closed",
+                        G_CALLBACK (notification_closed_sv_cb), ie);
+
+      dbus_g_proxy_begin_call (priv->sv_daemon_proxy,
+                               "PlayEvent",
+                               (DBusGProxyCallNotify) play_event_notify,
+                               g_object_ref (notification),
+                               (GDestroyNotify) g_object_unref,
+                               dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+                               hints,
+                               G_TYPE_STRING,
+                               sender,
+                               G_TYPE_INVALID);
+    }
+
   /* Call plugins */
-  for (i = 0; i < priv->plugins->len; i++)
+/*  for (i = 0; i < priv->plugins->len; i++)
     {
       HDNotificationPlugin *plugin = g_ptr_array_index (priv->plugins, i);
 
       hd_notification_plugin_notify (plugin, notification);
-    }
+    }*/
 
   /* Lets see if we have any led event for this category */
   p = hd_notification_get_hint (notification, "led-pattern");
@@ -1023,6 +1125,9 @@ hd_incoming_events_dispose (GObject *object)
 
   if (priv->mce_proxy)
     priv->mce_proxy = (g_object_unref (priv->mce_proxy), NULL);
+
+  if (priv->sv_daemon_proxy)
+    priv->sv_daemon_proxy = (g_object_unref (priv->sv_daemon_proxy), NULL);
 
   G_OBJECT_CLASS (hd_incoming_events_parent_class)->dispose (object);
 }
@@ -1365,6 +1470,7 @@ hd_incoming_events_init (HDIncomingEvents *ie)
 {
   HDIncomingEventsPrivate *priv;
   DBusGConnection *connection;
+  DBusGConnection *session_connection;
   GError *error = NULL;
 
   priv = ie->priv = HD_INCOMING_EVENTS_GET_PRIVATE (ie);
@@ -1402,7 +1508,7 @@ hd_incoming_events_init (HDIncomingEvents *ie)
   if (error)
     {
       g_warning ("Could not connect to System D-Bus. %s", error->message);
-      g_error_free (error);
+      g_clear_error (&error);
     }
   else
     {
@@ -1432,6 +1538,21 @@ hd_incoming_events_init (HDIncomingEvents *ie)
                                G_TYPE_INVALID);
 
       g_debug ("%s. Got mce Proxy", __FUNCTION__);
+    }
+
+  session_connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+
+  if (error)
+    {
+      g_warning ("Could not connect to System D-Bus. %s", error->message);
+      g_clear_error (&error);
+    }
+  else
+    {
+      priv->sv_daemon_proxy = dbus_g_proxy_new_for_name (session_connection,
+                                                         HD_SV_NOTIFICATION_DAEMON_DBUS_NAME,
+                                                         HD_SV_NOTIFICATION_DAEMON_DBUS_PATH,
+                                                         HD_SV_NOTIFICATION_DAEMON_DBUS_NAME);
     }
 }
 

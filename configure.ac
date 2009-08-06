@@ -80,6 +80,14 @@ PKG_CHECK_MODULES(HILDON_HOME,
 AC_SUBST(HILDON_HOME_LIBS)
 AC_SUBST(HILDON_HOME_CFLAGS)
 
+PKG_CHECK_MODULES(HILDON_SV_NOTIFICATION_DAEMON,
+                  [glib-2.0 dnl
+		   gmodule-2.0 dnl
+		   dbus-glib-1])
+
+AC_SUBST(HILDON_SV_NOTIFICATION_DAEMON_LIBS)
+AC_SUBST(HILDON_SV_NOTIFICATION_DAEMON_CFLAGS)
+
 # Check for ftw
 AC_CHECK_HEADERS([ftw.h],
                  AC_DEFINE([HAVE_FTW_H], 1,
@@ -132,6 +140,7 @@ AC_OUTPUT([
 Makefile
 com.nokia.HildonHome.service
 org.freedesktop.Notifications.service
+com.nokia.HildonSVNotificationDaemon.service
 src/Makefile
 src/home.conf
 src/home.plugins

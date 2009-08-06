@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/com/nokia/HildonSVNotificationDaemon">
+  <interface name="com.nokia.HildonSVNotificationDaemon">
+                
+    <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="HDSVNotificationDaemon"/>
+
+    <method name="PlayEvent">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_sv_notification_daemon_play_event"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+
+      <arg type="a{sv}" name="hints" direction="in" />
+      <arg type="s" name="notification_sender" direction="in" />
+      <arg type="i" name="id" direction="out" />
+    </method>
+
+    <method name="StopEvent">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_sv_notification_daemon_stop_event"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+
+      <arg type="i" name="id" direction="in" />
+    </method>
+  </interface>
+</node>

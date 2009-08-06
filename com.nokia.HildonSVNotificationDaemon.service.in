@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=com.nokia.HildonSVNotificationDaemon
+Exec=/bin/sh -c "/usr/sbin/dsmetool -t @prefix@/bin/hildon-sv-notification-daemon && sleep 1"

@@ -13,3 +13,7 @@ makebuilddir::
 binary-install/hildon-home::
 	dh_installxsession -u 'post 18'
 	dh_maemolauncher
+
+binary-predeb/hildon-home::
+	# set the Setuid bit for hildon-notification-daemon
+	chmod 4755 $(CURDIR)/debian/hildon-home/usr/bin/hildon-sv-notification-daemon
