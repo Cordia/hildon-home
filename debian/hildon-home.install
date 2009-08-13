@@ -4,4 +4,4 @@ debian/tmp/etc/hildon-desktop/*.safe-set
 debian/tmp/usr/share/dbus-1/services/*.service
 debian/tmp/usr/bin/hildon-home
 debian/tmp/usr/bin/hildon-sv-notification-daemon
-
+debian/tmp/usr/share/applications/hildon-notification/.empty

@@ -5,3 +5,7 @@ services_DATA = \
 		com.nokia.HildonHome.service		\
 		org.freedesktop.Notifications.service	\
 		com.nokia.HildonSVNotificationDaemon.service
+
+notificationdirdir = $(hildonnotificationdesktopentrydir)
+notificationdir_DATA = \
+		.empty

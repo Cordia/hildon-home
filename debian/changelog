@@ -1,6 +1,8 @@
 hildon-home (0.3.41~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne
+  * Fixes: NB#132855 - Hildon-home process is waking up needlessly while
+    device is sleeping
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  7 Aug 2009 11:06:38 +0300
 

@@ -1,3 +1,16 @@
+2009-08-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#132855 - Hildon-home process is waking up needlessly while
+	device is sleeping
+
+	* .empty:
+	* Makefile.am:
+	* debian/hildon-home.install: Install an empty file into
+	/usr/share/applications/hildon-notification to create the directory
+	and remove polling.
+
+	* debian/changelog: Update.
+
 2009-08-07  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.40
