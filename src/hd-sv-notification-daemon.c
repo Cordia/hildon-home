@@ -248,7 +248,9 @@ static void
 mlock_process ()
 {
   uid_t ruid, euid, suid;
+#if 0
   struct rlimit rl;
+#endif
 
   if (getresuid (&ruid, &euid, &suid) != 0)
     {
@@ -259,6 +261,7 @@ mlock_process ()
 /*  g_debug ("process running as ruid: %u, euid: %u, suid: %u",
            ruid, euid, suid);*/
 
+#if 0
   rl.rlim_cur = MEMLOCK_LIMIT;
   rl.rlim_max = MEMLOCK_LIMIT;
   if (setrlimit (RLIMIT_MEMLOCK, &rl) != 0)
@@ -267,6 +270,7 @@ mlock_process ()
                  g_strerror (errno));
       return;
     }
+#endif
 
   if (euid != ruid &&
       setresuid (ruid, ruid, ruid) != 0)
@@ -275,6 +279,7 @@ mlock_process ()
                  g_strerror (errno), euid);
     }
 
+#if 0
   if (mlockall (MCL_CURRENT | MCL_FUTURE) != 0)
     {
       g_warning ("mlockall failed: %s", g_strerror (errno));
@@ -283,6 +288,7 @@ mlock_process ()
     {
       g_warning ("process sucessful mlocked");
     }*/
+#endif
 }
 
 /* Log handler which ignores debug output */

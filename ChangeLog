@@ -1,5 +1,9 @@
 2009-08-13  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-sv-notification-daemon.c (mlock_process): Disable mlock.
+
+2009-08-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#132855 - Hildon-home process is waking up needlessly while
 	device is sleeping
 
