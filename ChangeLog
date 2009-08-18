@@ -1,5 +1,15 @@
 2009-08-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#131444 - After restarting device image background is not
+	preserved.
+
+	* src/hd-backgrounds.c (set_theme_idle, hd_backgrounds_startup): Set
+	current theme on startup.
+
+	* debian/changelog: Update.
+
+2009-08-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#133437 - Desktop edit mode application menu does not have
 	theme  selector
 

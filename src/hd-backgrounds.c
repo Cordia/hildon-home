@@ -1108,7 +1108,7 @@ set_theme_idle (gpointer data)
 
   priv->set_theme_idle_id = 0;
 
-  g_warning ("%s", __FUNCTION__);
+  g_debug ("%s", __FUNCTION__);
 
   update_backgrounds_from_theme (HD_BACKGROUNDS (data),
                                  CURRENT_BACKGROUNDS_DESKTOP);
@@ -1147,6 +1147,19 @@ hd_backgrounds_startup (HDBackgrounds *backgrounds)
   gchar *cache_info_filename;
   GFile *cache_info_file;
   GError *error = NULL;
+  gchar *current_theme;
+
+  /* Get current theme */
+  current_theme = g_new0 (gchar, 2048);
+  if (readlink (CURRENT_THEME_DIR, current_theme, 2047) > 0)
+    {
+      priv->current_theme = current_theme;
+    }
+  else
+    {
+      g_warning ("%s. Could not read current theme", __FUNCTION__);
+      g_free (current_theme);
+    }
 
   root_win = gdk_window_foreign_new_for_display (gdk_display_get_default (),
                                                  gdk_x11_get_default_root_xwindow ());
