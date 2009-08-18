@@ -1,3 +1,15 @@
+2009-08-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#133437 - Desktop edit mode application menu does not have
+	theme  selector
+
+	* debian/control: Add dependecy for location packages.
+
+	* src/hd-hildon-home-dbus.c (personalization_clicked_cb,
+	  hd_hildon_home_dbus_init): Add Themes menu item to desktop menu.
+
+	* debian/changelog: Update.
+
 2009-08-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.42

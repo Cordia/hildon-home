@@ -1,6 +1,8 @@
 hildon-home (0.3.43~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#133437 - Desktop edit mode application menu does not have theme
+    selector
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Aug 2009 13:04:35 +0300
 

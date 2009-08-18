@@ -33,6 +33,8 @@
 #include <X11/Xlib.h>
 #include <stdlib.h>
 
+#include <libosso.h>
+
 #include "hd-activate-views-dialog.h"
 #include "hd-add-applet-dialog.h"
 #include "hd-applet-manager.h"
@@ -158,6 +160,22 @@ manage_views_clicked_cb (GtkButton        *button,
 }
 
 static void
+personalization_clicked_cb (GtkButton        *button,
+                            HDHildonHomeDBus *dbus)
+{
+  osso_context_t *osso;
+
+  osso = osso_initialize ("hildon-home", "1", 0, NULL);
+
+  osso_cp_plugin_execute (osso,
+                          "libpersonalisation.so",
+                          NULL,
+                          TRUE);
+
+  osso_deinitialize (osso);
+}
+
+static void
 hd_hildon_home_dbus_init (HDHildonHomeDBus *dbus)
 {
   HDHildonHomeDBusPrivate *priv;
@@ -278,6 +296,14 @@ hd_hildon_home_dbus_init (HDHildonHomeDBus *dbus)
   button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE, "home_me_manage_views"));
   g_signal_connect_after (button, "clicked",
                           G_CALLBACK (manage_views_clicked_cb), dbus);
+  hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
+                          GTK_BUTTON (button));
+  gtk_widget_show (button);
+
+  button = gtk_button_new_with_label (dgettext ("hildon-control-panel-personalisation",
+                                                "pers_ti_personalization"));
+  g_signal_connect_after (button, "clicked",
+                          G_CALLBACK (personalization_clicked_cb), dbus);
   hildon_app_menu_append (HILDON_APP_MENU (priv->menu),
                           GTK_BUTTON (button));
   gtk_widget_show (button);

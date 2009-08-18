@@ -8,7 +8,7 @@ Standards-Version: 3.8.0
 Package: hildon-home
 Section: x11
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${launcher:Depends}, hildon-libs-l10n-mr | hildon-libs-l10n-mr0, maemo-af-desktop-l10n-mr | maemo-af-desktop-l10n-mr0, hildon-common-strings-l10n-mr | hildon-common-strings-l10n-mr0
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${launcher:Depends}, hildon-libs-l10n-mr | hildon-libs-l10n-mr0, maemo-af-desktop-l10n-mr | maemo-af-desktop-l10n-mr0, hildon-common-strings-l10n-mr | hildon-common-strings-l10n-mr0, hildon-control-panel-personalisation-l10n-mr | hildon-control-panel-personalisation-l10n-mr0
 Description: Hildon Home application
 
 Package: hildon-home-dbg
