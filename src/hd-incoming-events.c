@@ -137,7 +137,16 @@ struct _HDIncomingEventsPrivate
   DBusGProxy      *sv_daemon_proxy;
 
   gboolean         device_locked;
+  gboolean         display_on;
 };
+
+enum
+{
+  DISPLAY_STATUS_CHANGED,
+  LAST_SIGNAL
+};
+
+static guint incoming_events_signals [LAST_SIGNAL] = { 0 };
 
 G_DEFINE_TYPE (HDIncomingEvents, hd_incoming_events, G_TYPE_OBJECT);
 
@@ -1157,6 +1166,16 @@ hd_incoming_events_class_init (HDIncomingEventsClass *klass)
   object_class->dispose = hd_incoming_events_dispose;
   object_class->finalize = hd_incoming_events_finalize;
 
+  incoming_events_signals[DISPLAY_STATUS_CHANGED]  = g_signal_new ("display-status-changed",
+                                                                   HD_TYPE_INCOMING_EVENTS,
+                                                                   G_SIGNAL_RUN_FIRST,
+                                                                   0,
+                                                                   NULL, NULL,
+                                                                   g_cclosure_marshal_VOID__BOOLEAN,
+                                                                   G_TYPE_NONE,
+                                                                   1,
+                                                                   G_TYPE_BOOLEAN);
+
   g_type_class_add_private (klass, sizeof (HDIncomingEventsPrivate));
 }
 
@@ -1386,7 +1405,8 @@ hd_incoming_events_system_bus_signal_handler (DBusConnection *conn,
                                               DBusMessage    *msg,
                                               void           *data)
 {
-  HDIncomingEventsPrivate *priv = HD_INCOMING_EVENTS (data)->priv;
+  HDIncomingEvents *ie = data;
+  HDIncomingEventsPrivate *priv = ie->priv;
 
   if (dbus_message_is_signal(msg,
                              MCE_SIGNAL_IF,
@@ -1418,6 +1438,39 @@ hd_incoming_events_system_bus_signal_handler (DBusConnection *conn,
                                    GTK_RESPONSE_DELETE_EVENT);
           }
     }
+  else if (dbus_message_is_signal (msg,
+                                   MCE_SIGNAL_IF,
+                                   MCE_DISPLAY_SIG))
+    {
+      DBusMessageIter iter;
+
+      if (dbus_message_iter_init (msg, &iter))
+        if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING)
+          {
+            const char *value;
+            gboolean display_on = TRUE;
+
+            dbus_message_iter_get_basic(&iter, &value);
+            if (strcmp (value, MCE_DISPLAY_ON_STRING) == 0)
+              display_on = TRUE;
+            else if (strcmp (value, MCE_DISPLAY_DIM_STRING) == 0)
+              display_on = TRUE;
+            else if (strcmp (value, MCE_DISPLAY_OFF_STRING) == 0)
+              display_on = FALSE;
+            else
+              g_warning ("%s. Unknown value %s for signal %s.%s",
+                         __FUNCTION__,
+                         value,
+                         MCE_SIGNAL_IF,
+                         MCE_DISPLAY_SIG);
+
+            priv->display_on = display_on;
+
+            g_signal_emit (ie,
+                           incoming_events_signals[DISPLAY_STATUS_CHANGED],
+                           0, display_on);
+          }
+     }
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
@@ -1487,6 +1540,8 @@ hd_incoming_events_init (HDIncomingEvents *ie)
   priv->plugins = g_ptr_array_new ();
 
   priv->plugin_manager = hd_plugin_manager_new (hd_config_file_new_with_defaults ("notification.conf"));
+
+  priv->display_on = TRUE;
 
   /* Connect to plugin manager signals */
   g_signal_connect (priv->plugin_manager, "plugin-added",
@@ -1565,4 +1620,12 @@ hd_incoming_events_get (void)
     ie = g_object_new (HD_TYPE_INCOMING_EVENTS, NULL);
 
   return ie;
+}
+
+gboolean
+hd_incoming_events_get_display_on (void)
+{
+  HDIncomingEvents *ie = hd_incoming_events_get ();
+
+  return ie->priv->display_on;
 }

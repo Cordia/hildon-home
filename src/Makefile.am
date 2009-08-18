@@ -112,22 +112,6 @@ hildon_sv_notification_daemon_SOURCES = \
 nodist_hildon_sv_notification_daemon_SOURCES = \
 	hd-sv-notification-daemon-glue.h
 
-noinst_PROGRAMS = test-incoming-event
-
-test_incoming_event_CFLAGS = \
-	$(HILDON_HOME_CFLAGS)
-
-test_incoming_event_LDFLAGS = \
-	-rdynamic			\
-	$(HILDON_HOME_LIBS)
-
-test_incoming_event_SOURCES = \
-	hd-cairo-surface-cache.c	\
-	hd-cairo-surface-cache.h	\
-	hd-incoming-event-window.c	\
-	hd-incoming-event-window.h	\
-	test-incoming-event.c
-
 EXTRA_DIST = \
 	hd-notification-manager.xml \
 	hd-hildon-home-dbus.xml \

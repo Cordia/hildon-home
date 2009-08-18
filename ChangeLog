@@ -1,3 +1,29 @@
+2009-08-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#133096 - Hildon-desktop is reducing use-time when device
+	sleeps
+
+	* src/hd-incoming-event-window.c (PROP_MESSAGE,
+	  hd_incoming_event_window_realize,
+	  hd_incoming_event_window_set_property, display_status_changed,
+	  hd_incoming_event_window_init): Only update the timne when the
+	  display is on.
+
+	* src/hd-incoming-events.c (_HDIncomingEventsPrivate::display_on,
+	  DISPLAY_STATUS_CHANGED, LAST_SIGNAL, incoming_events_signals,
+	  hd_incoming_events_class_init,
+	  hd_incoming_events_system_bus_signal_handler,
+	  hd_incoming_events_init, hd_incoming_events_get,
+	  hd_incoming_events_get_display_on):
+	* src/hd-incoming-events.h: Listen to
+	MCE for display status and emits a signal to incoming event windows on
+	display status change.
+
+	* src/Makefile.am:
+	* src/test-incoming-event.c (deleted): Remove test application.
+
+	* debian/changelog: Update.
+
 2009-08-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.41

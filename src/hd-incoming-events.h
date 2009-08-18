@@ -55,6 +55,8 @@ GType             hd_incoming_events_get_type (void);
 
 HDIncomingEvents *hd_incoming_events_get      (void);
 
+gboolean          hd_incoming_events_get_display_on (void);
+
 G_END_DECLS
 
 #endif

@@ -35,6 +35,7 @@
 
 #include "hd-cairo-surface-cache.h"
 #include "hd-incoming-event-window.h"
+#include "hd-incoming-events.h"
 
 /* Pixel sizes */
 #define WINDOW_WIDTH 366
@@ -78,7 +79,7 @@ enum
   PROP_TITLE,
   PROP_TIME,
   PROP_AMOUNT,
-  PROP_MESSAGE
+  PROP_MESSAGE,
 };
 
 enum {
@@ -357,7 +358,10 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   hd_incoming_event_window_set_string_xwindow_property (widget,
                           "_HILDON_INCOMING_EVENT_NOTIFICATION_DESTINATION",
                           priv->destination);
-  hd_incoming_event_window_update_time (HD_INCOMING_EVENT_WINDOW (widget));
+
+  /* Update time of nopreview windows */
+  if (!priv->preview && hd_incoming_events_get_display_on ())
+    hd_incoming_event_window_update_time (HD_INCOMING_EVENT_WINDOW (widget));
   hd_incoming_event_window_update_title_and_amount (HD_INCOMING_EVENT_WINDOW (widget));
 
   /* Set background to transparent pixmap */
@@ -519,7 +523,8 @@ hd_incoming_event_window_set_property (GObject      *object,
 
     case PROP_TIME:
       priv->time = g_value_get_long (value);
-      hd_incoming_event_window_update_time (HD_INCOMING_EVENT_WINDOW (object));
+      if (!priv->preview && hd_incoming_events_get_display_on ())
+        hd_incoming_event_window_update_time (HD_INCOMING_EVENT_WINDOW (object));
       break;
 
     case PROP_AMOUNT:
@@ -651,6 +656,27 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
 }
 
 static void
+display_status_changed (HDIncomingEvents      *ie,
+                        gboolean               display_on,
+                        HDIncomingEventWindow *window)
+{
+  HDIncomingEventWindowPrivate *priv = window->priv;
+
+  if (priv->preview)
+    return;
+
+  if (display_on)
+    {
+      hd_incoming_event_window_update_time (window);
+    }
+  else
+    {
+      if (priv->update_time_source)
+        priv->update_time_source = (g_source_remove (priv->update_time_source), 0);
+    }
+}
+
+static void
 hd_incoming_event_window_init (HDIncomingEventWindow *window)
 {
   HDIncomingEventWindowPrivate *priv = HD_INCOMING_EVENT_WINDOW_GET_PRIVATE (window);
@@ -729,6 +755,8 @@ hd_incoming_event_window_init (HDIncomingEventWindow *window)
   priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
                                                        BACKGROUND_IMAGE_FILE);
 
+  g_signal_connect_object (hd_incoming_events_get (), "display-status-changed",
+                           G_CALLBACK (display_status_changed), window, 0);
 
   gtk_widget_set_size_request (GTK_WIDGET (window),
                                cairo_image_surface_get_width (priv->bg_image),
