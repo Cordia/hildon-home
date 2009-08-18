@@ -1,9 +1,9 @@
-hildon-home (0.3.42~unreleased) unstable; urgency=low
+hildon-home (0.3.42) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#133096 - Hildon-desktop is reducing use-time when device sleeps
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 13 Aug 2009 17:11:45 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Aug 2009 13:02:19 +0300
 
 hildon-home (0.3.41) unstable; urgency=low
 

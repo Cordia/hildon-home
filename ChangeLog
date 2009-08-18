@@ -1,3 +1,8 @@
+2009-08-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 0.3.42
+	* configure.ac: 0.3.42
+
 2009-08-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#133096 - Hildon-desktop is reducing use-time when device
