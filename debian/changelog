@@ -4,6 +4,7 @@ hildon-home (0.3.43~unreleased) unstable; urgency=low
   * Fixes: NB#133437 - Desktop edit mode application menu does not have theme
     selector
   * Fixes: NB#131444 - After restarting device image background is not preserved.
+  * Fixes: NB#133686 - hildon-home and hildon-sv-notify start in wrong place
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Aug 2009 13:04:35 +0300
 

@@ -1,6 +1,7 @@
 debian/tmp/etc/hildon-desktop/*.conf
 debian/tmp/etc/hildon-desktop/*.plugins
 debian/tmp/etc/hildon-desktop/*.safe-set
+debian/tmp/etc/X11/Xsession.d/
 debian/tmp/usr/share/dbus-1/services/*.service
 debian/tmp/usr/bin/hildon-home
 debian/tmp/usr/bin/hildon-sv-notification-daemon

@@ -1,5 +1,18 @@
 2009-08-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#133686 - hildon-home and hildon-sv-notify start in wrong
+	place
+
+	* debian/hildon-home.install:
+	* debian/hildon-home.xsession:
+	* debian/hildon-sv-notification-daemon.xsession:
+	* debian/rules: Install xsession file for starting
+	hildon-sv-notification-daemon in Xsession.d.
+
+	* debian/changelog: Update.
+
+2009-08-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#131444 - After restarting device image background is not
 	preserved.
 

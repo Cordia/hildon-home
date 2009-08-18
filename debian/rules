@@ -10,6 +10,11 @@ endif
 makebuilddir::
 	AUTOGEN_SUBDIR_MODE=1 NOCONFIGURE=yes ./autogen.sh
 
+install/hildon-home::
+	install -d $(CURDIR)/debian/tmp/etc/X11/Xsession.d
+	install -m755 $(CURDIR)/debian/hildon-sv-notification-daemon.xsession \
+		$(CURDIR)/debian/tmp/etc/X11/Xsession.d/65hildon-sv-notification-daemon
+
 binary-install/hildon-home::
 	dh_installxsession -u 'post 18'
 	dh_maemolauncher
