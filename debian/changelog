@@ -1,10 +1,10 @@
-hildon-home (0.3.44~unreleased) unstable; urgency=low
+hildon-home (0.3.44) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#133876 - Add an icon for each preinstalled panorama image set to
     the 'change background' dialog
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 18 Aug 2009 17:25:08 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 20 Aug 2009 15:05:09 +0300
 
 hildon-home (0.3.43) unstable; urgency=low
 
