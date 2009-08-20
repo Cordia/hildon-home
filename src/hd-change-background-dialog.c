@@ -31,6 +31,8 @@
 #include <hildon/hildon-file-chooser-dialog.h>
 #include <hildon/hildon-file-selection.h>
 
+#include <hildon-thumbnail-factory.h>
+
 #include "hd-backgrounds.h"
 
 #include "hd-change-background-dialog.h"
@@ -54,6 +56,8 @@
 #define DIR_THEMES "/usr/share/themes"
 #define DIR_BACKGROUNDS "/usr/share/backgrounds"
 
+#define THEME_DESCRIPTION_FILE_NAME "index.theme"
+
 enum
 {
   COL_NAME,
@@ -65,6 +69,7 @@ enum
   COL_IMAGE_4,
   COL_IMAGE_SET,
   COL_THEME,
+  COL_THUMBNAIL,
   NUM_COLS
 };
 
@@ -86,14 +91,124 @@ struct _HDChangeBackgroundDialogPrivate
   GtkTreePath  *custom_image;
 
   guint         current_view;
+
+  HildonThumbnailFactory *thumbnail_factory;
 };
 
 G_DEFINE_TYPE (HDChangeBackgroundDialog, hd_change_background_dialog, GTK_TYPE_DIALOG);
 
+static gchar *
+get_theme_description_path (const gchar *theme)
+{
+  return g_build_filename (DIR_THEMES,
+                           theme,
+                           THEME_DESCRIPTION_FILE_NAME,
+                           NULL);
+}
+
+static gchar *
+get_thumbnail_path_for_theme (const gchar *theme)
+{
+  gchar *theme_description_path = NULL;
+  GKeyFile *theme_description;
+  gchar *result = NULL;
+  GError *error = NULL;
+
+  theme_description_path = get_theme_description_path (theme);
+
+  theme_description = g_key_file_new ();
+  g_key_file_load_from_file (theme_description,
+                             theme_description_path,
+                             G_KEY_FILE_NONE,
+                             &error);
+
+  if (error)
+    {
+      g_warning ("%s. Could not read theme description file %s. %s",
+                 __FUNCTION__,
+                 theme_description_path,
+                 error->message);
+      g_error_free (error);
+      goto clean;
+    }
+
+  result = g_key_file_get_string (theme_description,
+                                  G_KEY_FILE_DESKTOP_GROUP,
+                                  G_KEY_FILE_DESKTOP_KEY_ICON,
+                                  &error);
+
+  if (error)
+    {
+      g_warning ("%s. Could not read %s/%s from theme description file %s. %s",
+                 __FUNCTION__,
+                 G_KEY_FILE_DESKTOP_GROUP,
+                 G_KEY_FILE_DESKTOP_KEY_ICON,
+                 theme_description_path,
+                 error->message);
+      g_error_free (error);
+      goto clean;
+    }
+
+clean:
+  g_free (theme_description_path);
+  g_key_file_free (theme_description);
+
+  return result;
+}
+
+static GdkPixbuf *
+get_thumbnail_for_theme (const gchar *theme)
+{
+  gchar *path;
+  GdkPixbuf *thumbnail = NULL;
+  GError *error = NULL;
+
+  path = get_thumbnail_path_for_theme (theme);
+  if (path)
+    {
+      thumbnail = gdk_pixbuf_new_from_file (path,
+                                            &error);
+      if (error)
+        {
+          g_warning ("%s. Could not read thumbnail icon %s. %s",
+                     __FUNCTION__,
+                     path,
+                     error->message);
+          g_error_free (error);
+        }
+    }
+
+  return thumbnail;
+}
+
+static void
+image_set_thumbnail_callback (HildonThumbnailFactory *self,
+                              GdkPixbuf              *thumbnail,
+                              GError                 *error,
+                              gpointer                user_data)
+{
+  GtkTreeRowReference *reference = user_data;
+  GtkTreeModel *model = gtk_tree_row_reference_get_model (reference);
+  GtkTreePath *path = gtk_tree_row_reference_get_path (reference);
+
+  if (path && thumbnail)
+    {
+      GtkTreeIter iter;
+
+      if (gtk_tree_model_get_iter (model, &iter, path))
+        {
+          gtk_list_store_set (GTK_LIST_STORE (model),
+                              &iter,
+                              COL_THUMBNAIL, thumbnail,
+                              -1);
+        }
+    }
+}
+
 static void
 hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialog,
                                                 const gchar               *dirname,
-                                                gboolean                   theme,
+                                                const gchar               *theme,
                                                 const gchar               *current_background,
                                                 GtkTreeRowReference      **selected_row)
 {
@@ -110,7 +225,6 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
     {
       gchar *type, *filename, *name, *label = NULL;
       gchar *image[5];
-      guint order;
       gboolean image_set = FALSE;
       GKeyFile *keyfile;
       GtkTreeIter iter;
@@ -149,10 +263,6 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
                                     G_KEY_FILE_DESKTOP_GROUP,
                                     G_KEY_FILE_DESKTOP_KEY_NAME,
                                     NULL);
-      order = g_key_file_get_integer (keyfile,
-                                      G_KEY_FILE_DESKTOP_GROUP,
-                                      KEY_FILE_BACKGROUND_KEY_ORDER,
-                                      NULL);
       image[0] = g_key_file_get_string (keyfile,
                                         G_KEY_FILE_DESKTOP_GROUP,
                                         KEY_FILE_BACKGROUND_KEY_FILE,
@@ -219,15 +329,54 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
                                          &iter,
                                          -1,
                                          COL_NAME, label,
-                                         COL_ORDER, order,
+                                         COL_ORDER, 0,
                                          COL_IMAGE, image[0],
                                          COL_IMAGE_1, image[1],
                                          COL_IMAGE_2, image[2],
                                          COL_IMAGE_3, image[3],
                                          COL_IMAGE_4, image[4],
                                          COL_IMAGE_SET, image_set,
-                                         COL_THEME, theme,
+                                         COL_THEME, theme ? TRUE: FALSE,
                                          -1);
+
+      /* Update thumbnail */
+      if (theme)
+        {
+          GdkPixbuf *thumbnail;
+
+          thumbnail = get_thumbnail_for_theme (theme);
+
+          if (thumbnail)
+            {
+              gtk_list_store_set (GTK_LIST_STORE (priv->model),
+                                  &iter,
+                                  COL_THUMBNAIL, thumbnail,
+                                  -1);
+
+              g_object_unref (thumbnail);
+            }
+        }
+      else if (image_set)
+        {
+          GtkTreePath *path;
+          GtkTreeRowReference *reference;
+          gchar *uri = g_filename_to_uri (image[1], NULL, NULL);
+
+          path = gtk_tree_model_get_path (priv->model, &iter);
+          reference = gtk_tree_row_reference_new (priv->model, path);
+          gtk_tree_path_free (path);
+
+          hildon_thumbnail_factory_request_pixbuf (priv->thumbnail_factory,
+                                                   uri,
+                                                   80, 60,
+                                                   FALSE,
+                                                   NULL,
+                                                   image_set_thumbnail_callback,
+                                                   reference,
+                                                   (GDestroyNotify) gtk_tree_row_reference_free);
+
+          g_free (uri);
+        }
 
       if ((!image_set && !g_strcmp0 (image[0], current_background)) ||
           (image_set && !g_strcmp0 (image[priv->current_view + 1], current_background)))
@@ -239,6 +388,11 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
           if (selected_row)
             *selected_row = gtk_tree_row_reference_new (priv->model,
                                                         path);
+
+          gtk_list_store_set (GTK_LIST_STORE (priv->model),
+                              &iter,
+                              COL_ORDER, -1,
+                              -1);
 
           gtk_tree_path_free (path);
         }
@@ -293,7 +447,7 @@ hd_change_background_dialog_constructed (GObject *object)
 
               hd_change_background_dialog_append_backgrounds (dialog,
                                                               themes_dir,
-                                                              TRUE,
+                                                              basename,
                                                               current_background,
                                                               &selected_row);
 
@@ -306,7 +460,7 @@ hd_change_background_dialog_constructed (GObject *object)
   /* Append backgrounds from background dir */
   hd_change_background_dialog_append_backgrounds (dialog,
                                                   DIR_BACKGROUNDS,
-                                                  FALSE,
+                                                  NULL,
                                                   current_background,
                                                   &selected_row);
 
@@ -316,7 +470,7 @@ hd_change_background_dialog_constructed (GObject *object)
                                  NULL);
   hd_change_background_dialog_append_backgrounds (dialog,
                                                   images_dir,
-                                                  FALSE,
+                                                  NULL,
                                                   current_background,
                                                   &selected_row);
   g_free (images_dir);
@@ -347,7 +501,7 @@ hd_change_background_dialog_constructed (GObject *object)
                                          0,
                                          COL_NAME, label,
                                          COL_IMAGE, current_background,
-                                         COL_ORDER, -1, /* first entry */
+                                         COL_ORDER, -2, /* first entry */
                                          COL_THEME, FALSE,
                                          COL_IMAGE_SET, FALSE,
                                          -1);
@@ -369,6 +523,9 @@ hd_change_background_dialog_dispose (GObject *object)
 
   if (priv->model)
     priv->model = (g_object_unref (priv->model), NULL);
+
+  if (priv->thumbnail_factory)
+    priv->thumbnail_factory = (g_object_unref (priv->thumbnail_factory), NULL);
 
   G_OBJECT_CLASS (hd_change_background_dialog_parent_class)->dispose (object);
 }
@@ -460,7 +617,7 @@ add_image_dialog_response (GtkDialog                *dialog,
           gtk_list_store_set (GTK_LIST_STORE (priv->model), &iter,
                               COL_NAME, label,
                               COL_IMAGE, filename,
-                              COL_ORDER, -1, /* first entry */
+                              COL_ORDER, -2, /* first entry */
                               -1);
 
           hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
@@ -635,6 +792,69 @@ hd_change_background_dialog_class_init (HDChangeBackgroundDialogClass *klass)
   g_type_class_add_private (klass, sizeof (HDChangeBackgroundDialogPrivate));
 }
 
+static gint
+backgrounds_iter_cmp (GtkTreeModel *model,
+                      GtkTreeIter  *a,
+                      GtkTreeIter  *b,
+                      gpointer      user_data)
+{
+  gint a_order, b_order;
+  gboolean a_theme, b_theme, a_image_set, b_image_set;
+  gchar *a_name, *b_name;
+  gint result = -1;
+
+  gtk_tree_model_get (model,
+                      a,
+                      COL_ORDER, &a_order,
+                      COL_THEME, &a_theme,
+                      COL_IMAGE_SET, &a_image_set,
+                      COL_NAME, &a_name,
+                      -1);
+
+  gtk_tree_model_get (model,
+                      b,
+                      COL_ORDER, &b_order,
+                      COL_THEME, &b_theme,
+                      COL_IMAGE_SET, &b_image_set,
+                      COL_NAME, &b_name,
+                      -1);
+
+  if (a_order != b_order)
+    {
+      result = a_order - b_order;
+    }
+  else  if (a_theme)
+    {
+      if (b_theme)
+        result = strcmp (a_name, b_name);
+      else if (b_image_set)
+        result = 1;
+      else
+        result = -1;
+    }
+  else if (a_image_set)
+    {
+      if (b_theme)
+        result = -1;
+      else if (b_image_set)
+        result = strcmp (a_name, b_name);
+      else
+        result = -1;
+    }
+  else
+    {
+      if (b_image_set)
+        result = 1;
+      else
+        result = strcmp (a_name, b_name);
+     }
+
+  g_free (a_name);
+  g_free (b_name);
+
+  return result;
+}
+
 static void
 hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
 {
@@ -643,6 +863,8 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   GtkCellRenderer *renderer;
 
   dialog->priv = priv;
+
+  priv->thumbnail_factory = hildon_thumbnail_factory_get_instance ();
 
   /* Set dialog title */
   gtk_window_set_title (GTK_WINDOW (dialog), dgettext ("maemo-af-desktop", "home_ti_change_backgr"));
@@ -657,17 +879,31 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   priv->model = (GtkTreeModel *) gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_INT,
                                                      G_TYPE_STRING,
                                                      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-                                                     G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
+                                                     G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, GDK_TYPE_PIXBUF);
 
   /* Sort by order */
+  gtk_tree_sortable_set_default_sort_func (GTK_TREE_SORTABLE (priv->model),
+                                           backgrounds_iter_cmp,
+                                           NULL,
+                                           NULL);
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
-                                        COL_ORDER,
+                                        GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
                                         GTK_SORT_ASCENDING);
 
   /* Create empty column */
   column = hildon_touch_selector_append_column (HILDON_TOUCH_SELECTOR (priv->selector),
                                                 priv->model,
                                                 NULL);
+
+  /* Add the thumbnail renderer */
+  renderer = gtk_cell_renderer_pixbuf_new ();
+  gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (column),
+                              renderer,
+                              FALSE);
+  gtk_cell_layout_add_attribute (GTK_CELL_LAYOUT (column),
+                                 renderer,
+                                 "pixbuf", COL_THUMBNAIL);
+
   /* Add the label renderer */
   renderer = gtk_cell_renderer_text_new ();
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (column),

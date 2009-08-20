@@ -75,7 +75,8 @@ PKG_CHECK_MODULES(HILDON_HOME,
 		   sqlite3				dnl
 		   osso-bookmark-engine			dnl
 		   mce 					dnl
-		   libosso])
+		   libosso                              dnl
+		   hildon-thumbnail])
 
 AC_SUBST(HILDON_HOME_LIBS)
 AC_SUBST(HILDON_HOME_CFLAGS)

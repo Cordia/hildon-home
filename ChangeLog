@@ -1,3 +1,16 @@
+2009-08-20  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#133876 - Add an icon for each preinstalled panorama image
+	set to the 'change background' dialog
+
+	* configure.ac:
+	* debian/control: Add hildon-thumbnail dependency.
+
+	* src/hd-change-background-dialog.c: Add thumbnails to Change
+	background dialog.
+
+	* debian/changelog: Update.
+
 2009-08-18  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.43
