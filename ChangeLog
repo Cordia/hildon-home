@@ -1,3 +1,15 @@
+2009-08-27  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#135486 - Logical string 'home_ti_select_shortcut' in layout
+	mode (langauge: finnish)
+
+	* src/hd-add-task-dialog.c (hd_add_task_dialog_init):
+	* src/hd-applet-manager.c (items_configuration_loaded_cb): Use
+	dgettext instead of gettext so it does not fail when an widget changes
+	the default textdomain.
+
+	* debian/changelog: Update.
+
 2009-08-20  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.44

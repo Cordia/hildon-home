@@ -84,7 +84,7 @@ hd_add_task_dialog_init (HDAddTaskDialog *dialog)
   dialog->priv = priv;
 
   /* Set dialog title */
-  gtk_window_set_title (GTK_WINDOW (dialog), gettext ("home_ti_select_shortcut"));
+  gtk_window_set_title (GTK_WINDOW (dialog), dgettext ("maemo-af-desktop", "home_ti_select_shortcut"));
 
   /* The selector */
   priv->selector = hildon_touch_selector_new ();

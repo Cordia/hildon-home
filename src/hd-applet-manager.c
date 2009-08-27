@@ -170,7 +170,7 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
           if (text_domain)
             info->name = dgettext (text_domain, name);
           else
-            info->name = gettext (name);
+            info->name = dgettext (GETTEXT_PACKAGE, name);
 
           g_free (text_domain);
           if (info->name != name)
