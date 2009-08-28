@@ -1,10 +1,10 @@
-hildon-home (0.3.45~unreleased) unstable; urgency=low
+hildon-home (0.3.45) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#135486 - Logical string 'home_ti_select_shortcut' in layout mode
     (langauge: finnish)
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 20 Aug 2009 15:06:45 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 28 Aug 2009 10:08:24 +0300
 
 hildon-home (0.3.44) unstable; urgency=low
 
