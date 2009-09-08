@@ -37,8 +37,15 @@
 
 #include <osso-mem.h>
 
+#include <gdk/gdkx.h>
+
+#include <X11/X.h>
+#include <X11/Xatom.h>
+
 #include "hd-incoming-event-window.h"
 #include "hd-notification-manager.h"
+#include "hd-led-pattern.h"
+#include "hd-multi-map.h"
 
 #include "hd-incoming-events.h"
 
@@ -138,6 +145,8 @@ struct _HDIncomingEventsPrivate
 
   gboolean         device_locked;
   gboolean         display_on;
+
+  HDMultiMap      *unperceived_notifications;
 };
 
 enum
@@ -766,39 +775,6 @@ end:
   gtk_widget_destroy (GTK_WIDGET (window));
 }
 
-/* Function to set/reset mce led pattern */
-static void
-hd_incoming_events_set_led_pattern (HDIncomingEvents *ie,
-                                    const gchar      *pattern,
-                                    gboolean          activate)
-{
-  HDIncomingEventsPrivate *priv = ie->priv;
-
-  if (activate)
-    g_debug("Activate LED pattern : %s\n", pattern);
-  else
-    g_debug("Deactivate LED pattern : %s\n", pattern);
-
-  /* Just make a method call as per args to activate/deactivate
-   * given led pattern without looking for any reply(We don't have a reply) */
-  dbus_g_proxy_call_no_reply (priv->mce_proxy,
-                              (activate) ? MCE_ACTIVATE_LED_PATTERN :
-                              MCE_DEACTIVATE_LED_PATTERN,
-                              G_TYPE_STRING,
-                              pattern,
-                              G_TYPE_INVALID,
-                              G_TYPE_INVALID);
-}
-
-static void 
-close_led_notification (HDNotification *notification,
-                        const gchar    *pattern)
-{
-  hd_incoming_events_set_led_pattern (hd_incoming_events_get (),
-                                      pattern,
-                                      FALSE);
-}
-
 static void show_preview_window (HDIncomingEvents *ie);
 
 static void
@@ -974,6 +950,17 @@ play_event_notify (DBusGProxy     *proxy,
     }  
 }
 
+static void
+unperceived_notification_closed (HDNotification *notification,
+                                 HDLedPattern   *led_pattern)
+{
+  HDIncomingEvents *ie = hd_incoming_events_get ();
+  HDIncomingEventsPrivate *priv = ie->priv;
+
+  hd_multi_map_remove (priv->unperceived_notifications,
+                       G_OBJECT (led_pattern),
+                       G_OBJECT (notification));
+}
 
 static void
 hd_incoming_events_notified (HDNotificationManager  *nm,
@@ -1060,16 +1047,15 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
 
   if (pattern)
     {
-      /* Activate pattern */
-      hd_incoming_events_set_led_pattern (ie,
-                                          pattern,
-                                          TRUE);
-      /* Handler to deactivate the led event */
-      g_signal_connect_data (notification, "closed",
-                             G_CALLBACK (close_led_notification),
-                             g_strdup (pattern),
-                             (GClosureNotify) g_free,
-                             0);
+      HDLedPattern *led_pattern = hd_led_pattern_get (pattern);
+      hd_multi_map_insert (priv->unperceived_notifications,
+                           G_OBJECT (led_pattern),
+                           G_OBJECT (notification));
+      g_object_unref (led_pattern);
+
+      g_signal_connect (notification, "closed",
+                        G_CALLBACK (unperceived_notification_closed),
+                        led_pattern);
     }
 
   /* Return if no notification window should be shown */
@@ -1137,6 +1123,9 @@ hd_incoming_events_dispose (GObject *object)
 
   if (priv->sv_daemon_proxy)
     priv->sv_daemon_proxy = (g_object_unref (priv->sv_daemon_proxy), NULL);
+
+  if (priv->unperceived_notifications)
+    priv->unperceived_notifications = (g_object_unref (priv->unperceived_notifications), NULL);
 
   G_OBJECT_CLASS (hd_incoming_events_parent_class)->dispose (object);
 }
@@ -1518,6 +1507,66 @@ devlock_mode_get_notify (DBusGProxy       *proxy,
     }
 }
 
+static GdkFilterReturn
+filter_property_changed (GdkXEvent *xevent,
+                         GdkEvent *event,
+                         gpointer data)
+{
+  GdkWindow *root_win = data;
+  HDIncomingEventsPrivate *priv = hd_incoming_events_get ()->priv;
+  XEvent *ev = (XEvent *) xevent;
+
+  if (ev->type == PropertyNotify)
+    {
+      if (ev->xproperty.atom == gdk_x11_get_xatom_by_name ("_MB_CURRENT_APP_WINDOW"))
+        {
+          Atom actual_type;
+          int actual_format;
+          unsigned long nitems, bytes;
+          unsigned char *atom_data;
+
+          if (XGetWindowProperty (GDK_WINDOW_XDISPLAY (root_win),
+                                  GDK_WINDOW_XID (root_win),
+                                  gdk_x11_get_xatom_by_name ("_MB_CURRENT_APP_WINDOW"),
+                                  0,
+                                  (~0L),
+                                  False,
+                                  AnyPropertyType,
+                                  &actual_type,
+                                  &actual_format,
+                                  &nitems,
+                                  &bytes,
+                                  &atom_data) == Success)
+            {
+              if (nitems == 1) {
+                  guint32 *new_value = (void *) atom_data;
+                  g_debug ("%s. %u", __FUNCTION__, *new_value);
+                  if (*new_value == 0xFFFFFFFF)
+                    hd_multi_map_remove_all (priv->unperceived_notifications);
+              }
+            }
+        }
+    }
+
+  return GDK_FILTER_CONTINUE;
+}
+
+static void
+initialize_filter_current_window_changes (void)
+{
+  GdkWindow *root_win;
+
+  root_win = gdk_window_foreign_new_for_display (gdk_display_get_default (),
+                                                 gdk_x11_get_default_root_xwindow ());
+  gdk_window_set_events (root_win,
+                         gdk_window_get_events (root_win) |
+                         GDK_PROPERTY_CHANGE_MASK);
+
+  gdk_window_add_filter (root_win,
+                         filter_property_changed,
+                         root_win);
+}
+
 static void
 hd_incoming_events_init (HDIncomingEvents *ie)
 {
@@ -1609,6 +1658,10 @@ hd_incoming_events_init (HDIncomingEvents *ie)
                                                          HD_SV_NOTIFICATION_DAEMON_DBUS_PATH,
                                                          HD_SV_NOTIFICATION_DAEMON_DBUS_NAME);
     }
+
+  priv->unperceived_notifications = hd_multi_map_new ();
+
+  initialize_filter_current_window_changes ();
 }
 
 HDIncomingEvents *

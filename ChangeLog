@@ -1,3 +1,22 @@
+2009-09-08  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#133861 - Led blinking for new sms/chat messages is not
+	stopped when task switcher is opened
+
+	* src/hd-incoming-events.c: Use Multi map for unperceived
+	notifications to fix proper display of led pattern and disable led
+	pattern as soon as task switcher is opened.
+
+	* src/hd-multi-map.c (added):
+	* src/hd-multi-map.h (added): Add multi map implementation.
+
+	* src/hd-led-pattern.c (added):
+	* src/hd-led-pattern.h (added): Add led pattern class.
+
+	* src/Makefile.am: Add new files.
+
+	* debian/changelog: Update.
+
 2009-08-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.45

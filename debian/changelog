@@ -1,6 +1,8 @@
 hildon-home (0.3.46~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  *  Fixes: NB#133861 - Led blinking for new sms/chat messages is not stopped
+     when task switcher is opened
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri, 28 Aug 2009 10:10:05 +0300
 

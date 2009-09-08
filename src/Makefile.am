@@ -87,6 +87,10 @@ hildon_home_SOURCES = \
 	hd-task-manager.h		\
 	hd-bookmark-manager.c		\
 	hd-bookmark-manager.h		\
+	hd-led-pattern.c                \
+	hd-led-pattern.h		\
+	hd-multi-map.c			\
+	hd-multi-map.h			\
 	hildon-home.c
 
 nodist_hildon_home_SOURCES = \
