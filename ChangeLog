@@ -1,3 +1,8 @@
+2009-09-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 0.3.46
+	* configure.ac: 0.3.46
+
 2009-09-08  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#133861 - Led blinking for new sms/chat messages is not
