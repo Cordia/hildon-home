@@ -1053,9 +1053,10 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
                            G_OBJECT (notification));
       g_object_unref (led_pattern);
 
-      g_signal_connect (notification, "closed",
-                        G_CALLBACK (unperceived_notification_closed),
-                        led_pattern);
+      g_signal_connect_object (notification, "closed",
+                               G_CALLBACK (unperceived_notification_closed),
+                               led_pattern,
+                               0);
     }
 
   /* Return if no notification window should be shown */

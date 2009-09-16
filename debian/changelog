@@ -1,6 +1,7 @@
 hildon-home (0.3.47~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#138801 - Crash : hildon-home-74E6 observed
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  8 Sep 2009 13:03:33 +0300
 

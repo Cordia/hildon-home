@@ -1,3 +1,12 @@
+2009-09-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#138801 - Crash : hildon-home-74E6 observed
+
+	* src/hd-incoming-events.c (hd_incoming_events_notified): Use
+	g_signal_connect_object instead of g_signal_connect.
+
+	* debian/changelog: Update.
+
 2009-09-08  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.46
