@@ -1,3 +1,8 @@
+2009-09-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 0.3.47
+	* configure.ac: 0.3.47
+
 2009-09-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#134673 - Add link dialog shows bookmarks that are not in
