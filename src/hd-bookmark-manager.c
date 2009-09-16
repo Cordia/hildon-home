@@ -75,12 +75,12 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
   gchar *name;
   gchar *icon_path = NULL;
 
-  g_debug ("hd_bookmark_manager_add_bookmark_item");
-
   /* If it is a folder recurse over all children */
   if (item->isFolder)
     {
       GSList *c;
+
+      g_debug ("%s. Folder.", __FUNCTION__);
 
       for (c = item->list; c; c = c->next)
         {
@@ -90,6 +90,12 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
 
       return;
     }
+
+  g_debug ("%s. Name: %s", __FUNCTION__, item->name);
+
+  /* A deleted operator bookmark */
+  if (item->isDeleted)
+    return;
 
   name = g_strndup (item->name, strlen (item->name) - BOOKMARK_EXTENSION_LEN);
 
@@ -117,6 +123,26 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
     g_object_unref (pixbuf);
 }
 
+static void
+free_bookmark_item (BookmarkItem *bookmark)
+{
+    if (!bookmark)
+        return;
+
+    bookmark->name = (g_free (bookmark->name), NULL);
+    bookmark->url = (g_free(bookmark->url), NULL);
+    bookmark->favicon_file = (g_free(bookmark->favicon_file), NULL);
+    bookmark->thumbnail_file = (g_free(bookmark->thumbnail_file), NULL);
+
+    if (bookmark->list) {
+        g_slist_foreach (bookmark->list, (GFunc) free_bookmark_item, NULL);
+        g_slist_free (bookmark->list);
+        bookmark->list = NULL;
+    }
+
+    g_free (bookmark);
+}
+
 static gboolean
 hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
 {
@@ -136,7 +162,7 @@ hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
   if (root != NULL)
   {
     hd_bookmark_manager_add_bookmark_item (manager, root);
-    g_free (root);
+    free_bookmark_item (root);
   }
   else
     g_warning ("Could not read users bookmarks from file");
@@ -153,6 +179,8 @@ hd_bookmark_manager_bookmark_files_changed (GnomeVFSMonitorHandle *handle,
 {
   HDBookmarkManager *manager = HD_BOOKMARK_MANAGER (user_data);
   HDBookmarkManagerPrivate *priv = manager->priv;
+
+  g_debug ("%s. Type: %u", __FUNCTION__, event_type);
 
   if (!priv->parse_idle_id)
     priv->parse_idle_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,

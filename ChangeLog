@@ -1,5 +1,15 @@
 2009-09-16  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#134673 - Add link dialog shows bookmarks that are not in
+	bookmarks
+
+	* src/hd-bookmark-manager.c (hd_bookmark_manager_add_bookmark_item,
+	  free_bookmark_item, hd_bookmark_manager_parse_bookmark_files,
+	  hd_bookmark_manager_bookmark_files_changed): Add support for
+	  isDeleted flag. Fixes memory leak.
+
+2009-09-16  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#138801 - Crash : hildon-home-74E6 observed
 
 	* src/hd-incoming-events.c (hd_incoming_events_notified): Use

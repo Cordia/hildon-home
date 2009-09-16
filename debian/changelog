@@ -2,6 +2,7 @@ hildon-home (0.3.47~unreleased) unstable; urgency=low
 
   Jan Arne:
   * Fixes: NB#138801 - Crash : hildon-home-74E6 observed
+  * Fixes: NB#134673 - Add link dialog shows bookmarks that are not in bookmarks
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue,  8 Sep 2009 13:03:33 +0300
 
