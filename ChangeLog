@@ -1,3 +1,14 @@
+2009-09-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes memory leaks (NB#127468)
+
+	* src/hd-change-background-dialog.c (get_thumbnail_for_theme,
+	  image_set_thumbnail_callback): Add missing gtk_tree_path_free and
+	  g_free.
+
+	* src/hd-incoming-events.c (filter_property_changed): Add missing
+	XFree.
+
 2009-09-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Fix Coverity-found issues.

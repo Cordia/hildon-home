@@ -1524,7 +1524,7 @@ filter_property_changed (GdkXEvent *xevent,
           Atom actual_type;
           int actual_format;
           unsigned long nitems, bytes;
-          unsigned char *atom_data;
+          unsigned char *atom_data = NULL;
 
           if (XGetWindowProperty (GDK_WINDOW_XDISPLAY (root_win),
                                   GDK_WINDOW_XID (root_win),
@@ -1541,11 +1541,13 @@ filter_property_changed (GdkXEvent *xevent,
             {
               if (nitems == 1) {
                   guint32 *new_value = (void *) atom_data;
-                  g_debug ("%s. %u", __FUNCTION__, *new_value);
                   if (*new_value == 0xFFFFFFFF)
                     hd_multi_map_remove_all (priv->unperceived_notifications);
               }
             }
+	  
+          if(atom_data)
+            XFree (atom_data);
         }
     }
 

@@ -176,6 +176,8 @@ get_thumbnail_for_theme (const gchar *theme)
                      error->message);
           g_error_free (error);
         }
+
+      g_free (path);
     }
 
   return thumbnail;
@@ -202,6 +204,8 @@ image_set_thumbnail_callback (HildonThumbnailFactory *self,
                               COL_THUMBNAIL, thumbnail,
                               -1);
         }
+
+      gtk_tree_path_free (path);
     }
 }
 
