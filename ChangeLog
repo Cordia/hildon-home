@@ -1,3 +1,12 @@
+2009-09-28  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Fix Coverity-found issues.
+
+	* src/hd-backgrounds.c (volume_pre_unmount_cb): Check if
+	gnome_vfs_volume_monitor_get_volume_for_path returns NULL. 
+	* src/hd-hildon-home-dbus.c (hd_hildon_home_dbus_init): Fix D-Bus
+	connection code to make Coverity happy.
+
 2009-09-16  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.47

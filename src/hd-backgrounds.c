@@ -1317,7 +1317,7 @@ volume_pre_unmount_cb (GnomeVFSVolumeMonitor *monitor,
                                                             path);
       g_free (path);
 
-      if (!gnome_vfs_volume_compare (volume, other))
+      if (other && !gnome_vfs_volume_compare (volume, other))
         {
           /* Display banner if the background image was user initiated */
           display_banner = (display_banner || data->display_banner);

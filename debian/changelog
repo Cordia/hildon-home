@@ -1,6 +1,7 @@
 hildon-home (0.3.48~unreleased) unstable; urgency=low
 
-  * foo
+  Kimmo:
+  * Fix couple of Coverity-found issues.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 16 Sep 2009 16:29:59 +0300
 
