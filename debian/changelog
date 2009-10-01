@@ -1,9 +1,13 @@
-hildon-home (0.3.48~unreleased) unstable; urgency=low
+hildon-home (0.3.48) unstable; urgency=low
 
   Kimmo:
   * Fix couple of Coverity-found issues.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 16 Sep 2009 16:29:59 +0300
+  Jan Arne:
+  * Fixes: NB#127468 - hildon-home leaks slowly memory during generic device
+    use
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed, 30 Sep 2009 16:27:04 +0300
 
 hildon-home (0.3.47) unstable; urgency=low
 
