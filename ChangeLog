@@ -1,3 +1,20 @@
+2009-10-08  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#134569 - Very rarely 'SMS Conversation View' is not opened
+	immediately from notification preview if it stays in Task Switcher
+	View for a while
+	Fixes: NB#126688 - Contact authorization dialog should not be modal
+
+	* src/hd-incoming-events.c (notifications_append,
+	  is_notification_sticky, repack_ptr_array, notifications_close_all,
+	  notifications_get_amount, notifications_activate,
+	  switcher_window_response, preview_window_response): Do not use the
+	  defined D-Bus call if notification is in a thread (assigned to a
+	  window). Add "sticky" hint (type bool or uchar) which requires
+	  notification to be closed explicitly.
+
+	* debian/changelog: Update.
+
 2009-09-30  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.48

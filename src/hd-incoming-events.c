@@ -300,9 +300,47 @@ notifications_append (Notifications *ns,
     }
 }
 
+static gboolean
+is_notification_sticky (HDNotification *notification)
+{
+  GValue *sticky = hd_notification_get_hint (notification,
+                                             "sticky");
+
+  if (G_VALUE_HOLDS_BOOLEAN (sticky))
+    return g_value_get_boolean (sticky);
+  else if (G_VALUE_HOLDS_UCHAR (sticky))
+    return g_value_get_uchar (sticky) != 0;
+  else if (G_VALUE_HOLDS_UINT (sticky))
+    return g_value_get_uint (sticky) != 0;
+  else
+    return FALSE;
+}
+
+static void
+repack_ptr_array (GPtrArray *array)
+{
+  guint dest_id = 0, src_id = 0;
+
+  for (; src_id < array->len; src_id++)
+    {
+      gpointer src_data = g_ptr_array_index (array, src_id);
+
+      if (src_data)
+        {
+          g_ptr_array_index (array, dest_id) = src_data;
+          dest_id++;
+        }
+    }
+
+  g_ptr_array_remove_range (array,
+                            dest_id,
+                            array->len - dest_id);
+}
+
 /* Close all notifications and call the update cb */
 static void
-notifications_close_all (Notifications *ns)
+notifications_close_all (Notifications *ns,
+                         gboolean       close_sticky)
 {
   guint i;
 
@@ -310,18 +348,22 @@ notifications_close_all (Notifications *ns)
     {
       HDNotification *n = g_ptr_array_index (ns->notifications,
                                              i);
-      g_signal_handlers_disconnect_by_func (n,
-                                            notification_closed_cb,
-                                            ns);
-      hd_notification_manager_close_notification (hd_notification_manager_get (),
-                                                  hd_notification_get_id (n),
-                                                  NULL);
-      g_object_unref (n);
-    }
+      gboolean sticky = is_notification_sticky (n);
 
-  g_ptr_array_remove_range (ns->notifications,
-                            0,
-                            ns->notifications->len);
+      if (close_sticky || !sticky)
+        {
+          g_signal_handlers_disconnect_by_func (n,
+                                                notification_closed_cb,
+                                                ns);
+          hd_notification_manager_close_notification (hd_notification_manager_get (),
+                                                      hd_notification_get_id (n),
+                                                      NULL);
+          g_object_unref (n);
+          g_ptr_array_index (ns->notifications, i) = NULL;
+        }
+    }
+ 
+  repack_ptr_array (ns->notifications);
 
   if (ns->cb)
     ns->cb (ns, ns->cb_data);
@@ -414,18 +456,14 @@ notifications_get_amount (Notifications *ns)
 }
 
 /* Activate an array of notifications
- *
- * Returns: %TRUE if the notifications were sucessfullly activated
  */ 
-static gboolean
+static void
 notifications_activate (Notifications *ns)
 {
-  CategoryInfo *info;
   guint i;
-  const gchar *common_account;
 
   if (notifications_is_empty (ns))
-    return TRUE;
+    return;
 
   if (osso_mem_in_lowmem_state ())
     {
@@ -436,56 +474,47 @@ notifications_activate (Notifications *ns)
                                       dgettext ("ke-recv",
                                                 "memr_ti_close_applications"));
 
-      return FALSE;
+      return;
     }
 
-  if (notifications_get_amount (ns) == 1)
+  if (notifications_get_amount (ns) > 1)
     {
-      /* Always call default action if it is only one notification */
-      HDNotification *n = g_ptr_array_index (ns->notifications, 0);
+      CategoryInfo *info;
+      const gchar *common_account;
+
+      info = notifications_get_category_info (ns);
+      common_account = notifications_get_common_account (ns);
+
+      if (common_account)
+        {
+          hd_notification_manager_call_dbus_callback_with_arg (hd_notification_manager_get (),
+                                                               info->account_call,
+                                                               common_account);
+          notifications_close_all (ns, FALSE);
+          return;
+        }
+
+      if (info && info->dbus_callback && !ns->thread)
+        {
+          /* Call D-Bus callback if available else call default action on each notification */
+          hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
+                                                      info->dbus_callback);
+          notifications_close_all (ns, FALSE);
+          return;
+        }
+    }
+
+  for (i = 0; i < ns->notifications->len; i++)
+    {
+      HDNotification *n = g_ptr_array_index (ns->notifications,
+                                             i);
 
       hd_notification_manager_call_action (hd_notification_manager_get (),
                                            n,
                                            "default");
-      notifications_close_all (ns);
-      return TRUE;
     }
 
-  info = notifications_get_category_info (ns);
-  common_account = notifications_get_common_account (ns);
-
-  if (common_account)
-    {
-      hd_notification_manager_call_dbus_callback_with_arg (hd_notification_manager_get (),
-                                                           info->account_call,
-                                                           common_account);
-      notifications_close_all (ns);
-      return TRUE;
-    }
-
-  if (info && info->dbus_callback)
-    {
-      /* Call D-Bus callback if available else call default action on each notification */
-      hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
-                                                  info->dbus_callback);
-      notifications_close_all (ns);
-      return TRUE;
-    }
-  else
-    {
-      for (i = 0; i < ns->notifications->len; i++)
-        {
-          HDNotification *n = g_ptr_array_index (ns->notifications,
-                                                 i);
-
-          hd_notification_manager_call_action (hd_notification_manager_get (),
-                                               n,
-                                               "default");
-        }
-    }
-
-  notifications_close_all (ns);
-  return TRUE;
+  notifications_close_all (ns, FALSE);
 }
 
 static void
@@ -567,7 +596,7 @@ switcher_window_response (HDIncomingEventWindow *window,
   if (response_id == GTK_RESPONSE_OK)
     notifications_activate (ns);
   else
-    notifications_close_all (ns);
+    notifications_close_all (ns, TRUE);
 }
 
 static void
@@ -752,26 +781,19 @@ preview_window_response (HDIncomingEventWindow *window,
                          gint                   response_id,
                          Notifications         *ns)
 {
-  g_debug ("preview_window_response response_id:%d", response_id);
-
   if (response_id == GTK_RESPONSE_OK)
     {
-      if (!notifications_activate (ns))
-        {
-          /* Notifications could not be activated add them to task switcher */
-          notifications_add_to_switcher (ns);
-          goto end;
-        }
+      notifications_activate (ns);
+      if (notifications_is_empty (ns))
+        notifications_free (ns);
+      else
+        notifications_add_to_switcher (ns);
     }
   else if (response_id == GTK_RESPONSE_DELETE_EVENT)
-    {
-      notifications_add_to_switcher (ns);
-      goto end;
-    }
+    notifications_add_to_switcher (ns);
+  else
+    g_warning ("%s. Unexpected response id: %d", __FUNCTION__, response_id);
 
-  notifications_free (ns);
-
-end:
   gtk_widget_destroy (GTK_WIDGET (window));
 }
 
