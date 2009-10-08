@@ -1,5 +1,20 @@
 2009-10-08  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#130557 - LED continusly blinks though clear the
+	notifications from task switcher
+
+	* src/hd-incoming-events.c (filter_property_changed): Deactivate all
+	notification related led patterns when task switcher is shown to fix
+	broken behaviour when hildon-home crashed.
+
+	* src/hd-led-pattern.c (hd_led_pattern_deactivate_all):
+	* src/hd-led-pattern.h: Add function to deactivate all notification
+	related led patterns.
+
+	* debian/changelog: Update.
+
+2009-10-08  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#134569 - Very rarely 'SMS Conversation View' is not opened
 	immediately from notification preview if it stays in Task Switcher
 	View for a while

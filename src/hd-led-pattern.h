@@ -54,6 +54,8 @@ GType            hd_led_pattern_get_type       (void);
 
 HDLedPattern    *hd_led_pattern_get            (const gchar  *name);
 
+void             hd_led_pattern_deactivate_all (void);
+
 G_END_DECLS
 
 #endif

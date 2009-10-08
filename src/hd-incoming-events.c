@@ -1564,11 +1564,14 @@ filter_property_changed (GdkXEvent *xevent,
               if (nitems == 1) {
                   guint32 *new_value = (void *) atom_data;
                   if (*new_value == 0xFFFFFFFF)
-                    hd_multi_map_remove_all (priv->unperceived_notifications);
+                    {
+                      hd_led_pattern_deactivate_all ();
+                      hd_multi_map_remove_all (priv->unperceived_notifications);
+                    }
               }
             }
 	  
-          if(atom_data)
+          if (atom_data)
             XFree (atom_data);
         }
     }

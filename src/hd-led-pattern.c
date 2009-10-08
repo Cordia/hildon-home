@@ -277,4 +277,38 @@ hd_led_pattern_set_property (GObject      *object,
     }
 }
 
+const static char *default_notification_pattern[] = 
+{
+  "PatternCommunicationCall",
+  "PatternCommunicationIM",
+  "PatternCommunicationSMS",
+  "PatternCommunicationEmail",
+  "PatternCommonNotification",
+  NULL
+};
 
+void
+hd_led_pattern_deactivate_all (void)
+{
+  DBusGProxy *mce_proxy;
+  guint i;
+
+  mce_proxy = get_mce_proxy ();
+
+  if (mce_proxy)
+    {
+      for (i = 0; default_notification_pattern[i]; i++)
+        {
+          g_debug ("%s. Dectivate LED pattern: %s",
+                   __FUNCTION__,
+                   default_notification_pattern[i]);
+
+          dbus_g_proxy_call_no_reply (mce_proxy,
+                                      MCE_DEACTIVATE_LED_PATTERN,
+                                      G_TYPE_STRING,
+                                      default_notification_pattern[i],
+                                      G_TYPE_INVALID,
+                                      G_TYPE_INVALID);
+        }
+    }
+}

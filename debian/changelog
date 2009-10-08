@@ -5,6 +5,8 @@ hildon-home (0.3.49~unreleased) unstable; urgency=low
     immediately from notification preview if it stays in Task Switcher View
     for a while
   * Fixes: NB#126688 - Contact authorization dialog should not be modal
+  * Fixes: NB#130557 - LED continusly blinks though clear the notifications
+    from task switcher
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu,  1 Oct 2009 12:49:20 +0300
 
