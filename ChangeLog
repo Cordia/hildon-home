@@ -1,3 +1,22 @@
+2009-10-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Release 0.3.50
+	* configure.ac: 0.3.50
+
+2009-10-09  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#130557 - LED continusly blinks though clear the
+	notifications from task switcher
+
+	* src/hd-incoming-events.c
+	  (_HDIncomingEventsPrivate::task_switcher_shown,
+	  hd_incoming_events_notified,
+	  hd_incoming_events_system_bus_signal_handler,
+	  filter_property_changed): Do not blink when task switcher is shown
+	  and display is on.
+
+	* src/home.safe-set.in: Update.
+
 2009-10-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.49

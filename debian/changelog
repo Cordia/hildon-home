@@ -1,8 +1,10 @@
-hildon-home (0.3.50~unreleased) unstable; urgency=low
+hildon-home (0.3.50) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#130557 - LED continusly blinks though clear the notifications
+    from task switcher
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  9 Oct 2009 06:56:14 +0300
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  9 Oct 2009 15:15:27 +0200
 
 hildon-home (0.3.49) unstable; urgency=low
 

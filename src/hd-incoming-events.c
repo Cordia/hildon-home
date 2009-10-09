@@ -143,8 +143,9 @@ struct _HDIncomingEventsPrivate
   DBusGProxy      *mce_proxy;
   DBusGProxy      *sv_daemon_proxy;
 
-  gboolean         device_locked;
-  gboolean         display_on;
+  gboolean         device_locked : 1;
+  gboolean         display_on : 1;
+  gboolean         task_switcher_shown : 1;
 
   HDMultiMap      *unperceived_notifications;
 };
@@ -1067,7 +1068,7 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   if (!pattern && info)
     pattern = info->pattern;
 
-  if (pattern)
+  if (pattern && !(priv->display_on && priv->task_switcher_shown))
     {
       HDLedPattern *led_pattern = hd_led_pattern_get (pattern);
       hd_multi_map_insert (priv->unperceived_notifications,
@@ -1478,6 +1479,12 @@ hd_incoming_events_system_bus_signal_handler (DBusConnection *conn,
 
             priv->display_on = display_on;
 
+            if (display_on && priv->task_switcher_shown)
+              {
+                hd_led_pattern_deactivate_all ();
+                hd_multi_map_remove_all (priv->unperceived_notifications);
+              }
+
             g_signal_emit (ie,
                            incoming_events_signals[DISPLAY_STATUS_CHANGED],
                            0, display_on);
@@ -1565,9 +1572,12 @@ filter_property_changed (GdkXEvent *xevent,
                   guint32 *new_value = (void *) atom_data;
                   if (*new_value == 0xFFFFFFFF)
                     {
+                      priv->task_switcher_shown = TRUE;
                       hd_led_pattern_deactivate_all ();
                       hd_multi_map_remove_all (priv->unperceived_notifications);
                     }
+                  else
+                    priv->task_switcher_shown = FALSE;
               }
             }
 	  
