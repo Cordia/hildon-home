@@ -1,3 +1,8 @@
+2009-10-09  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 0.3.49
+	* configure.ac: 0.3.49
+
 2009-10-08  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#130557 - LED continusly blinks though clear the
