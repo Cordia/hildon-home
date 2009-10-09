@@ -1,3 +1,9 @@
+hildon-home (0.3.50~unreleased) unstable; urgency=low
+
+  * foo
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  9 Oct 2009 06:56:14 +0300
+
 hildon-home (0.3.49) unstable; urgency=low
 
   Jan Arne:
