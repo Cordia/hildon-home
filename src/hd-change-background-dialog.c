@@ -95,6 +95,10 @@ struct _HDChangeBackgroundDialogPrivate
   HildonThumbnailFactory *thumbnail_factory;
 };
 
+static void request_thumbnail_for_uri (HDChangeBackgroundDialog *dialog,
+                                       const char               *uri,
+                                       GtkTreeIter              *iter);
+
 G_DEFINE_TYPE (HDChangeBackgroundDialog, hd_change_background_dialog, GTK_TYPE_DIALOG);
 
 static gchar *
@@ -362,22 +366,11 @@ hd_change_background_dialog_append_backgrounds (HDChangeBackgroundDialog  *dialo
         }
       else if (image_set)
         {
-          GtkTreePath *path;
-          GtkTreeRowReference *reference;
           gchar *uri = g_filename_to_uri (image[1], NULL, NULL);
 
-          path = gtk_tree_model_get_path (priv->model, &iter);
-          reference = gtk_tree_row_reference_new (priv->model, path);
-          gtk_tree_path_free (path);
-
-          hildon_thumbnail_factory_request_pixbuf (priv->thumbnail_factory,
-                                                   uri,
-                                                   80, 60,
-                                                   FALSE,
-                                                   NULL,
-                                                   image_set_thumbnail_callback,
-                                                   reference,
-                                                   (GDestroyNotify) gtk_tree_row_reference_free);
+          request_thumbnail_for_uri (dialog,
+                                     uri,
+                                     &iter);
 
           g_free (uri);
         }
@@ -414,6 +407,30 @@ cleanup:
       g_free (image[4]);
     }
   g_dir_close (dir);
+}
+
+static void
+request_thumbnail_for_uri (HDChangeBackgroundDialog *dialog,
+                           const char               *uri,
+                           GtkTreeIter              *iter)
+{
+  HDChangeBackgroundDialogPrivate *priv = dialog->priv;
+  GtkTreePath *path;
+  GtkTreeRowReference *reference;
+
+  path = gtk_tree_model_get_path (priv->model, iter);
+  reference = gtk_tree_row_reference_new (priv->model, path);
+
+  hildon_thumbnail_factory_request_pixbuf (priv->thumbnail_factory,
+                                           uri,
+                                           80, 60,
+                                           FALSE,
+                                           NULL,
+                                           image_set_thumbnail_callback,
+                                           reference,
+                                           (GDestroyNotify) gtk_tree_row_reference_free);
+
+  gtk_tree_path_free (path);
 }
 
 static void
@@ -496,9 +513,10 @@ hd_change_background_dialog_constructed (GObject *object)
   else
     {
       GtkTreeIter iter;
-      gchar *label;
+      gchar *label, *uri;
 
       label = g_filename_display_basename (current_background);
+      uri = g_filename_to_uri (current_background, NULL, NULL);
 
       gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
                                          &iter,
@@ -510,6 +528,11 @@ hd_change_background_dialog_constructed (GObject *object)
                                          COL_IMAGE_SET, FALSE,
                                          -1);
 
+      if (uri)
+        request_thumbnail_for_uri (dialog,
+                                   uri,
+                                   &iter);
+
       priv->custom_image = gtk_tree_model_get_path (priv->model, &iter);
 
       hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
@@ -517,6 +540,7 @@ hd_change_background_dialog_constructed (GObject *object)
                                          &iter,
                                          TRUE);
       g_free (label);
+      g_free (uri);
     }
 }
 
@@ -596,6 +620,8 @@ add_image_dialog_response (GtkDialog                *dialog,
 
       uri = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (dialog));
 
+      g_debug ("%s. Selected file: %s.", __FUNCTION__, uri);
+
       if (!uri)
         {
           g_warning ("No image file selected.");
@@ -624,6 +650,10 @@ add_image_dialog_response (GtkDialog                *dialog,
                               COL_ORDER, -2, /* first entry */
                               -1);
 
+          request_thumbnail_for_uri (cb_dialog,
+                                     uri,
+                                     &iter);
+
           hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
                                              0,
                                              &iter,
@@ -633,7 +663,6 @@ add_image_dialog_response (GtkDialog                *dialog,
           g_free (filename);
           g_free (label);
         }
-
     }
 
   gtk_widget_destroy (GTK_WIDGET (dialog));
