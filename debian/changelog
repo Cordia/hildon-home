@@ -1,6 +1,10 @@
 hildon-home (0.3.51~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#134370 - Icon is not shown for the newly added image in the
+    'choose background dialog'.
+  * Fixes: NB#109885 - First item in any list is selected by default
+  * Fixes: NB#138509 - Preview notification text has white drop shadow
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  9 Oct 2009 15:19:11 +0200
 
@@ -28,6 +32,7 @@ hildon-home (0.3.48) unstable; urgency=low
 
   Kimmo:
   * Fix couple of Coverity-found issues.
+  * Fixes: NB#127468 - Memory leaks.
 
   Jan Arne:
   * Fixes: NB#127468 - hildon-home leaks slowly memory during generic device

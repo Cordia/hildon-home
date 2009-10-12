@@ -1,5 +1,32 @@
 2009-10-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#109885 - First item in any list is selected by default
+
+	* src/hd-install-widgets-dialog.c:
+	* src/hd-install-widgets-dialog.h: Add common dialog for installing
+	all kind of widgets. Do not select the first item by default.
+
+	* src/hd-widgets.c:
+	* src/hd-widgets.h: Add methods to allow using the new common dialog
+	for installing.
+
+	* src/hd-applet-manager.c:
+	* src/hd-applet-manager.h:
+	* src/hd-bookmark-widgets.c:
+	* src/hd-bookmark-widgets.h:
+	* src/hd-task-manager.c:
+	* src/hd-task-manager.h:
+	* src/hd-task-shortcut.c: Use the new common HDWidgets class to allow
+	using the common dialog.
+
+	* src/hd-hildon-home-dbus.c:
+	* src/hildon-home.c:
+	* src/Makefile.am: Required changes.
+
+	* debian/changelog: Update.
+
+2009-10-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#138509 - Preview notification text has white drop shadow
 
 	* src/hd-incoming-event-window.c

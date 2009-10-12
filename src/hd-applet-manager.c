@@ -33,6 +33,8 @@
 
 #include <string.h>
 
+#include <libhildondesktop/libhildondesktop.h>
+
 #include "hd-applet-manager.h"
 
 #define HD_APPLET_MANAGER_GET_PRIVATE(object) \
@@ -68,7 +70,7 @@ typedef struct
 static void hd_applet_manager_install_applet_from_desktop_file (HDAppletManager *manager,
                                                                 const gchar     *desktop_file);
 
-G_DEFINE_TYPE (HDAppletManager, hd_applet_manager, G_TYPE_OBJECT);
+G_DEFINE_TYPE (HDAppletManager, hd_applet_manager, HD_TYPE_WIDGETS);
 
 static void
 hd_plugin_info_free (HDPluginInfo *info)
@@ -405,35 +407,83 @@ hd_applet_manager_finalize (GObject *object)
   G_OBJECT_CLASS (hd_applet_manager_parent_class)->finalize (object);
 }
 
+static GtkTreeModel *
+hd_applet_manager_get_model (HDWidgets *widgets)
+{
+  HDAppletManagerPrivate *priv = HD_APPLET_MANAGER (widgets)->priv;
+
+  return priv->model ? g_object_ref (priv->model) : NULL;
+}
+
+
+static const gchar *
+hd_applet_manager_get_dialog_title (HDWidgets *widgets)
+{
+  return dgettext (GETTEXT_PACKAGE, "home_ti_select_widgets");
+}
+
+static void
+hd_applet_manager_setup_column_renderes (HDWidgets     *widgets,
+                                         GtkCellLayout *column)
+{
+  GtkCellRenderer *renderer;
+
+  renderer = gtk_cell_renderer_text_new ();
+  gtk_cell_layout_pack_start (column,
+                              renderer,
+                              TRUE);
+  gtk_cell_layout_add_attribute (column,
+                                 renderer,
+                                 "text", 0);
+}
+
+static void
+hd_applet_manager_install_widget (HDWidgets   *widgets,
+                                  GtkTreePath *path)
+{
+  HDAppletManagerPrivate *priv = HD_APPLET_MANAGER (widgets)->priv;
+  GtkTreeIter iter;
+  gchar *desktop_file;
+
+  gtk_tree_model_get_iter (priv->model, &iter, path);
+
+  gtk_tree_model_get (priv->model, &iter,
+                      1, &desktop_file,
+                      -1);
+
+  hd_applet_manager_install_applet_from_desktop_file (HD_APPLET_MANAGER (widgets),
+                                                      desktop_file);
+
+  g_free (desktop_file);
+}
+
 static void
 hd_applet_manager_class_init (HDAppletManagerClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  HDWidgetsClass *widgets_class = HD_WIDGETS_CLASS (klass);
 
   object_class->dispose = hd_applet_manager_dispose;
   object_class->finalize = hd_applet_manager_finalize;
+
+  widgets_class->get_dialog_title = hd_applet_manager_get_dialog_title;
+  widgets_class->get_model = hd_applet_manager_get_model;
+  widgets_class->setup_column_renderes = hd_applet_manager_setup_column_renderes;
+  widgets_class->install_widget = hd_applet_manager_install_widget;
 
   g_type_class_add_private (klass, sizeof (HDAppletManagerPrivate));
 }
 
 /* Retuns the singleton HDAppletManager instance. Should not be refed or unrefed */
-HDAppletManager *
+HDWidgets*
 hd_applet_manager_get (void)
 {
-  static HDAppletManager *manager = NULL;
+  static HDWidgets *manager = NULL;
 
   if (G_UNLIKELY (!manager))
     manager = g_object_new (HD_TYPE_APPLET_MANAGER, NULL);
 
   return manager;
-}
-
-GtkTreeModel *
-hd_applet_manager_get_model (HDAppletManager *manager)
-{
-  HDAppletManagerPrivate *priv = manager->priv;
-
-  return priv->model ? g_object_ref (priv->model) : NULL;
 }
 
 static void
@@ -461,23 +511,6 @@ hd_applet_manager_install_applet_from_desktop_file (HDAppletManager *manager,
 
   /* Store file atomically */
   hd_plugin_configuration_store_items_key_file (HD_PLUGIN_CONFIGURATION (priv->plugin_manager));
-}
-
-void
-hd_applet_manager_install_applet (HDAppletManager *manager,
-                                  GtkTreeIter     *iter)
-{
-  HDAppletManagerPrivate *priv = manager->priv;
-  gchar *desktop_file;
-
-  gtk_tree_model_get (priv->model, iter,
-                      1, &desktop_file,
-                      -1);
-
-  hd_applet_manager_install_applet_from_desktop_file (manager,
-                                                      desktop_file);
-
-  g_free (desktop_file);
 }
 
 void

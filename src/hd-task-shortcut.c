@@ -29,7 +29,7 @@
 #include <hildon/hildon.h>
 
 #include "hd-cairo-surface-cache.h"
-#include "hd-task-manager.h"
+#include "hd-shortcut-widgets.h"
 #include "hd-task-shortcut.h"
 
 /* Layout from Task navigation layout guide 1.2 */
@@ -60,8 +60,8 @@ struct _HDTaskShortcutPrivate
 G_DEFINE_TYPE (HDTaskShortcut, hd_task_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
 
 static void
-hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
-                                          HDTaskShortcut *shortcut)
+hd_task_shortcut_desktop_file_changed_cb (HDShortcutWidgets *manager,
+                                          HDTaskShortcut    *shortcut)
 {
   HDTaskShortcutPrivate *priv = shortcut->priv;
   gchar *desktop_id;
@@ -70,7 +70,7 @@ hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
 
   desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
 
-  icon_name = hd_task_manager_get_icon (manager, desktop_id);
+  icon_name = hd_shortcut_widgets_get_icon (manager, desktop_id);
  
   if (icon_name)
     {
@@ -147,8 +147,8 @@ hd_task_shortcut_desktop_file_changed_cb (HDTaskManager  *manager,
 }
 
 static void
-hd_task_shortcut_desktop_file_deleted_cb (HDTaskManager  *manager,
-                                          HDTaskShortcut *shortcut)
+hd_task_shortcut_desktop_file_deleted_cb (HDShortcutWidgets *manager,
+                                          HDTaskShortcut    *shortcut)
 {
   gboolean result;
 
@@ -161,7 +161,7 @@ static void
 hd_task_shortcut_constructed (GObject *object)
 {
   HDTaskShortcut *shortcut = HD_TASK_SHORTCUT (object);
-  HDTaskManager *manager = hd_task_manager_get ();
+  HDWidgets *manager = hd_shortcut_widgets_get ();
   gchar *desktop_id, *detailed_signal;
 
   /* Chain up */
@@ -185,7 +185,7 @@ hd_task_shortcut_constructed (GObject *object)
                            0);
 
   /* Update label and icon if already there */
-  hd_task_shortcut_desktop_file_changed_cb (manager,
+  hd_task_shortcut_desktop_file_changed_cb (HD_SHORTCUT_WIDGETS (manager),
                                             shortcut);
 
   /* Free memory */
@@ -332,8 +332,8 @@ button_release_event_cb (GtkWidget      *widget,
 
       desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
 
-      hd_task_manager_launch_task (hd_task_manager_get (),
-                                   desktop_id);
+      hd_shortcut_widgets_launch_task (HD_SHORTCUT_WIDGETS (hd_shortcut_widgets_get ()),
+                                       desktop_id);
 
       g_free (desktop_id);
 

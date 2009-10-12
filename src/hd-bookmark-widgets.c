@@ -1,7 +1,7 @@
 /*
  * This file is part of hildon-home
  *
- * Copyright (C) 2008 Nokia Corporation.
+ * Copyright (C) 2008, 2009 Nokia Corporation.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -36,10 +36,10 @@
 
 #include <osso_bookmark_parser.h>
 
-#include "hd-bookmark-manager.h"
+#include "hd-bookmark-widgets.h"
 
-#define HD_BOOKMARK_MANAGER_GET_PRIVATE(object) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_BOOKMARK_MANAGER, HDBookmarkManagerPrivate))
+#define HD_BOOKMARK_WIDGETS_GET_PRIVATE(object) \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_BOOKMARK_WIDGETS, HDBookmarkWidgetsPrivate))
 
 #define BOOKMARK_SHORTCUTS_GCONF_KEY "/apps/osso/hildon-home/bookmark-shortcuts"
 
@@ -55,7 +55,7 @@
 #define ID_VALID_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_+?"
 #define ID_SUBSTITUTOR '_'
 
-struct _HDBookmarkManagerPrivate
+struct _HDBookmarkWidgetsPrivate
 {
   GtkTreeModel *model;
 
@@ -64,13 +64,13 @@ struct _HDBookmarkManagerPrivate
   guint parse_idle_id;
 };
 
-G_DEFINE_TYPE (HDBookmarkManager, hd_bookmark_manager, G_TYPE_OBJECT);
+G_DEFINE_TYPE (HDBookmarkWidgets, hd_bookmark_widgets, HD_TYPE_WIDGETS);
 
 static void
-hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
+hd_bookmark_widgets_add_bookmark_item (HDBookmarkWidgets *widgets,
                                        BookmarkItem      *item)
 {
-  HDBookmarkManagerPrivate *priv = manager->priv;
+  HDBookmarkWidgetsPrivate *priv = widgets->priv;
   GdkPixbuf *pixbuf = NULL;
   gchar *name;
   gchar *icon_path = NULL;
@@ -84,7 +84,7 @@ hd_bookmark_manager_add_bookmark_item (HDBookmarkManager *manager,
 
       for (c = item->list; c; c = c->next)
         {
-          hd_bookmark_manager_add_bookmark_item (manager,
+          hd_bookmark_widgets_add_bookmark_item (widgets,
                                                  c->data);
         }
 
@@ -144,9 +144,9 @@ free_bookmark_item (BookmarkItem *bookmark)
 }
 
 static gboolean
-hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
+hd_bookmark_widgets_parse_bookmark_files (HDBookmarkWidgets *widgets)
 {
-  HDBookmarkManagerPrivate *priv = manager->priv;
+  HDBookmarkWidgetsPrivate *priv = widgets->priv;
   BookmarkItem *root = NULL;
 
   /* Unset the thread id so the files are parsed again if there is a change */
@@ -161,7 +161,7 @@ hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
 
   if (root != NULL)
   {
-    hd_bookmark_manager_add_bookmark_item (manager, root);
+    hd_bookmark_widgets_add_bookmark_item (widgets, root);
     free_bookmark_item (root);
   }
   else
@@ -171,28 +171,31 @@ hd_bookmark_manager_parse_bookmark_files (HDBookmarkManager *manager)
 }
 
 static void
-hd_bookmark_manager_bookmark_files_changed (GnomeVFSMonitorHandle *handle,
+hd_bookmark_widgets_bookmark_files_changed (GnomeVFSMonitorHandle *handle,
                                             const gchar *monitor_uri,
                                             const gchar *info_uri,
                                             GnomeVFSMonitorEventType event_type,
                                             gpointer user_data)
 {
-  HDBookmarkManager *manager = HD_BOOKMARK_MANAGER (user_data);
-  HDBookmarkManagerPrivate *priv = manager->priv;
+  HDBookmarkWidgets *widgets = HD_BOOKMARK_WIDGETS (user_data);
+  HDBookmarkWidgetsPrivate *priv = widgets->priv;
 
   g_debug ("%s. Type: %u", __FUNCTION__, event_type);
 
   if (!priv->parse_idle_id)
-    priv->parse_idle_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
+    priv->parse_idle_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_widgets_parse_bookmark_files,
                                                 user_data);
 }
 
 static void
-hd_bookmark_manager_monitor_bookmark_files (HDBookmarkManager *manager)
+hd_bookmark_widgets_constructed (GObject *object)
 {
-  HDBookmarkManagerPrivate *priv = manager->priv;
+  HDBookmarkWidgetsPrivate *priv = HD_BOOKMARK_WIDGETS (object)->priv;
   gchar *user_bookmarks, *user_bookmarks_uri;
   GnomeVFSResult result;
+
+  if (G_OBJECT_CLASS (hd_bookmark_widgets_parent_class)->constructed)
+    G_OBJECT_CLASS (hd_bookmark_widgets_parent_class)->constructed (object);
 
   /* Create the bookmark paths if they do not exist yet */
   set_bookmark_files_path ();
@@ -205,24 +208,24 @@ hd_bookmark_manager_monitor_bookmark_files (HDBookmarkManager *manager)
   result = gnome_vfs_monitor_add (&priv->user_bookmarks_handle,
                                   user_bookmarks_uri,
                                   GNOME_VFS_MONITOR_FILE,
-                                  hd_bookmark_manager_bookmark_files_changed,
-                                  manager);
+                                  hd_bookmark_widgets_bookmark_files_changed,
+                                  object);
   if (result != GNOME_VFS_OK)
     g_debug ("Could not add monitor for user bookmark file. %s", gnome_vfs_result_to_string (result));
 
-  priv->parse_idle_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_manager_parse_bookmark_files,
-                                              manager);
+  priv->parse_idle_id = gdk_threads_add_idle ((GSourceFunc) hd_bookmark_widgets_parse_bookmark_files,
+                                              object);
 
   g_free (user_bookmarks);
   g_free (user_bookmarks_uri);
 }
 
 static void
-hd_bookmark_manager_init (HDBookmarkManager *manager)
+hd_bookmark_widgets_init (HDBookmarkWidgets *widgets)
 {
-  HDBookmarkManagerPrivate *priv;
-  manager->priv = HD_BOOKMARK_MANAGER_GET_PRIVATE (manager);
-  priv = manager->priv;
+  HDBookmarkWidgetsPrivate *priv;
+  widgets->priv = HD_BOOKMARK_WIDGETS_GET_PRIVATE (widgets);
+  priv = widgets->priv;
 
   priv->model = GTK_TREE_MODEL (gtk_list_store_new (4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, GDK_TYPE_PIXBUF));
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
@@ -232,9 +235,9 @@ hd_bookmark_manager_init (HDBookmarkManager *manager)
 }
 
 static void
-hd_bookmark_manager_dipose (GObject *object)
+hd_bookmark_widgets_dipose (GObject *object)
 {
-  HDBookmarkManagerPrivate *priv = HD_BOOKMARK_MANAGER (object)->priv;
+  HDBookmarkWidgetsPrivate *priv = HD_BOOKMARK_WIDGETS (object)->priv;
 
   if (priv->model)
     priv->model = (g_object_unref (priv->model), NULL);
@@ -248,51 +251,60 @@ hd_bookmark_manager_dipose (GObject *object)
       priv->parse_idle_id = 0;
     }
 
-  G_OBJECT_CLASS (hd_bookmark_manager_parent_class)->dispose (object);
+  G_OBJECT_CLASS (hd_bookmark_widgets_parent_class)->dispose (object);
 }
 
-static void
-hd_bookmark_manager_class_init (HDBookmarkManagerClass *klass)
+
+static GtkTreeModel *
+hd_bookmark_widgets_get_model (HDWidgets *widgets)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  object_class->dispose = hd_bookmark_manager_dipose;
-
-  g_type_class_add_private (klass, sizeof (HDBookmarkManagerPrivate));
-}
-
-/* Retuns the singleton HDBookmarkManager instance. Should not be refed or unrefed */
-HDBookmarkManager *
-hd_bookmark_manager_get (void)
-{
-  static HDBookmarkManager *manager = NULL;
-
-  if (G_UNLIKELY (!manager))
-    {
-      manager = g_object_new (HD_TYPE_BOOKMARK_MANAGER, NULL);
-
-      hd_bookmark_manager_monitor_bookmark_files (manager);
-    }
-
-  return manager;
-}
-
-GtkTreeModel *
-hd_bookmark_manager_get_model (HDBookmarkManager *manager)
-{
-  HDBookmarkManagerPrivate *priv = manager->priv;
+  HDBookmarkWidgetsPrivate *priv = HD_BOOKMARK_WIDGETS (widgets)->priv;
 
   return g_object_ref (priv->model);
 }
 
-void
-hd_bookmark_manager_install_bookmark (HDBookmarkManager *manager,
-                                      GtkTreeIter     *iter)
+
+static const gchar *
+hd_bookmark_widgets_get_dialog_title (HDWidgets *widgets)
 {
-  HDBookmarkManagerPrivate *priv = manager->priv;
+  return dgettext (GETTEXT_PACKAGE, "home_ti_select_bookmark");
+}
+
+static void
+hd_bookmark_widgets_setup_column_renderes (HDWidgets     *widgets,
+                                           GtkCellLayout *column)
+{
+  GtkCellRenderer *renderer;
+  
+  renderer = gtk_cell_renderer_pixbuf_new ();
+  gtk_cell_layout_pack_start (column,
+                              renderer,
+                              FALSE);
+  gtk_cell_layout_add_attribute (column,
+                                 renderer,
+                                 "pixbuf", 3);
+
+  /* Add the label renderer */
+  renderer = gtk_cell_renderer_text_new ();
+  gtk_cell_layout_pack_start (column,
+                              renderer,
+                              FALSE);
+  gtk_cell_layout_add_attribute (column,
+                                 renderer,
+                                 "text", 0);
+}
+
+static void
+hd_bookmark_widgets_install_widget (HDWidgets   *widgets,
+                                    GtkTreePath *path)
+{
+  HDBookmarkWidgetsPrivate *priv = HD_BOOKMARK_WIDGETS (widgets)->priv;
+  GtkTreeIter iter;
   gchar *label, *icon, *url;
 
-  gtk_tree_model_get (priv->model, iter,
+  gtk_tree_model_get_iter (priv->model, &iter, path);
+
+  gtk_tree_model_get (priv->model, &iter,
                       0, &label,
                       1, &icon,
                       2, &url,
@@ -306,4 +318,33 @@ hd_bookmark_manager_install_bookmark (HDBookmarkManager *manager,
   g_free (label);
   g_free (icon);
   g_free (url);
+}
+
+static void
+hd_bookmark_widgets_class_init (HDBookmarkWidgetsClass *klass)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  HDWidgetsClass *widgets_class = HD_WIDGETS_CLASS (klass);
+
+  object_class->constructed = hd_bookmark_widgets_constructed;
+  object_class->dispose = hd_bookmark_widgets_dipose;
+
+  widgets_class->get_dialog_title = hd_bookmark_widgets_get_dialog_title;
+  widgets_class->get_model = hd_bookmark_widgets_get_model;
+  widgets_class->setup_column_renderes = hd_bookmark_widgets_setup_column_renderes;
+  widgets_class->install_widget = hd_bookmark_widgets_install_widget;
+
+  g_type_class_add_private (klass, sizeof (HDBookmarkWidgetsPrivate));
+}
+
+/* Retuns the singleton HDBookmarkWidgets instance. Should not be refed or unrefed */
+HDWidgets *
+hd_bookmark_widgets_get (void)
+{
+  static HDWidgets *bookmark_widgets = NULL;
+
+  if (G_UNLIKELY (!bookmark_widgets))
+    bookmark_widgets = g_object_new (HD_TYPE_BOOKMARK_WIDGETS, NULL);
+
+  return bookmark_widgets;
 }

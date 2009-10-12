@@ -55,12 +55,6 @@ hd-marshal.h: hd-marshal.list
 hildon_home_SOURCES = \
 	hd-activate-views-dialog.c	\
 	hd-activate-views-dialog.h	\
-	hd-add-applet-dialog.c		\
-	hd-add-applet-dialog.h		\
-	hd-add-bookmark-dialog.c	\
-	hd-add-bookmark-dialog.h	\
-	hd-add-task-dialog.c		\
-	hd-add-task-dialog.h		\
 	hd-applet-manager.c		\
 	hd-applet-manager.h		\
 	hd-backgrounds.c		\
@@ -83,14 +77,18 @@ hildon_home_SOURCES = \
 	hd-system-notifications.h	\
 	hd-task-shortcut.c		\
 	hd-task-shortcut.h		\
-	hd-task-manager.c		\
-	hd-task-manager.h		\
-	hd-bookmark-manager.c		\
-	hd-bookmark-manager.h		\
+	hd-shortcut-widgets.c		\
+	hd-shortcut-widgets.h		\
+	hd-bookmark-widgets.c		\
+	hd-bookmark-widgets.h		\
 	hd-led-pattern.c                \
 	hd-led-pattern.h		\
 	hd-multi-map.c			\
 	hd-multi-map.h			\
+	hd-widgets.c			\
+	hd-widgets.h			\
+	hd-install-widgets-dialog.c	\
+	hd-install-widgets-dialog.h	\
 	hildon-home.c
 
 nodist_hildon_home_SOURCES = \

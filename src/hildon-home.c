@@ -40,9 +40,9 @@
 #include "hd-notification-manager.h"
 #include "hd-system-notifications.h"
 #include "hd-incoming-events.h"
-#include "hd-bookmark-manager.h"
+#include "hd-bookmark-widgets.h"
 #include "hd-bookmark-shortcut.h"
-#include "hd-task-manager.h"
+#include "hd-shortcut-widgets.h"
 #include "hd-task-shortcut.h"
 #include "hd-hildon-home-dbus.h"
 #include "hd-applet-manager.h"
@@ -183,12 +183,12 @@ main (int argc, char **argv)
   g_object_unref (client);
 
   /* Task Shortcuts */
-  hd_task_manager_get ();
+  hd_shortcut_widgets_get ();
   hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,
                     HD_TYPE_TASK_SHORTCUT);
 
   /* Bookmark Shortcuts */
-  hd_bookmark_manager_get ();
+  hd_bookmark_widgets_get ();
   hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
                     HD_TYPE_BOOKMARK_SHORTCUT);
 

@@ -22,10 +22,7 @@
 #ifndef __HD_APPLET_MANAGER_H__
 #define __HD_APPLET_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
-
-#include <libhildondesktop/libhildondesktop.h>
+#include "hd-widgets.h"
 
 G_BEGIN_DECLS
 
@@ -42,26 +39,22 @@ typedef struct _HDAppletManagerPrivate HDAppletManagerPrivate;
 
 struct _HDAppletManager 
 {
-  GObject gobject;
+  HDWidgets parent;
 
   HDAppletManagerPrivate *priv;
 };
 
 struct _HDAppletManagerClass 
 {
-  GObjectClass parent_class;
+  HDWidgetsClass parent_class;
 };
 
-GType            hd_applet_manager_get_type       (void);
+GType      hd_applet_manager_get_type       (void);
 
-HDAppletManager *hd_applet_manager_get            (void);
+HDWidgets *hd_applet_manager_get            (void);
 
-GtkTreeModel    *hd_applet_manager_get_model      (HDAppletManager *manager);
-
-void             hd_applet_manager_install_applet (HDAppletManager *manager,
-                                                   GtkTreeIter     *iter);
-void             hd_applet_manager_remove_applet  (HDAppletManager *manager,
-                                                   const gchar     *applet_id);
+void       hd_applet_manager_remove_applet  (HDAppletManager *manager,
+                                             const gchar     *applet_id);
 
 G_END_DECLS
 
