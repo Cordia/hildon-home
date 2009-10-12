@@ -1,3 +1,8 @@
+2009-10-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
+
+	Release 0.3.51
+	* configure.ac: 0.3.51
+
 2009-10-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#109885 - First item in any list is selected by default
