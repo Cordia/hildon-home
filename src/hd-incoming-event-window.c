@@ -642,15 +642,9 @@ hd_incoming_event_window_class_init (HDIncomingEventWindowClass *klass)
   /* Add shadow to label */
   gtk_rc_parse_string ("style \"HDIncomingEventWindow-Text\" = \"osso-color-themeing\" {\n"
                        "  fg[NORMAL] = @NotificationTextColor\n"
-                       "  engine \"sapwood\" {\n"
-                       "    shadowcolor = @DefaultTextColor\n"
-                       "  }\n"
                        "} widget \"*.HDIncomingEventWindow-Text\" style \"HDIncomingEventWindow-Text\"\n"
                        "style \"HDIncomingEventWindow-Secondary\" = \"osso-color-themeing\" {\n"
                        "  fg[NORMAL] = @NotificationSecondaryTextColor\n"
-                       "  engine \"sapwood\" {\n"
-                       "    shadowcolor = @DefaultTextColor\n"
-                       "  }\n"
                        "} widget \"*.HDIncomingEventWindow-Secondary\" style \"HDIncomingEventWindow-Secondary\"");
   g_type_class_add_private (klass, sizeof (HDIncomingEventWindowPrivate));
 }
