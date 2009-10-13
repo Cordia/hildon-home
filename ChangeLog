@@ -1,5 +1,10 @@
 2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	* src/hd-applet-manager.c (hd_applet_manager_setup_column_renderes):
+	Center the widgets in the Add widget again. Fix regression.
+
+2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#139471 - Hildon-home crash when moving large number of
 	bookmarks
 	Fixes: NB#142632 - hildon-home crashes (sefgault) when receiving a

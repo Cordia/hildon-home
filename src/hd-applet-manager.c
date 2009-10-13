@@ -429,6 +429,10 @@ hd_applet_manager_setup_column_renderes (HDWidgets     *widgets,
   GtkCellRenderer *renderer;
 
   renderer = gtk_cell_renderer_text_new ();
+  g_object_set (renderer,
+                "width", 1,
+                "xalign", 0.5,
+                NULL);
   gtk_cell_layout_pack_start (column,
                               renderer,
                               TRUE);
