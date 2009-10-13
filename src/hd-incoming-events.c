@@ -376,6 +376,7 @@ notifications_get_category_info (Notifications *ns)
   HDIncomingEvents *ie = hd_incoming_events_get ();
   HDIncomingEventsPrivate *priv = ie->priv;
   HDNotification *notification;
+  const gchar *category;
 
   if (notifications_is_empty (ns))
     return NULL;
@@ -383,8 +384,13 @@ notifications_get_category_info (Notifications *ns)
   notification = g_ptr_array_index (ns->notifications,
                                     ns->notifications->len - 1);
 
+  category = hd_notification_get_category (notification);
+
+  if (!category)
+    return NULL;
+
   return g_hash_table_lookup (priv->categories,
-                              hd_notification_get_category (notification));
+                              category);
 }
 
 /* If account call is available, check if the account hint is the same for

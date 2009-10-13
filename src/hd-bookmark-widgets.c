@@ -94,7 +94,7 @@ hd_bookmark_widgets_add_bookmark_item (HDBookmarkWidgets *widgets,
   g_debug ("%s. Name: %s", __FUNCTION__, item->name);
 
   /* A deleted operator bookmark */
-  if (item->isDeleted)
+  if (item->isDeleted || !item->name)
     return;
 
   name = g_strndup (item->name, strlen (item->name) - BOOKMARK_EXTENSION_LEN);

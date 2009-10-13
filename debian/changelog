@@ -1,6 +1,9 @@
 hildon-home (0.3.52~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * NB#139471 - Hildon-home crash when moving large number of bookmarks
+  * NB#142632 - hildon-home crashes (sefgault) when receiving a custom
+    notification
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Mon, 12 Oct 2009 14:47:01 +0300
 

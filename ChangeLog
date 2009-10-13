@@ -1,3 +1,18 @@
+2009-10-13  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#139471 - Hildon-home crash when moving large number of
+	bookmarks
+	Fixes: NB#142632 - hildon-home crashes (sefgault) when receiving a
+	custom notification
+
+	* src/hd-bookmark-widgets.c (hd_bookmark_widgets_add_bookmark_item):
+	Check if bookmark name is NULL and do not crash in that case.
+
+	* src/hd-incoming-events.c (notifications_get_category_info): Support
+	custom notifications without a category set.
+
+	* debian/changelog: Update.
+
 2009-10-12  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.51
