@@ -1,5 +1,9 @@
 2009-10-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Release 0.3.53
+
+2009-10-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#144239 - Shortcut of customized application is missing after
 	device restart
 

@@ -1,6 +1,8 @@
-hildon-home (0.3.53~unreleased) unstable; urgency=low
+hildon-home (0.3.53) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#144239 - Shortcut of customized application is missing after
+    device restart
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 13 Oct 2009 14:44:58 +0300
 
