@@ -226,13 +226,13 @@ hd_shortcut_widgets_load_desktop_file (const gchar *filename)
   if (info->icon)
     icon_info = gtk_icon_theme_lookup_icon (icon_theme,
                                             info->icon,
-                                            64,
+                                            HILDON_ICON_PIXEL_SIZE_THUMB,
                                             GTK_ICON_LOOKUP_NO_SVG);
 
   if (!icon_info)
     icon_info = gtk_icon_theme_lookup_icon (icon_theme,
                                             "tasklaunch_default_application",
-                                            64,
+                                            HILDON_ICON_PIXEL_SIZE_THUMB,
                                             GTK_ICON_LOOKUP_NO_SVG);
 
   if (icon_info)
@@ -725,6 +725,19 @@ hd_shortcut_widgets_get (void)
     }
 
   return widgets;
+}
+
+gboolean
+hd_shortcut_widgets_is_available (HDShortcutWidgets *widgets,
+                                  const gchar       *desktop_id)
+{
+  HDShortcutWidgetsPrivate *priv = widgets->priv;
+
+  g_return_val_if_fail (HD_IS_SHORTCUT_WIDGETS (widgets), FALSE);
+  g_return_val_if_fail (desktop_id, FALSE);
+
+  return g_hash_table_lookup (priv->available_tasks,
+                              desktop_id) != NULL;
 }
 
 const gchar *

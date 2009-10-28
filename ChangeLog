@@ -1,3 +1,20 @@
+2009-10-28  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#144239 - Shortcut of customized application is missing after
+	device restart
+
+	* src/hd-shortcut-widgets.c (hd_shortcut_widgets_load_desktop_file):
+	  Use symoblic constants for icon size.
+	  (hd_shortcut_widgets_is_available):
+	* src/hd-shortcut-widgets.h (hd_shortcut_widgets_is_available): Add
+	  new function to check if .desktop file was already scanned.
+
+	* src/hd-task-shortcut.c (load_icon_from_absolute_path,
+	  load_icon_from_theme, load_default_icon, load_icon_from_icon_name,
+	  hd_task_shortcut_desktop_file_changed_cb, hd_task_shortcut_show,
+	  hd_task_shortcut_class_init): Show shortcut as soon as .desktop file
+	  is changed. Also show icon when icon is not available.
+
 2009-10-13  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.52
