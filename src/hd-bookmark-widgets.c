@@ -109,6 +109,15 @@ hd_bookmark_widgets_add_bookmark_item (HDBookmarkWidgets *widgets,
       pixbuf = gdk_pixbuf_new_from_file_at_size (icon_path, 106, 64, NULL);
     }
 
+  if (!pixbuf)
+    {
+      pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
+                                         "general_bookmark",
+                                         64,
+                                         GTK_ICON_LOOKUP_NO_SVG,
+                                         NULL);
+    }
+
   gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
                                      NULL, -1,
                                      0, name,

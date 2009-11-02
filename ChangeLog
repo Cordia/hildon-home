@@ -1,3 +1,16 @@
+2009-11-02  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#131297 and NB#142916
+
+	* configure.ac:
+	* debian/control: Depends on new libhildondesktop.
+
+	* src/hd-bookmark-shortcut.c: Add fallback for thumbnail when the
+	thumbnail icon is not available.
+
+	* src/hd-bookmark-widgets.c: Use new functions to handle bookmark
+	shortcut creation and deletion in libhildondesktop.
+
 2009-10-28  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Release 0.3.53

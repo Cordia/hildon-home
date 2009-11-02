@@ -62,9 +62,6 @@
 
 /* GConf path for boomarks */
 #define BOOKMARKS_GCONF_PATH      "/apps/osso/hildon-home/bookmarks"
-#define BOOKMARKS_GCONF_KEY_LABEL BOOKMARKS_GCONF_PATH "/%s/label"
-#define BOOKMARKS_GCONF_KEY_URL   BOOKMARKS_GCONF_PATH "/%s/url"
-#define BOOKMARKS_GCONF_KEY_ICON  BOOKMARKS_GCONF_PATH "/%s/icon"
 
 #define HD_BOOKMARK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
                                                                             HD_TYPE_BOOKMARK_SHORTCUT,\
@@ -81,6 +78,7 @@ struct _HDBookmarkShortcutPrivate
   GConfClient *gconf_client;
 
   cairo_surface_t *thumbnail_icon;
+  cairo_surface_t *default_thumbnail_icon;
 
   cairo_surface_t *bg_image;
   cairo_surface_t *bg_active;
@@ -89,127 +87,178 @@ struct _HDBookmarkShortcutPrivate
 
 G_DEFINE_TYPE (HDBookmarkShortcut, hd_bookmark_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
 
+static inline gchar *
+get_gconf_key (const gchar *plugin_id,
+               const gchar *suffix)
+{
+  return g_strdup_printf ("%s/%s/%s",
+                          BOOKMARKS_GCONF_PATH,
+                          plugin_id,
+                          suffix);
+}
+
+static inline gchar *
+get_string_from_gconf (GConfClient *client,
+                       const gchar *plugin_id,
+                       const gchar *suffix)
+{
+  gchar *key, *value;
+  GError *error = NULL;
+
+  key = get_gconf_key (plugin_id, suffix);
+  value = gconf_client_get_string (client,
+                                   key,
+                                   &error);
+  if (error)
+    {
+      g_warning ("%s. Could not read %s from GConf for bookmark shortcut %s. %s",
+                 __FUNCTION__,
+                 suffix,
+                 plugin_id,
+                 error->message);
+      g_error_free (error);
+    }
+
+  g_free (key);
+
+  return value;
+}
+
+static inline gchar *
+get_label_from_gconf (GConfClient *client,
+                      const gchar *plugin_id)
+{
+  return get_string_from_gconf (client,
+                                plugin_id,
+                                "label");
+}
+
+static inline gchar *
+get_icon_path_from_gconf (GConfClient *client,
+                          const gchar *plugin_id)
+{
+  return get_string_from_gconf (client,
+                                plugin_id,
+                                "icon");
+}
+
+static inline gchar *
+get_url_from_gconf (GConfClient *client,
+                    const gchar *plugin_id)
+{
+  return get_string_from_gconf (client,
+                                plugin_id,
+                                "url");
+}
+
+static inline cairo_surface_t *
+scale_icon (cairo_surface_t *icon,
+            double           width,
+            double           height)
+{
+  cairo_surface_t *scaled_icon;
+  cairo_t *cr;
+
+  scaled_icon = cairo_surface_create_similar (icon,
+                                              cairo_surface_get_content (icon),
+                                              THUMBNAIL_WIDTH,
+                                              THUMBNAIL_HEIGHT);
+
+  cr = cairo_create (scaled_icon);
+
+  cairo_scale (cr,
+               THUMBNAIL_WIDTH / width,
+               THUMBNAIL_HEIGHT / height);
+
+  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_surface (cr,
+                            icon,
+                            0.0,
+                            0.0);
+
+  cairo_paint (cr);
+  cairo_destroy (cr);
+
+  return scaled_icon;
+}
+
+static inline cairo_surface_t *
+scale_icon_if_required (cairo_surface_t *icon)
+{
+  cairo_surface_t *scaled_icon;
+  int width, height;
+
+  width = cairo_image_surface_get_width (icon);
+  height = cairo_image_surface_get_height (icon);
+
+  if (width == THUMBNAIL_WIDTH &&
+      height == THUMBNAIL_HEIGHT)
+    return cairo_surface_reference (icon);
+
+  scaled_icon = scale_icon (icon, width, height);
+
+  return scaled_icon;
+}
+
+static inline cairo_surface_t *
+get_icon_from_gconf (GConfClient *client,
+                     const gchar *plugin_id)
+{
+  gchar *icon_path;
+
+  icon_path = get_icon_path_from_gconf (client, plugin_id);
+
+  if (icon_path)
+    {
+      cairo_surface_t *icon, *scaled_icon = NULL;
+      cairo_status_t status;
+
+      icon = cairo_image_surface_create_from_png (icon_path);
+      status = cairo_surface_status (icon);
+
+      if (status != CAIRO_STATUS_SUCCESS)
+        g_warning ("%s. Could not get thumbnail from file %s. %s",
+                   __FUNCTION__,
+                   icon_path,
+                   cairo_status_to_string (status));
+      else
+        scaled_icon = scale_icon_if_required (icon);
+
+      cairo_surface_destroy (icon);
+      g_free (icon_path);
+
+      return scaled_icon;
+    }
+
+  return NULL;
+}
+
 static void
 hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
 {
   HDBookmarkShortcutPrivate *priv = shortcut->priv;
   gchar *plugin_id;
-  gchar *key, *value;
-  GError *error = NULL;
+  gchar *label;
 
   plugin_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
 
-  /* Get label value from GConf */
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_LABEL, plugin_id);
-  value = gconf_client_get_string (priv->gconf_client,
-                                   key,
-                                   &error);
+  label = get_label_from_gconf (priv->gconf_client,
+                                plugin_id);
+  gtk_label_set_text (GTK_LABEL (priv->label), 
+                      label);
+  g_free (label);
 
-  /* Warn on error */
-  if (error)
-    {
-      g_warning ("Could not read label value from GConf for bookmark shortcut %s. %s",
-                 plugin_id,
-                 error->message);
-      g_clear_error (&error);
-    }
-
-  if (!value)
-    g_warning ("%s. No label for bookmark %s.", __FUNCTION__, plugin_id);
-
-  /* Set label */
-  gtk_label_set_text (GTK_LABEL (priv->label), value);
-
-  /* Free memory */
-  g_free (key);
-  g_free (value);
-
-  /* Get icon path from GConf */
   if (priv->thumbnail_icon)
     priv->thumbnail_icon = (cairo_surface_destroy (priv->thumbnail_icon), NULL);
 
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_ICON, plugin_id);
-  value = gconf_client_get_string (priv->gconf_client,
-                                   key,
-                                   &error);
-
-  /* Warn on error */
-  if (error)
-    {
-      g_warning ("Could not read icon path from GConf for bookmark shortcut %s. %s",
-                 plugin_id,
-                 error->message);
-      g_clear_error (&error);
-    }
-  else
-    {
-      cairo_surface_t *icon;
-      int w, h;
-
-      icon = cairo_image_surface_create_from_png (value);
-
-      w = cairo_image_surface_get_width (icon);
-      h = cairo_image_surface_get_height (icon);
-
-      if (w != THUMBNAIL_WIDTH || h != THUMBNAIL_HEIGHT)
-        {
-          cairo_t *cr;
-
-          /* Create scaled icon */
-          priv->thumbnail_icon = cairo_surface_create_similar (icon,
-                                                               cairo_surface_get_content (icon),
-                                                               THUMBNAIL_WIDTH,
-                                                               THUMBNAIL_HEIGHT);
-
-          cr = cairo_create (priv->thumbnail_icon);
-
-          cairo_scale (cr, THUMBNAIL_WIDTH/w, THUMBNAIL_HEIGHT/h);
-
-          cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-          cairo_set_source_surface (cr,
-                                    icon,
-                                    0,
-                                    0);
-
-          cairo_paint (cr);
-          cairo_destroy (cr);
-
-          cairo_surface_destroy (icon);
-        }
-      else
-        {
-          priv->thumbnail_icon = icon;
-        }
-    }
-
-  if (!value)
-    g_warning ("%s. No icon for bookmark %s.", __FUNCTION__, plugin_id);
-
-  /* Free memory */
-  g_free (key);
-  g_free (value);
+  priv->thumbnail_icon = get_icon_from_gconf (priv->gconf_client,
+                                              plugin_id);
 
   /* Get URL from GConf */
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_URL, plugin_id);
   g_free (priv->url);
-  priv->url = gconf_client_get_string (priv->gconf_client,
-                                       key,
-                                       &error);
+  priv->url = get_url_from_gconf (priv->gconf_client,
+                                  plugin_id);
 
-  /* Warn on error */
-  if (error)
-    {
-      g_warning ("Could not read URL from GConf for bookmark shortcut %s. %s",
-                 plugin_id,
-                 error->message);
-      g_clear_error (&error);
-    }
-
-  if (!priv->url)
-    g_warning ("%s. No URL for bookmark %s.", __FUNCTION__, plugin_id);
-
-  /* Free memory */
-  g_free (key);
   g_free (plugin_id);
 }
 
@@ -242,8 +291,66 @@ hd_bookmark_shortcut_dispose (GObject *object)
   if (priv->thumbnail_icon)
     priv->thumbnail_icon = (cairo_surface_destroy (priv->thumbnail_icon), NULL);
 
+  if (priv->default_thumbnail_icon)
+    priv->default_thumbnail_icon = (cairo_surface_destroy (priv->default_thumbnail_icon), NULL);
+
   /* Chain up */
   G_OBJECT_CLASS (hd_bookmark_shortcut_parent_class)->dispose (object);
+}
+
+static void
+create_default_thumbnail (HDBookmarkShortcut *shortcut,
+                          cairo_surface_t    *surface)
+{
+  HDBookmarkShortcutPrivate *priv = shortcut->priv;
+
+  if (!priv->default_thumbnail_icon)
+    {
+      cairo_t *cr;
+      GtkStyle *style;
+      GdkColor color;
+      GdkPixbuf *pixbuf;
+
+      priv->default_thumbnail_icon = cairo_surface_create_similar (surface,
+                                                                   cairo_surface_get_content (surface),
+                                                                   THUMBNAIL_WIDTH,
+                                                                   THUMBNAIL_HEIGHT);
+      cr = cairo_create (priv->default_thumbnail_icon);
+
+      /* Paint background */
+      style = gtk_widget_get_style (GTK_WIDGET (shortcut));
+
+      cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+
+      if (gtk_style_lookup_color (style,
+                                  "DefaultBackgroundColor",
+                                  &color))
+        gdk_cairo_set_source_color (cr, &color);
+      else
+        cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
+
+      cairo_paint (cr);
+
+      pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
+                                         "general_bookmark",
+                                         64,
+                                         GTK_ICON_LOOKUP_NO_SVG,
+                                         NULL);
+
+      if (pixbuf)
+        {
+          cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+          gdk_cairo_set_source_pixbuf (cr,
+                                       pixbuf,
+                                       (THUMBNAIL_WIDTH - gdk_pixbuf_get_width (pixbuf)) / 2.0,
+                                       (THUMBNAIL_HEIGHT - gdk_pixbuf_get_height (pixbuf)) / 2.0);
+          cairo_paint (cr);
+
+          g_object_unref (pixbuf);
+        }
+
+      cairo_destroy (cr);
+    }
 }
 
 static void
@@ -355,6 +462,7 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
   HDBookmarkShortcutPrivate *priv = HD_BOOKMARK_SHORTCUT (widget)->priv;
   cairo_t *cr;
   cairo_surface_t *bg;
+  cairo_surface_t *thumbnail_icon;
 
   cr = gdk_cairo_create (GDK_DRAWABLE (widget->window));
   gdk_cairo_region (cr, event->region);
@@ -371,9 +479,18 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
   cairo_paint (cr);
 
   if (priv->thumbnail_icon)
+    thumbnail_icon = priv->thumbnail_icon;
+  else
+    {
+      create_default_thumbnail (HD_BOOKMARK_SHORTCUT (widget),
+                                bg);
+      thumbnail_icon = priv->default_thumbnail_icon;
+    }
+
+  if (thumbnail_icon)
     {
       cairo_set_source_surface (cr,
-                                priv->thumbnail_icon,
+                                thumbnail_icon,
                                 BORDER_WIDTH_LEFT,
                                 BORDER_WIDTH_TOP);
       if (priv->thumb_mask)
@@ -397,6 +514,19 @@ hd_bookmark_shortcut_expose_event (GtkWidget *widget,
                                                                              event);
 }
 
+static void
+hd_bookmark_shortcut_style_set (GtkWidget *widget,
+                                GtkStyle  *previous_style)
+{
+  HDBookmarkShortcutPrivate *priv = HD_BOOKMARK_SHORTCUT (widget)->priv;
+
+  if (priv->default_thumbnail_icon)
+    priv->default_thumbnail_icon = (cairo_surface_destroy (priv->default_thumbnail_icon), NULL);
+
+  if (GTK_WIDGET_CLASS (hd_bookmark_shortcut_parent_class)->style_set)
+    GTK_WIDGET_CLASS (hd_bookmark_shortcut_parent_class)->style_set (widget,
+                                                                     previous_style);
+}
 
 static void
 hd_bookmark_shortcut_class_init (HDBookmarkShortcutClass *klass)
@@ -409,6 +539,7 @@ hd_bookmark_shortcut_class_init (HDBookmarkShortcutClass *klass)
 
   widget_class->realize = hd_bookmark_shortcut_realize;
   widget_class->expose_event = hd_bookmark_shortcut_expose_event;
+  widget_class->style_set = hd_bookmark_shortcut_style_set;
 
   object_class->constructed = hd_bookmark_shortcut_constructed;
   object_class->dispose = hd_bookmark_shortcut_dispose;
@@ -476,65 +607,12 @@ delete_event_cb (GtkWidget          *widget,
                  GdkEvent           *event,
                  HDBookmarkShortcut *shortcut)
 {
-  HDBookmarkShortcutPrivate *priv = shortcut->priv;
   gchar *plugin_id;
-  gchar *key;
-  GError *error = NULL;
 
   plugin_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
 
-  /* Unset label value in GConf */
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_LABEL, plugin_id);
-  gconf_client_unset (priv->gconf_client,
-                      key,
-                      &error);
+  hd_shortcuts_remove_bookmark_shortcut (plugin_id);
 
-  /* Warn on error */
-  if (error)
-    {
-      g_warning ("Could not unset label value in GConf for bookmark shortcut %s. %s",
-                 plugin_id,
-                 error->message);
-      g_clear_error (&error);
-    }
-
-  g_free (key);
-
-  /* Unset icon path in GConf */
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_ICON, plugin_id);
-  gconf_client_unset (priv->gconf_client,
-                      key,
-                      &error);
-
-  /* Warn on error */
-  if (error)
-    {
-      g_warning ("Could not unset icon path in GConf for bookmark shortcut %s. %s",
-                 plugin_id,
-                 error->message);
-      g_clear_error (&error);
-    }
-
-  /* Free memory */
-  g_free (key);
-
-  /* Unset URL in GConf */
-  key = g_strdup_printf (BOOKMARKS_GCONF_KEY_URL, plugin_id);
-  gconf_client_unset (priv->gconf_client,
-                      key,
-                      &error);
-
-  /* Warn on error */
-  if (error)
-    {
-      g_warning ("Could not unset URL in GConf for bookmark shortcut %s. %s",
-                 plugin_id,
-                 error->message);
-      g_clear_error (&error);
-    }
-
-  /* Free memory */
-  g_free (key);
   g_free (plugin_id);
 
   return FALSE;
@@ -576,7 +654,6 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   gtk_container_add (GTK_CONTAINER (alignment), priv->label);
 
   gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
-/*  gtk_container_set_border_width (GTK_CONTAINER (applet), BORDER_WIDTH_LEFT); */
   g_signal_connect (applet, "delete-event",
                     G_CALLBACK (delete_event_cb), applet);
 
