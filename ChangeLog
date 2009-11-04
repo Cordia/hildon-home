@@ -1,5 +1,9 @@
 2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Release 0.3.55
+
+2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#123966 - Already closed notifications are displayed
 
 	* configure.ac:
