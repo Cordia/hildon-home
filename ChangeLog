@@ -1,5 +1,13 @@
 2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: 143078 - Missed call icon in notifications should use phone app
+	icon
+
+	* src/notification-groups.conf: Use general_application_call instead
+	of general_missed as the missed call icon.
+
+2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#127501 - Task Switcher timestamp not rounded correctly.
 
 	* src/hd-time-difference.c:
