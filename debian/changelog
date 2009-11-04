@@ -9,7 +9,7 @@ hildon-home (0.3.55) unstable; urgency=low
   Jan Arne:
   * Fixes: NB#123966 - Already closed notifications are displayed
   * Fixes: NB#128853 - list not scrolling to selected item
-  * Fixes: 143078 - Missed call icon in notifications should use phone app
+  * Fixes: NB#143078 - Missed call icon in notifications should use phone app
     icon
   * Fixes: NB#127501 - Task Switcher timestamp not rounded correctly
 
