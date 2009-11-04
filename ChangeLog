@@ -1,5 +1,13 @@
 2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#128853 - list not scrolling to selected item
+
+	* src/hd-change-background-dialog.c (scroll_to_selected,
+	add_image_dialog_response): Scroll to selected item in an idle
+	handler.
+
+2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: 143078 - Missed call icon in notifications should use phone app
 	icon
 

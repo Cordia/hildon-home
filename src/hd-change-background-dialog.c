@@ -92,6 +92,8 @@ struct _HDChangeBackgroundDialogPrivate
 
   guint         current_view;
 
+  guint scroll_to_selected_id;
+
   HildonThumbnailFactory *thumbnail_factory;
 };
 
@@ -555,6 +557,9 @@ hd_change_background_dialog_dispose (GObject *object)
   if (priv->thumbnail_factory)
     priv->thumbnail_factory = (g_object_unref (priv->thumbnail_factory), NULL);
 
+  if (priv->scroll_to_selected_id)
+    priv->scroll_to_selected_id = (g_source_remove (priv->scroll_to_selected_id), 0);
+
   G_OBJECT_CLASS (hd_change_background_dialog_parent_class)->dispose (object);
 }
 
@@ -603,6 +608,24 @@ get_image_label_from_uri (const gchar *uri)
   g_free (tmp);
 
   return imagename;
+}
+
+static gboolean
+scroll_to_selected (gpointer data)
+{
+  HDChangeBackgroundDialogPrivate *priv = HD_CHANGE_BACKGROUND_DIALOG (data)->priv;
+  GtkTreeIter iter;
+
+  priv->scroll_to_selected_id = 0;
+
+  gtk_tree_model_get_iter (priv->model, &iter, priv->custom_image);
+
+  hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
+                                     0,
+                                     &iter,
+                                     TRUE);
+
+  return FALSE;
 }
 
 static void
@@ -654,10 +677,8 @@ add_image_dialog_response (GtkDialog                *dialog,
                                      uri,
                                      &iter);
 
-          hildon_touch_selector_select_iter (HILDON_TOUCH_SELECTOR (priv->selector),
-                                             0,
-                                             &iter,
-                                             TRUE);
+          priv->scroll_to_selected_id = gdk_threads_add_idle (scroll_to_selected,
+                                                              cb_dialog);
 
           g_free (uri);
           g_free (filename);
