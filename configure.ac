@@ -70,7 +70,7 @@ AC_DEFINE(GETTEXT_PACKAGE, ["maemo-af-desktop"], [Localisation domain])
 PKG_CHECK_MODULES(HILDON_HOME,
                   [hildon-1		>= 2.1.4	dnl
 		   hildon-fm-2		>= 2.0.9	dnl
-                   libhildondesktop-1	>= 2.1.36	dnl
+                   libhildondesktop-1	>= 2.1.37	dnl
 		   gnome-vfs-2.0	>= 2.8.3	dnl
 		   sqlite3				dnl
 		   osso-bookmark-engine			dnl

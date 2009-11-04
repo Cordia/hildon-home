@@ -1,5 +1,17 @@
 2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#123966 - Already closed notifications are displayed
+
+	* configure.ac:
+	* debian/control: Depend on new libhildondesktop.
+
+	* src/hd-incoming-events.c (notifications_new_for_notification,
+	  show_preview_window): Check if notifications were already closed.
+
+	* src/test-notifications.py: Update for test.
+
+2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#128853 - list not scrolling to selected item
 
 	* src/hd-change-background-dialog.c (scroll_to_selected,

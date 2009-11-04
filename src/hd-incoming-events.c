@@ -217,6 +217,11 @@ notifications_new_for_notification (HDNotification *n,
                    n);
   g_signal_connect (n, "closed",
                     G_CALLBACK (notification_closed_cb), ns);
+  if (hd_notification_is_closed (n))
+    {
+      notification_closed_cb (n, ns);
+      return ns;
+    }
 
   if (thread)
     {
@@ -230,7 +235,7 @@ notifications_new_for_notification (HDNotification *n,
     }
   else
     ns->group = g_strdup (notification_get_group (n));
-
+   
 
   return ns;
 }
@@ -857,14 +862,14 @@ show_preview_window (HDIncomingEvents *ie)
   ns->cb  = (NotificationsCallback) notifications_update_window;
   ns->cb_data = priv->preview_window;
 
-  notifications_update_window (ns,
-                               priv->preview_window);
-
   g_signal_connect (priv->preview_window, "response",
                     G_CALLBACK (preview_window_response),
                     ns);
   g_signal_connect (priv->preview_window, "destroy",
                     G_CALLBACK (preview_window_destroy_cb), ie);
+
+  notifications_update_window (ns,
+                               priv->preview_window);
 
   /* Send dbus request to mce to turn display backlight on */
   if (priv->mce_proxy)

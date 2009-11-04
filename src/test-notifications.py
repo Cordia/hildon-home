@@ -7,17 +7,29 @@ import gobject
 import dbus
 import dbus.mainloop.glib
 
+ids = []
 emitted = 0
 
 def emit_notification(iface):
 	global emitted
+	global ids
 	emitted += 1
-        id = iface.Notify ('test-send.py', '0', '', 'sms-%d' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'sms-message', 'persistent': dbus.Byte(1), 'no-notification-window': False }, 0)
-#	print "%dsms (id %d)" % (emitted, id) 
-#	id = iface.Notify ('test-send.py', '0', '', 'chat-%d' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'chat-message', 'persistent': dbus.Byte(1), 'message-thread': 'Controlpanel' }, 0)
-	print "%dsms (id %d)" % (emitted, id) 
+        id = iface.Notify ('test-send.py', '0', '', 'sms-%d' % (emitted), 'text:%d' % (emitted), ['default', 'default'], { 'category': 'sms-message', 'persistent': dbus.Byte(0), 'no-notification-window': False }, 0)
+	print "%dsms (id %d)" % (emitted, id)
+	ids.append(id)
+
+	if (emitted == 50):
+		close_notifications(iface)
+		return False
 
 	return True
+
+def close_notifications(iface):
+	global ids
+	for id in ids:
+        	iface.CloseNotification (id)
+		print "(id %d) closed" % (id)
+
 
 def notification_closed_handler(id):
 	print 'notification closed. id: ' + str(id)

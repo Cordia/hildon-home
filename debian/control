@@ -2,7 +2,7 @@ Source: hildon-home
 Section: x11
 Priority: optional
 Maintainer: Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
-Build-Depends: debhelper (>= 5), cdbs, pkg-config, libhildon1-dev (>= 2.1.4), libosso-gnomevfs2-dev, libdbus-1-dev (>= 1.0.2), libhildondesktop1-dev (> 2.1.35), libsqlite3-dev, osso-bookmark-engine-dev, libhildonfm2-dev, upstart-dev, maemo-launcher-dev (>= 0.23-1), mce-dev, libosso-dev, libhildon-thumbnail-dev
+Build-Depends: debhelper (>= 5), cdbs, pkg-config, libhildon1-dev (>= 2.1.4), libosso-gnomevfs2-dev, libdbus-1-dev (>= 1.0.2), libhildondesktop1-dev (> 2.1.36), libsqlite3-dev, osso-bookmark-engine-dev, libhildonfm2-dev, upstart-dev, maemo-launcher-dev (>= 0.23-1), mce-dev, libosso-dev, libhildon-thumbnail-dev
 Standards-Version: 3.8.0
 
 Package: hildon-home
