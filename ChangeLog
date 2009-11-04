@@ -1,3 +1,18 @@
+2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#127501 - Task Switcher timestamp not rounded correctly.
+
+	* src/hd-time-difference.c:
+	* src/hd-time-difference.h: Add hd_time_difference_get_text and
+	hd_time_difference_get_timeout helper functions (with unit tests) to
+	handle time difference display (and timeout for next update).
+
+	* src/Makefile.am: Add src/hd-time-difference.[ch] to SOURCES.
+
+	* src/hd-incoming-event-window.c
+	(hd_incoming_event_window_update_time): Us the new hd_time_difference
+
+
 2009-11-03  Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>
 
 	Release 0.3.54

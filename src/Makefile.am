@@ -89,6 +89,8 @@ hildon_home_SOURCES = \
 	hd-widgets.h			\
 	hd-install-widgets-dialog.c	\
 	hd-install-widgets-dialog.h	\
+	hd-time-difference.c		\
+	hd-time-difference.h		\
 	hildon-home.c
 
 nodist_hildon_home_SOURCES = \

@@ -26,7 +26,6 @@
 
 #include <string.h>
 
-#include <glib/gi18n.h>
 #include <gdk/gdkx.h>
 #include <hildon/hildon.h>
 
@@ -36,6 +35,7 @@
 #include "hd-cairo-surface-cache.h"
 #include "hd-incoming-event-window.h"
 #include "hd-incoming-events.h"
+#include "hd-time-difference.h"
 
 /* Pixel sizes */
 #define WINDOW_WIDTH 366
@@ -58,11 +58,6 @@
 
 #define IMAGES_DIR                   "/etc/hildon/theme/images/"
 #define BACKGROUND_IMAGE_FILE        IMAGES_DIR "wmIncomingEvent.png"
-
-#define MINUTE (60)
-#define HOUR   (MINUTE * 60)
-#define DAY    (HOUR * 24)
-#define YEAR   (DAY * 365)
 
 /* Timeout in seconds */
 #define INCOMING_EVENT_WINDOW_PREVIEW_TIMEOUT 4
@@ -231,47 +226,8 @@ hd_incoming_event_window_update_time (HDIncomingEventWindow *window)
 
   difference = current_time - priv->time;
 
-  if (difference < HOUR)
-    {
-      time_text = g_strdup_printf (dngettext ("hildon-libs",
-                                              "wdgt_va_ago_one_minute",
-                                              "wdgt_va_ago_minutes",
-                                              MAX (difference / MINUTE, 1)),
-                                   MAX (difference / MINUTE, 1));
-      timeout = MINUTE - (difference % MINUTE);
-      g_debug ("%s. n: %ld, difference: %ld, timeout: %ld",
-               __FUNCTION__,
-               MAX (difference / MINUTE, 1),
-               difference,
-               timeout);
-    }
-  else if (difference < DAY)
-    {
-      time_text = g_strdup_printf (dngettext ("hildon-libs",
-                                              "wdgt_va_ago_one_hour",
-                                              "wdgt_va_ago_hours",
-                                              difference / HOUR),
-                                   difference / HOUR);
-      timeout = HOUR - (difference % HOUR);
-    }
-  else if (difference < YEAR)
-    {
-      time_text = g_strdup_printf (dngettext ("hildon-libs",
-                                              "wdgt_va_ago_one_day",
-                                              "wdgt_va_ago_days",
-                                              difference / DAY),
-                                   difference / DAY);
-      timeout = DAY - (difference % DAY);
-    }
-  else
-    {
-      time_text = g_strdup_printf (dngettext ("hildon-libs",
-                                              "wdgt_va_ago_one_year",
-                                              "wdgt_va_ago_years",
-                                              difference / YEAR),
-                                   difference / YEAR);
-      timeout = YEAR - (difference % YEAR);
-    }
+  time_text = hd_time_difference_get_text (difference);
+  timeout = hd_time_difference_get_timeout (difference);
 
   hd_incoming_event_window_set_string_xwindow_property (GTK_WIDGET (window),
                                                         "_HILDON_INCOMING_EVENT_NOTIFICATION_TIME",
