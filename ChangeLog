@@ -1,3 +1,25 @@
+2009-11-06  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#142515 - Increase in memory usage of hildon-home while
+	changing theme from layout mode.
+
+	* src/hd-command-thread-pool.c:
+	* src/hd-command-thread-pool.h: A thread pool which supports different
+	commands.
+
+	* src/Makefile.am: Add new source files.
+
+	* src/hd-backgrounds.c: Restart hildon-home on theme change. Use
+	HDCommandThreadPool.
+	* src/hd-backgrounds.h: Add hd_backgrounds_set_image_set function to
+	set an image set.
+
+	* src/hd-change-background-dialog.c: Use hd_backgrounds_set_image_set
+	for image sets.
+
+	* src/hildon-home.c: Clean hildon-home stamp when hildon-home is
+	quit on prupose.
+
 2009-11-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Release 0.3.55

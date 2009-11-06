@@ -197,6 +197,8 @@ main (int argc, char **argv)
 
   /* Start the main loop */
   gtk_main ();
+  
+  hd_stamp_file_finalize (HD_HOME_STAMP_FILE);
 
   /* We got a signal, flush the database.  How we do it breaks
    * if somebody has taken reference of the nm, but we don't. */

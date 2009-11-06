@@ -40,6 +40,8 @@
 
 #include <unistd.h>
 
+#include "hd-command-thread-pool.h"
+
 #include "hd-backgrounds.h"
 
 #define SCREEN_WIDTH 800
@@ -93,8 +95,8 @@ struct _HDBackgroundsPrivate
   guint bg_image_notify[VIEWS];
 
   /* Data used for the thread which creates the cached images */
-  GThreadPool      *caching_thread_pool;
-  GMutex           *mutex;
+  HDCommandThreadPool *thread_pool;
+  GMutex              *mutex;
 
   HDBackgroundData *current_requests[VIEWS];
   GFile            *current_bg_image[VIEWS];
@@ -110,6 +112,8 @@ struct _HDBackgroundsPrivate
   GnomeVFSVolumeMonitor *volume_monitor2;
 };
 
+static void create_cached_image (HDBackgroundData *data);
+
 G_DEFINE_TYPE (HDBackgrounds, hd_backgrounds, G_TYPE_OBJECT);
 
 static void
@@ -121,24 +125,6 @@ background_data_free (HDBackgroundData *data)
   g_object_unref (data->file);
   g_object_unref (data->cancellable);
   g_slice_free (HDBackgroundData, data);
-}
-
-/* pending_requests:
- *
- * Must be called with mutex locked
- *
- */
-static gboolean
-pending_requests (HDBackgrounds *backgrounds)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-  guint i;
-
-  for (i = 0; i < VIEWS; i++)
-    if (priv->current_requests[i])
-      return TRUE;
-
-  return FALSE;
 }
 
 static void
@@ -179,9 +165,10 @@ create_cached_background (HDBackgrounds *backgrounds,
     {
       priv->current_requests[view] = data;
 
-      g_thread_pool_push (priv->caching_thread_pool,
-                          data,
-                          NULL);
+      hd_command_thread_pool_push (priv->thread_pool,
+                                   (HDCommandCallback) create_cached_image,
+                                   data,
+                                   NULL);
     }
   g_mutex_unlock (priv->mutex);
 }
@@ -434,9 +421,9 @@ show_banner (const gchar *summary)
 }
 
 static void
-create_cached_image (HDBackgroundData *data,
-                     HDBackgrounds    *backgrounds)
+create_cached_image (HDBackgroundData *data)
 {
+  HDBackgrounds *backgrounds = hd_backgrounds_get ();
   HDBackgroundsPrivate *priv = backgrounds->priv;
   GdkPixbuf *pixbuf = NULL;
   gboolean scaling_required = FALSE, thumbnail_created = FALSE;
@@ -731,19 +718,6 @@ cleanup:
   g_mutex_lock (priv->mutex);
   if (priv->current_requests[data->view] == data)
     priv->current_requests[data->view] = NULL;
-  if (!pending_requests (backgrounds))
-    {
-      /* Call callback if not called yet */
-      if (priv->change_request_cb)
-        {
-          gdk_threads_add_idle_full (G_PRIORITY_HIGH_IDLE,
-                                     priv->change_request_cb,
-                                     priv->cb_data,
-                                     NULL);
-          priv->change_request_cb = NULL;
-          priv->cb_data = NULL;
-        }
-    }
   g_mutex_unlock (priv->mutex);
 
   if (pixbuf)
@@ -981,6 +955,14 @@ load_cache_info_cb (GFile         *file,
     }
 }
 
+static gboolean
+restart_hildon_home (gpointer data)
+{
+  gtk_main_quit ();
+
+  return FALSE;
+}
+
 /* Only supports themes with four backgrounds set */
 static void
 update_backgrounds_from_theme (HDBackgrounds *backgrounds,
@@ -1099,6 +1081,12 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
 
   for (i = 0; i < VIEWS; i++)
     g_object_unref (bg_image[i]);
+
+  hd_command_thread_pool_push_idle (priv->thread_pool,
+                                    G_PRIORITY_HIGH_IDLE,
+                                    restart_hildon_home,
+                                    NULL,
+                                    NULL);
 }
 
 static gboolean
@@ -1346,7 +1334,6 @@ static void
 hd_backgrounds_init (HDBackgrounds *backgrounds)
 {
   HDBackgroundsPrivate *priv;
-  GError *error = NULL;
 
   backgrounds->priv = HD_BACKGROUNDS_GET_PRIVATE (backgrounds);
   priv = backgrounds->priv;
@@ -1355,18 +1342,7 @@ hd_backgrounds_init (HDBackgrounds *backgrounds)
 
   priv->mutex = g_mutex_new ();
 
-  priv->caching_thread_pool = g_thread_pool_new ((GFunc) create_cached_image,
-                                                 backgrounds,
-                                                 1,
-                                                 TRUE,
-                                                 &error);
-  if (error)
-    {
-      g_warning ("%s. Could not create thread pool. %s",
-                 __FUNCTION__,
-                 error->message);
-      g_error_free (error);
-    }
+  priv->thread_pool = hd_command_thread_pool_new ();
 
   priv->volume_monitor = g_volume_monitor_get ();
   g_signal_connect (priv->volume_monitor, "mount-pre-unmount",
@@ -1395,10 +1371,8 @@ hd_backgrounds_dipose (GObject *object)
       priv->gconf_client = (g_object_unref (priv->gconf_client), NULL);
     }
 
-  if (priv->caching_thread_pool)
-    priv->caching_thread_pool = (g_thread_pool_free (priv->caching_thread_pool,
-                                                     FALSE,
-                                                     TRUE), NULL);
+  if (priv->thread_pool)
+    priv->thread_pool = (g_object_unref (priv->thread_pool), NULL);
 
   for (i = 0; i < VIEWS; i++)
     priv->current_bg_image[i] = (g_object_unref (priv->current_bg_image[i]), NULL);
@@ -1443,7 +1417,8 @@ hd_backgrounds_set_background (HDBackgrounds *backgrounds,
                                guint          view,
                                const gchar   *uri,
                                GSourceFunc    done_callback,
-                               gpointer       cb_data)
+                               gpointer       cb_data,
+                               GDestroyNotify destroy_data)
 {
   HDBackgroundsPrivate *priv = backgrounds->priv;
   GFile *file;
@@ -1465,29 +1440,49 @@ hd_backgrounds_set_background (HDBackgrounds *backgrounds,
   g_object_unref (file);
 
   if (done_callback)
+    hd_command_thread_pool_push_idle (priv->thread_pool,
+                                      G_PRIORITY_HIGH_IDLE,
+                                      done_callback,
+                                      cb_data,
+                                      destroy_data);
+}
+
+void
+hd_backgrounds_set_image_set   (HDBackgrounds *backgrounds,
+                                gchar        **uris,
+                                GSourceFunc    done_callback,
+                                gpointer       cb_data,
+                                GDestroyNotify destroy_data)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  guint i;
+
+  g_return_if_fail (HD_IS_BACKGROUNDS (backgrounds));
+
+  for (i = 0; i < VIEWS; i++)
     {
-      g_mutex_lock (priv->mutex);
-      if (pending_requests (backgrounds))
-        {
-          /* Call previous callback if not called yet */
-          if (priv->change_request_cb)
-            priv->change_request_cb (priv->cb_data);
-          /* Store new callback to be called */
-          priv->change_request_cb = done_callback;
-          priv->cb_data = cb_data;
-        }
+      GFile *file;
+
+      if (g_path_is_absolute (uris[i]))
+        file = g_file_new_for_path (uris[i]);
       else
-        {
-          /* Call previous callback and clear it if not called yet */
-          if (priv->change_request_cb)
-            priv->change_request_cb (priv->cb_data);
-          priv->change_request_cb = NULL;
-          priv->cb_data = NULL;
-          /* Call current callback */
-          done_callback (cb_data);
-        }
-      g_mutex_unlock (priv->mutex);
+        file = g_file_new_for_uri (uris[i]);
+
+      create_cached_background (backgrounds,
+                                file,
+                                i,
+                                TRUE,
+                                TRUE);
+
+      g_object_unref (file);
     }
+
+  if (done_callback)
+    hd_command_thread_pool_push_idle (priv->thread_pool,
+                                      G_PRIORITY_HIGH_IDLE,
+                                      done_callback,
+                                      cb_data,
+                                      destroy_data);
 }
 
 const gchar *

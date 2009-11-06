@@ -91,6 +91,8 @@ hildon_home_SOURCES = \
 	hd-install-widgets-dialog.h	\
 	hd-time-difference.c		\
 	hd-time-difference.h		\
+	hd-command-thread-pool.c	\
+	hd-command-thread-pool.h	\
 	hildon-home.c
 
 nodist_hildon_home_SOURCES = \

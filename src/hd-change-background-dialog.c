@@ -775,25 +775,11 @@ hd_change_background_dialog_response (GtkDialog *dialog,
 
           if (image_set)
             {
-              guint i;
-
-              hd_backgrounds_set_background (hd_backgrounds_get (),
-                                             priv->current_view,
-                                             image[priv->current_view + 1],
-                                             NULL,
-                                             NULL);
-
-              for (i = 0; i < 4; i++)
-                {
-                  if (i != priv->current_view)
-                    hd_backgrounds_set_background (hd_backgrounds_get (),
-                                                   i,
-                                                   image[i + 1],
-                                                   i == 3 ||
-                                                   (i == 2 && priv->current_view == 3) ?
-                                                   background_set_cb : NULL,
-                                                   dialog);
-                }
+              hd_backgrounds_set_image_set (hd_backgrounds_get (),
+                                            &image[1],
+                                            background_set_cb,
+                                            dialog,
+                                            NULL);
             }
           else
             {
@@ -801,7 +787,8 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                              priv->current_view,
                                              image[0],
                                              background_set_cb,
-                                             dialog);
+                                             dialog,
+                                             NULL);
             }
 
           /* free memory */

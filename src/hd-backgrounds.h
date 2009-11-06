@@ -59,7 +59,13 @@ void           hd_backgrounds_set_background  (HDBackgrounds *backgrounds,
                                                guint          view,
                                                const gchar   *uri,
                                                GSourceFunc    done_callback,
-                                               gpointer       cb_data);
+                                               gpointer       cb_data,
+                                               GDestroyNotify destroy_data);
+void           hd_backgrounds_set_image_set   (HDBackgrounds *backgrounds,
+                                               gchar        **uris,
+                                               GSourceFunc    done_callback,
+                                               gpointer       cb_data,
+                                               GDestroyNotify destroy_data);
 
 const gchar *  hd_backgrounds_get_background  (HDBackgrounds  *backgrounds,
                                                guint           view);
