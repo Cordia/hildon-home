@@ -65,6 +65,8 @@ hildon_home_SOURCES = \
 	hd-cairo-surface-cache.h	\
 	hd-change-background-dialog.c	\
 	hd-change-background-dialog.h	\
+	hd-edit-mode-menu.c		\
+	hd-edit-mode-menu.h		\
 	hd-hildon-home-dbus.c		\
 	hd-hildon-home-dbus.h		\
 	hd-incoming-event-window.c	\

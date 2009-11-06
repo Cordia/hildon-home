@@ -1,5 +1,17 @@
 2009-11-06  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#135795 - Desktop hanged in a mentioned scenario.
+
+	* src/hd-edit-mode-menu.c:
+	* src/hd-edit-mode-menu.h:
+	* src/Makefile.am: Extract edit mode menu into an own widget.
+	Override GtkWidgetClass->show to only show if no other modal dialog is
+	shown.
+
+	* src/hd-hildon-home-dbus.c: Use new HDEditModeMenu.
+
+2009-11-06  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#142515 - Increase in memory usage of hildon-home while
 	changing theme from layout mode.
 
