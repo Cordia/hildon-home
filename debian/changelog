@@ -1,8 +1,11 @@
-hildon-home (0.3.56~unreleased) unstable; urgency=low
+hildon-home (0.3.56) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes: NB#135795 - Desktop hanged in a mentioned scenario.
+  * Fixes: NB#142515 - Increase in memory usage of hildon-home while changing
+    theme from layout mode.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Wed,  4 Nov 2009 17:59:48 +0100
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  6 Nov 2009 13:13:12 +0100
 
 hildon-home (0.3.55) unstable; urgency=low
 

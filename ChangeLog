@@ -1,5 +1,9 @@
 2009-11-06  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Release 0.3.56
+
+2009-11-06  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#135795 - Desktop hanged in a mentioned scenario.
 
 	* src/hd-edit-mode-menu.c:
