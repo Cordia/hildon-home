@@ -1,9 +1,15 @@
-hildon-home (0.3.57~unreleased) unstable; urgency=low
+hildon-home (0.3.58~unreleased) unstable; urgency=low
+
+  * foo
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Nov 2009 15:07:41 +0100
+
+hildon-home (0.3.57) unstable; urgency=low
 
   Jan Arne:
   * Fixes Changelog.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  6 Nov 2009 13:20:07 +0100
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Nov 2009 14:54:32 +0100
 
 hildon-home (0.3.56) unstable; urgency=low
 
