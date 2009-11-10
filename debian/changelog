@@ -1,6 +1,7 @@
 hildon-home (0.3.57~unreleased) unstable; urgency=low
 
-  * foo
+  Jan Arne:
+  * Fixes Changelog.
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  6 Nov 2009 13:20:07 +0100
 
@@ -16,7 +17,6 @@ hildon-home (0.3.56) unstable; urgency=low
 hildon-home (0.3.55) unstable; urgency=low
 
   Jan Arne:
-  * Fixes: NB#123966 - Already closed notifications are displayed
   * Fixes: NB#128853 - list not scrolling to selected item
   * Fixes: NB#143078 - Missed call icon in notifications should use phone app
     icon
