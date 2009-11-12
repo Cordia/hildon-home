@@ -1,3 +1,11 @@
+2009-11-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#146369 - theme change dialog shoudl be open for longer time
+	till the theme change is completely applied.
+
+	* src/hd-edit-mode-menu.c: Run theme change dialog with
+	g_spawn_command_line_async.
+
 2009-11-10  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Release 0.3.57

@@ -28,8 +28,6 @@
 
 #include <dbus/dbus-glib-bindings.h>
 
-#include <libosso.h>
-
 #include "hd-widgets.h"
 #include "hd-applet-manager.h"
 #include "hd-bookmark-widgets.h"
@@ -226,16 +224,15 @@ static void
 personalization_clicked_cb (GtkButton      *button,
                             HDEditModeMenu *menu)
 {
-  osso_context_t *osso;
+  GError *error = NULL;
 
-  osso = osso_initialize ("hildon-home", "1", 0, NULL);
+  g_spawn_command_line_async ("/usr/bin/personalisation_app", &error);
 
-  osso_cp_plugin_execute (osso,
-                          "libpersonalisation.so",
-                          NULL,
-                          TRUE);
-
-  osso_deinitialize (osso);
+  if (error)
+    {
+      g_warning ("%s. Could not launch /usr/bin/personalisation_app. %s", __FUNCTION__, error->message);
+      g_error_free (error);
+    }
 }
 
 static void
