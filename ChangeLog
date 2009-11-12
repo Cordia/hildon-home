@@ -1,5 +1,9 @@
 2009-11-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Release 0.3.58
+
+2009-11-12  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#146369 - theme change dialog shoudl be open for longer time
 	till the theme change is completely applied.
 

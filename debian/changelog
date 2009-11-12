@@ -1,8 +1,9 @@
-hildon-home (0.3.58~unreleased) unstable; urgency=low
+hildon-home (0.3.58) unstable; urgency=low
 
-  * foo
+  * Fixes: NB#146369 - theme change dialog shoudl be open for longer time till
+    the theme change is completely applied.
 
- -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Tue, 10 Nov 2009 15:07:41 +0100
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Thu, 12 Nov 2009 12:06:50 +0100
 
 hildon-home (0.3.57) unstable; urgency=low
 
