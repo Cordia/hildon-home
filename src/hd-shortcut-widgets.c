@@ -73,7 +73,9 @@ struct _HDShortcutWidgetsPrivate
 typedef struct
 {
   gchar *label;
-  gchar *icon;
+  gchar *icon_name;
+
+  GdkPixbuf *icon;
 
   GtkTreeRowReference *row;
 } HDTaskInfo;
@@ -83,6 +85,13 @@ enum
   DESKTOP_FILE_CHANGED,
   DESKTOP_FILE_DELETED,
   LAST_SIGNAL
+};
+
+enum
+{
+  COL_TITLE,
+  COL_ICON,
+  COL_DESKTOP,
 };
 
 static guint shortcut_widgets_signals [LAST_SIGNAL] = { 0 };
@@ -103,12 +112,103 @@ hd_task_info_free (HDTaskInfo *info)
     return;
 
   g_free (info->label);
-  g_free (info->icon);
+  g_free (info->icon_name);
+
+  if (info->icon)
+    g_object_unref (info->icon);
 
   if (info->row)
     gtk_tree_row_reference_free (info->row);
 
   g_slice_free (HDTaskInfo, info);
+}
+
+static GdkPixbuf *
+load_icon_from_absolute_path (const gchar *path)
+{
+  GdkPixbuf *pixbuf;
+  GError *error = NULL;
+
+  pixbuf = gdk_pixbuf_new_from_file_at_size (path,
+                                             HILDON_ICON_PIXEL_SIZE_THUMB,
+                                             HILDON_ICON_PIXEL_SIZE_THUMB,
+                                             &error);
+  if (error)
+    {
+      g_debug ("%s. Could not load icon %s from file. %s",
+               __FUNCTION__,
+               path,
+               error->message);
+      g_error_free (error);
+    }
+
+  return pixbuf;
+}
+
+static GdkPixbuf *
+load_icon_from_theme (const gchar *icon)
+{
+  GdkPixbuf *pixbuf;
+  GError *error = NULL;
+
+  pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
+                                     icon,
+                                     HILDON_ICON_PIXEL_SIZE_THUMB,
+                                     GTK_ICON_LOOKUP_NO_SVG,
+                                     &error);
+
+  if (error)
+    {
+      g_debug ("%s. Could not load icon %s from theme. %s",
+               __FUNCTION__,
+               icon,
+               error->message);
+      g_error_free (error);
+    }
+
+  return pixbuf;
+}
+
+static GdkPixbuf *
+load_default_icon (void)
+{
+  GdkPixbuf *pixbuf;
+  GError *error = NULL;
+
+  pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
+                                     "tasklaunch_default_application",
+                                     HILDON_ICON_PIXEL_SIZE_THUMB,
+                                     GTK_ICON_LOOKUP_NO_SVG,
+                                     &error);
+
+  if (error)
+    {
+      g_warning ("%s. Could not load default application icon from theme. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_error_free (error);
+    }
+
+  return pixbuf;
+}
+
+static GdkPixbuf *
+load_icon_from_icon_name (const gchar *icon_name)
+{
+  GdkPixbuf *pixbuf = NULL;
+
+  if (icon_name)
+    {
+      if (g_path_is_absolute (icon_name))
+        pixbuf = load_icon_from_absolute_path (icon_name);
+      else
+        pixbuf = load_icon_from_theme (icon_name);
+    }
+
+  if (!pixbuf)
+    pixbuf = load_default_icon ();
+
+  return pixbuf;
 }
 
 static gboolean
@@ -121,9 +221,6 @@ hd_shortcut_widgets_load_desktop_file (const gchar *filename)
   HDTaskInfo *info = NULL;
   gchar *desktop_id = NULL;
   gchar *type = NULL, *translation_domain = NULL, *name = NULL;
-  GdkPixbuf *pixbuf = NULL;
-  GtkIconTheme *icon_theme = gtk_icon_theme_get_default ();
-  GtkIconInfo *icon_info = NULL;
 
   g_debug ("hd_shortcut_widgets_load_desktop_file (%s)", filename);
 
@@ -195,7 +292,9 @@ hd_shortcut_widgets_load_desktop_file (const gchar *filename)
   else
     {
       g_free (info->label);
-      g_free (info->icon);
+      g_free (info->icon_name);
+      if (info->icon)
+        info->icon = (g_object_unref (info->icon), NULL);
     }
 
   /* Translate name */
@@ -210,11 +309,11 @@ hd_shortcut_widgets_load_desktop_file (const gchar *filename)
     }
 
   /* Get the icon */
-  info->icon = g_key_file_get_string (desktop_file,
-                                      G_KEY_FILE_DESKTOP_GROUP,
-                                      G_KEY_FILE_DESKTOP_KEY_ICON,
-                                      &error);
-  if (!info->icon)
+  info->icon_name = g_key_file_get_string (desktop_file,
+                                           G_KEY_FILE_DESKTOP_GROUP,
+                                           G_KEY_FILE_DESKTOP_KEY_ICON,
+                                           &error);
+  if (!info->icon_name)
     {
       g_debug ("Could not read Icon entry in .desktop file `%s'. %s",
                filename,
@@ -222,24 +321,7 @@ hd_shortcut_widgets_load_desktop_file (const gchar *filename)
       g_error_free (error);
     }
 
-  /* Load icon for list */
-  if (info->icon)
-    icon_info = gtk_icon_theme_lookup_icon (icon_theme,
-                                            info->icon,
-                                            HILDON_ICON_PIXEL_SIZE_THUMB,
-                                            GTK_ICON_LOOKUP_NO_SVG);
-
-  if (!icon_info)
-    icon_info = gtk_icon_theme_lookup_icon (icon_theme,
-                                            "tasklaunch_default_application",
-                                            HILDON_ICON_PIXEL_SIZE_THUMB,
-                                            GTK_ICON_LOOKUP_NO_SVG);
-
-  if (icon_info)
-    {
-      pixbuf = gtk_icon_info_load_icon (icon_info, NULL);
-      gtk_icon_info_free (icon_info);
-    }
+  info->icon = load_icon_from_icon_name (info->icon_name);
 
   if (gtk_tree_row_reference_valid (info->row))
     {
@@ -251,10 +333,9 @@ hd_shortcut_widgets_load_desktop_file (const gchar *filename)
         {
           gtk_list_store_set (GTK_LIST_STORE (priv->model),
                               &iter,
-                              0, info->label,
-                              1, info->icon,
-                              2, desktop_id,
-                              3, pixbuf,
+                              COL_TITLE, info->label,
+                              COL_ICON, info->icon,
+                              COL_DESKTOP, desktop_id,
                               -1);
         }
       gtk_tree_path_free (path);
@@ -266,10 +347,9 @@ hd_shortcut_widgets_load_desktop_file (const gchar *filename)
 
       gtk_list_store_insert_with_values (GTK_LIST_STORE (priv->model),
                                          &iter, -1,
-                                         0, info->label,
-                                         1, info->icon,
-                                         2, desktop_id,
-                                         3, pixbuf,
+                                         COL_TITLE, info->label,
+                                         COL_ICON, info->icon,
+                                         COL_DESKTOP, desktop_id,
                                          -1);
 
       /* Update row reference */
@@ -289,10 +369,58 @@ cleanup:
   g_free (translation_domain);
   g_free (name);
   g_free (desktop_id);
-  if (pixbuf)
-    g_object_unref (pixbuf);
 
   return FALSE;
+}
+
+static void
+update_icon (HDShortcutWidgets *widgets,
+             const gchar       *desktop_id,
+             HDTaskInfo        *info)
+{
+  HDShortcutWidgetsPrivate *priv = widgets->priv;
+
+  if (info->icon)
+    g_object_unref (info->icon);
+
+  info->icon = load_icon_from_icon_name (info->icon_name);
+
+  if (gtk_tree_row_reference_valid (info->row))
+    {
+      GtkTreeIter iter;
+      GtkTreePath *path;
+
+      path = gtk_tree_row_reference_get_path (info->row);
+      if (gtk_tree_model_get_iter (priv->model, &iter, path))
+        {
+          gtk_list_store_set (GTK_LIST_STORE (priv->model),
+                              &iter,
+                              COL_ICON, info->icon,
+                              -1);
+        }
+      gtk_tree_path_free (path);
+    }
+
+  g_signal_emit (widgets,
+                 shortcut_widgets_signals[DESKTOP_FILE_CHANGED],
+                 g_quark_from_string (desktop_id));
+}
+
+static void
+update_all_icons (HDShortcutWidgets *widgets)
+{
+  HDShortcutWidgetsPrivate *priv = widgets->priv;
+  GHashTableIter iter;
+  gpointer desktop_id, task_info;
+
+  g_hash_table_iter_init (&iter,
+                          priv->available_tasks);
+  while (g_hash_table_iter_next (&iter, &desktop_id, &task_info)) 
+    {
+      update_icon (widgets,
+                   desktop_id,
+                   task_info);
+    }
 }
 
 static gboolean
@@ -501,7 +629,10 @@ hd_shortcut_widgets_init (HDShortcutWidgets *widgets)
   priv->monitors = g_hash_table_new_full (g_str_hash, g_str_equal,
                                           g_free, (GDestroyNotify) gnome_vfs_monitor_cancel);
 
-  priv->model = GTK_TREE_MODEL (gtk_list_store_new (4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, GDK_TYPE_PIXBUF));
+  priv->model = GTK_TREE_MODEL (gtk_list_store_new (3,
+                                                    G_TYPE_STRING,
+                                                    GDK_TYPE_PIXBUF,
+                                                    G_TYPE_STRING));
   gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (priv->model),
                                         0,
                                         GTK_SORT_ASCENDING);
@@ -523,6 +654,9 @@ hd_shortcut_widgets_init (HDShortcutWidgets *widgets)
                            NULL, NULL);
 
   update_installed_shortcuts (widgets);
+
+  g_signal_connect_swapped (gtk_icon_theme_get_default (), "changed",
+                            G_CALLBACK (update_all_icons), widgets);
 }
 
 static void
@@ -585,7 +719,7 @@ hd_shortcut_widgets_setup_column_renderes (HDWidgets     *widgets,
                               FALSE);
   gtk_cell_layout_add_attribute (column,
                                  renderer,
-                                 "pixbuf", 3);
+                                 "pixbuf", COL_ICON);
 
   /* Add the label renderer */
   renderer = gtk_cell_renderer_text_new ();
@@ -594,7 +728,7 @@ hd_shortcut_widgets_setup_column_renderes (HDWidgets     *widgets,
                               FALSE);
   gtk_cell_layout_add_attribute (column,
                                  renderer,
-                                 "text", 0);
+                                 "text", COL_TITLE);
 }
 
 static void
@@ -740,7 +874,7 @@ hd_shortcut_widgets_is_available (HDShortcutWidgets *widgets,
                               desktop_id) != NULL;
 }
 
-const gchar *
+GdkPixbuf *
 hd_shortcut_widgets_get_icon (HDShortcutWidgets *widgets,
                               const gchar       *desktop_id)
 {

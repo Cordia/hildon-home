@@ -59,93 +59,6 @@ struct _HDTaskShortcutPrivate
 
 G_DEFINE_TYPE (HDTaskShortcut, hd_task_shortcut, HD_TYPE_HOME_PLUGIN_ITEM);
 
-static inline GdkPixbuf *
-load_icon_from_absolute_path (const gchar *path)
-{
-  GdkPixbuf *pixbuf;
-  GError *error = NULL;
-
-  pixbuf = gdk_pixbuf_new_from_file_at_size (path,
-                                             HILDON_ICON_PIXEL_SIZE_THUMB,
-                                             HILDON_ICON_PIXEL_SIZE_THUMB,
-                                             &error);
-  if (error)
-    {
-      g_debug ("%s. Could not load icon %s from file. %s",
-               __FUNCTION__,
-               path,
-               error->message);
-      g_error_free (error);
-    }
-
-  return pixbuf;
-}
-
-static inline GdkPixbuf *
-load_icon_from_theme (const gchar *icon)
-{
-  GdkPixbuf *pixbuf;
-  GError *error = NULL;
-
-  pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
-                                     icon,
-                                     HILDON_ICON_PIXEL_SIZE_THUMB,
-                                     GTK_ICON_LOOKUP_NO_SVG,
-                                     &error);
-
-  if (error)
-    {
-      g_debug ("%s. Could not load icon %s from theme. %s",
-               __FUNCTION__,
-               icon,
-               error->message);
-      g_error_free (error);
-    }
-
-  return pixbuf;
-}
-
-static inline GdkPixbuf *
-load_default_icon (void)
-{
-  GdkPixbuf *pixbuf;
-  GError *error = NULL;
-
-  pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
-                                     "tasklaunch_default_application",
-                                     HILDON_ICON_PIXEL_SIZE_THUMB,
-                                     GTK_ICON_LOOKUP_NO_SVG,
-                                     &error);
-
-  if (error)
-    {
-      g_warning ("%s. Could not load default application icon from theme. %s",
-                 __FUNCTION__,
-                 error->message);
-      g_error_free (error);
-    }
-
-  return pixbuf;
-}
-
-static inline GdkPixbuf *
-load_icon_from_icon_name (const gchar *icon_name)
-{
-  GdkPixbuf *pixbuf = NULL;
-
-  if (icon_name)
-    {
-      if (g_path_is_absolute (icon_name))
-        pixbuf = load_icon_from_absolute_path (icon_name);
-      else
-        pixbuf = load_icon_from_theme (icon_name);
-    }
-
-  if (!pixbuf)
-    pixbuf = load_default_icon ();
-
-  return pixbuf;
-}
 
 static void
 hd_task_shortcut_desktop_file_changed_cb (HDShortcutWidgets *manager,
@@ -159,20 +72,14 @@ hd_task_shortcut_desktop_file_changed_cb (HDShortcutWidgets *manager,
   if (hd_shortcut_widgets_is_available (HD_SHORTCUT_WIDGETS (hd_shortcut_widgets_get ()),
                                         desktop_id))
     {
-      const gchar *icon_name;
       GdkPixbuf *pixbuf;
 
-      icon_name = hd_shortcut_widgets_get_icon (manager, desktop_id);
-
-      pixbuf = load_icon_from_icon_name (icon_name);
+      pixbuf = hd_shortcut_widgets_get_icon (manager, desktop_id);
 
       gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon),
                                  pixbuf);
 
       gtk_widget_show (GTK_WIDGET (shortcut));
-
-      if (pixbuf)
-        g_object_unref (pixbuf);
     }
 
   g_free (desktop_id);
