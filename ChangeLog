@@ -1,5 +1,12 @@
 2009-12-01  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Fixes: NB#142790 - Group chat invitation notifications are not
+	implemented
+
+	* src/notification-groups.conf: Add chat-invitation category.
+
+2009-12-01  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Add support for live search in dialogs.
 
 	* src/hd-applet-manager.c:
