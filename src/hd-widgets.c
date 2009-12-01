@@ -105,3 +105,12 @@ hd_widgets_install_widget (HDWidgets   *widgets,
   HD_WIDGETS_GET_CLASS (widgets)->install_widget (widgets,
                                                   path);
 }
+
+gint
+hd_widgets_get_text_column (HDWidgets *widgets)
+{
+  g_return_val_if_fail (HD_IS_WIDGETS (widgets), -1);
+  g_return_val_if_fail (HD_WIDGETS_GET_CLASS (widgets)->get_text_column, -1);
+
+  return HD_WIDGETS_GET_CLASS (widgets)->get_text_column (widgets);
+}

@@ -811,6 +811,12 @@ hd_shortcut_widgets_install_widget (HDWidgets   *widgets,
   g_slist_free (list);
 }
 
+static gint
+hd_shortcut_widgets_get_text_column (HDWidgets *widgets)
+{
+  return COL_TITLE;
+}
+
 static void
 hd_shortcut_widgets_class_init (HDShortcutWidgetsClass *klass)
 {
@@ -824,6 +830,7 @@ hd_shortcut_widgets_class_init (HDShortcutWidgetsClass *klass)
   widgets_class->get_model = hd_shortcut_widgets_get_model;
   widgets_class->setup_column_renderes = hd_shortcut_widgets_setup_column_renderes;
   widgets_class->install_widget = hd_shortcut_widgets_install_widget;
+  widgets_class->get_text_column  = hd_shortcut_widgets_get_text_column;
 
   shortcut_widgets_signals [DESKTOP_FILE_CHANGED] = g_signal_new ("desktop-file-changed",
                                                               G_TYPE_FROM_CLASS (klass),

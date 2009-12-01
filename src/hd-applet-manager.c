@@ -415,7 +415,6 @@ hd_applet_manager_get_model (HDWidgets *widgets)
   return priv->model ? g_object_ref (priv->model) : NULL;
 }
 
-
 static const gchar *
 hd_applet_manager_get_dialog_title (HDWidgets *widgets)
 {
@@ -461,6 +460,12 @@ hd_applet_manager_install_widget (HDWidgets   *widgets,
   g_free (desktop_file);
 }
 
+static gint
+hd_applet_manager_get_text_column (HDWidgets *widgets)
+{
+  return 0;
+}
+
 static void
 hd_applet_manager_class_init (HDAppletManagerClass *klass)
 {
@@ -474,6 +479,7 @@ hd_applet_manager_class_init (HDAppletManagerClass *klass)
   widgets_class->get_model = hd_applet_manager_get_model;
   widgets_class->setup_column_renderes = hd_applet_manager_setup_column_renderes;
   widgets_class->install_widget = hd_applet_manager_install_widget;
+  widgets_class->get_text_column = hd_applet_manager_get_text_column;
 
   g_type_class_add_private (klass, sizeof (HDAppletManagerPrivate));
 }

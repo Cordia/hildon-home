@@ -54,6 +54,7 @@ struct _HDWidgetsClass
                                           GtkCellLayout *colum);
   void          (*install_widget)        (HDWidgets     *widgets,
                                           GtkTreePath   *path);
+  gint          (*get_text_column)       (HDWidgets     *widgets);
 };
 
 GType         hd_widgets_get_type               (void);
@@ -64,6 +65,7 @@ void          hd_widgets_setup_column_renderers (HDWidgets     *widgets,
                                                  GtkCellLayout *column);
 void          hd_widgets_install_widget         (HDWidgets     *widgets,
                                                  GtkTreePath   *path);
+gint          hd_widgets_get_text_column        (HDWidgets     *widgets);
 
 G_END_DECLS
 

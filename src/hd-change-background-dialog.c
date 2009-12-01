@@ -954,6 +954,10 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
                                  renderer,
                                  "text", COL_NAME);
 
+  g_object_set (column,
+                "text-column", COL_NAME,
+                NULL);
+
   gtk_widget_show (priv->selector);
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), priv->selector);
 

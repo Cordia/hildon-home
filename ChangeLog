@@ -1,3 +1,17 @@
+2009-12-01  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Add support for live search in dialogs.
+
+	* src/hd-applet-manager.c:
+	* src/hd-bookmark-widgets.c:
+	* src/hd-shortcut-widgets.c:
+	* src/hd-widgets.c:
+	* src/hd-widgets.h: Add get_text_column method.
+
+	* src/hd-install-widgets-dialog.c: Set "text-column" property
+
+	* src/hd-change-background-dialog.c: Set "text-column" property.
+
 2009-11-12  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Release 0.3.58

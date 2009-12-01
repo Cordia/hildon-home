@@ -94,6 +94,10 @@ hd_install_widgets_dialog_constructed (GObject *object)
   hd_widgets_setup_column_renderers (priv->widgets,
                                      GTK_CELL_LAYOUT (column));
 
+  g_object_set (column,
+                "text-column", hd_widgets_get_text_column (priv->widgets),
+                NULL);
+
   hildon_touch_selector_set_hildon_ui_mode (HILDON_TOUCH_SELECTOR (priv->selector),
                                             HILDON_UI_MODE_NORMAL);
   hildon_picker_dialog_set_selector (HILDON_PICKER_DIALOG (object),

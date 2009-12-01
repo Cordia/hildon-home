@@ -329,6 +329,12 @@ hd_bookmark_widgets_install_widget (HDWidgets   *widgets,
   g_free (url);
 }
 
+static gint
+hd_bookmark_widgets_get_text_column (HDWidgets *widgets)
+{
+  return 0;
+}
+
 static void
 hd_bookmark_widgets_class_init (HDBookmarkWidgetsClass *klass)
 {
@@ -342,6 +348,7 @@ hd_bookmark_widgets_class_init (HDBookmarkWidgetsClass *klass)
   widgets_class->get_model = hd_bookmark_widgets_get_model;
   widgets_class->setup_column_renderes = hd_bookmark_widgets_setup_column_renderes;
   widgets_class->install_widget = hd_bookmark_widgets_install_widget;
+  widgets_class->get_text_column = hd_bookmark_widgets_get_text_column;
 
   g_type_class_add_private (klass, sizeof (HDBookmarkWidgetsPrivate));
 }
