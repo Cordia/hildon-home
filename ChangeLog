@@ -1,3 +1,12 @@
+2009-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Do not install /usr/share/doc files.
+
+	Fixes: NB#149133 - Remove doc files from hildon-home deb.
+
+	* debian/rules (DEB_DH_INSTALLCHANGELOGS_ARGS): Do not generate
+	/usr/share/doc/*/changelog.gz files.
+
 2009-12-01  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Fixes: NB#142790 - Group chat invitation notifications are not
