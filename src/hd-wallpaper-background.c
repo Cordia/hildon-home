@@ -213,9 +213,9 @@ get_display_label (GFile *file)
 }
 
 static void
-cb (HDSearchService *service,
-    GAsyncResult    *result,
-    GtkListStore    *store)
+search_service_cb (HDSearchService *service,
+                   GAsyncResult    *result,
+                   GtkListStore    *store)
 {
   GStrv filenames;
   gint i;
@@ -225,10 +225,13 @@ cb (HDSearchService *service,
 
   if (error)
     {
-
+      g_warning ("%s. Could not retrieve wallpapers from search service. %s",
+                 __FUNCTION__,
+                 error->message);
+      g_error_free (error);
     }
 
-  for (i = 0; filenames[i]; i++)
+  for (i = 0; filenames && filenames[i]; i++)
     {
       GFile *file;
       HDBackground *background;
@@ -268,7 +271,7 @@ hd_wallpaper_background_get_available (GtkListStore *store)
                                  QUERY_SERVICE,
                                  QUERY_RDFQ,
                                  NULL,
-                                 (GAsyncReadyCallback) cb,
+                                 (GAsyncReadyCallback) search_service_cb,
                                  store);
 }
 
