@@ -1,5 +1,9 @@
 2009-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Release 0.3.59
+
+2009-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Add support for wallpaper backgrounds.
 
 	Fixes: NB#145131 - Support full size background jpeg files

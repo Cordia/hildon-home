@@ -1,3 +1,14 @@
+hildon-home (0.3.59) unstable; urgency=low
+
+  Jan Arne:
+  * Fixes: NB#145131 - Support full size background jpeg files
+  * Fixes: NB#149133 - Remove doc files from hildon-home deb.
+  * Fixes: NB#142790 - Group chat invitation notifications are not implemented
+  * Fixes: NB#132200 - Icon for application installed from application manger
+    is not showing in shortcut list
+
+ -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  4 Dec 2009 10:00:43 +0100
+
 hildon-home (0.3.58) unstable; urgency=low
 
   * Fixes: NB#146369 - theme change dialog shoudl be open for longer time till
