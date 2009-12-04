@@ -35,6 +35,8 @@
 
 #include "hd-backgrounds.h"
 
+#include "hd-wallpaper-background.h"
+
 #include "hd-change-background-dialog.h"
 
 /* Add Image dialog */
@@ -70,6 +72,7 @@ enum
   COL_IMAGE_SET,
   COL_THEME,
   COL_THUMBNAIL,
+  COL_OBJECT,
   NUM_COLS
 };
 
@@ -498,6 +501,8 @@ hd_change_background_dialog_constructed (GObject *object)
                                                   &selected_row);
   g_free (images_dir);
 
+  hd_wallpaper_background_get_available (GTK_LIST_STORE (priv->model));
+
   if (selected_row)
     {
       GtkTreeIter iter;
@@ -759,6 +764,7 @@ hd_change_background_dialog_response (GtkDialog *dialog,
           gchar *image[5];
           gboolean image_set;
           guint i;
+          HDBackground *background;
 
           /* Get selected background image */
           gtk_tree_model_get (priv->model, &iter,
@@ -768,28 +774,39 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                               COL_IMAGE_3, &image[3],
                               COL_IMAGE_4, &image[4],
                               COL_IMAGE_SET, &image_set,
+                              COL_OBJECT, &background,
                               -1);
 
           hildon_gtk_window_set_progress_indicator (GTK_WINDOW (dialog),
                                                     TRUE);
+          gtk_widget_set_sensitive (GTK_WIDGET (dialog), FALSE);
 
-          if (image_set)
+          if (background)
             {
-              hd_backgrounds_set_image_set (hd_backgrounds_get (),
-                                            &image[1],
-                                            background_set_cb,
-                                            dialog,
-                                            NULL);
+              hd_background_set_for_current_view (background,
+                                                  priv->current_view,
+                                                  NULL); /* FIXME add cancellable */
             }
           else
             {
-              hd_backgrounds_set_background (hd_backgrounds_get (),
-                                             priv->current_view,
-                                             image[0],
-                                             background_set_cb,
-                                             dialog,
-                                             NULL);
+              if (image_set)
+                {
+                  hd_backgrounds_set_image_set (hd_backgrounds_get (),
+                                                &image[1]);
+                }
+              else
+                {
+                  hd_backgrounds_set_background (hd_backgrounds_get (),
+                                                 priv->current_view,
+                                                 image[0]);
+                }
             }
+
+          hd_backgrounds_add_done_cb (hd_backgrounds_get (),
+                                      background_set_cb,
+                                      dialog,
+                                      NULL);
+
 
           /* free memory */
           for (i = 0; i < 5; i++)
@@ -840,55 +857,25 @@ backgrounds_iter_cmp (GtkTreeModel *model,
                       gpointer      user_data)
 {
   gint a_order, b_order;
-  gboolean a_theme, b_theme, a_image_set, b_image_set;
   gchar *a_name, *b_name;
   gint result = -1;
 
   gtk_tree_model_get (model,
                       a,
                       COL_ORDER, &a_order,
-                      COL_THEME, &a_theme,
-                      COL_IMAGE_SET, &a_image_set,
                       COL_NAME, &a_name,
                       -1);
 
   gtk_tree_model_get (model,
                       b,
                       COL_ORDER, &b_order,
-                      COL_THEME, &b_theme,
-                      COL_IMAGE_SET, &b_image_set,
                       COL_NAME, &b_name,
                       -1);
 
   if (a_order != b_order)
-    {
-      result = a_order - b_order;
-    }
-  else  if (a_theme)
-    {
-      if (b_theme)
-        result = strcmp (a_name, b_name);
-      else if (b_image_set)
-        result = 1;
-      else
-        result = -1;
-    }
-  else if (a_image_set)
-    {
-      if (b_theme)
-        result = -1;
-      else if (b_image_set)
-        result = strcmp (a_name, b_name);
-      else
-        result = -1;
-    }
+    result = a_order - b_order;
   else
-    {
-      if (b_image_set)
-        result = 1;
-      else
-        result = strcmp (a_name, b_name);
-     }
+    result = strcmp (a_name, b_name);
 
   g_free (a_name);
   g_free (b_name);
@@ -920,7 +907,7 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   priv->model = (GtkTreeModel *) gtk_list_store_new (NUM_COLS, G_TYPE_STRING, G_TYPE_INT,
                                                      G_TYPE_STRING,
                                                      G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-                                                     G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, GDK_TYPE_PIXBUF);
+                                                     G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, GDK_TYPE_PIXBUF, HD_TYPE_BACKGROUND);
 
   /* Sort by order */
   gtk_tree_sortable_set_default_sort_func (GTK_TREE_SORTABLE (priv->model),

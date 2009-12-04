@@ -261,7 +261,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
       GtkTreeIter iter;
       GtkTreePath *path;
 
-      bg_image = g_strdup_printf ("%s/.backgrounds/thumbnail-%u.png",
+      bg_image = g_strdup_printf ("%s/.backgrounds/background-%u.png",
                                   g_get_home_dir (),
                                   i);
 

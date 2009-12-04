@@ -24,9 +24,10 @@
 #include <config.h>
 #endif
 
-#include <dbus/dbus-glib-bindings.h>
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
+
+#include "hd-dbus-utils.h"
 
 #include "hd-led-pattern.h"
 
@@ -60,7 +61,6 @@ static void            deactivate_pattern (HDLedPattern *pattern);
 
 static GHashTable      *get_pattern_map            (void);
 static DBusGProxy      *get_mce_proxy              (void);
-static DBusGConnection *get_system_dbus_connection (void);
 
 G_DEFINE_TYPE (HDLedPattern, hd_led_pattern, G_TYPE_INITIALLY_UNOWNED);
 
@@ -197,35 +197,18 @@ get_mce_proxy (void)
 
   if (G_UNLIKELY (!mce_proxy))
     {
-      DBusGConnection *system_dbus = get_system_dbus_connection ();
+      DBusGConnection *system_dbus = hd_get_system_dbus_connection ();
 
       if (system_dbus)
-        mce_proxy = dbus_g_proxy_new_for_name (system_dbus,
-                                               MCE_SERVICE,
-                                               MCE_REQUEST_PATH,
-                                               MCE_REQUEST_IF);
+        {
+          mce_proxy = dbus_g_proxy_new_for_name (system_dbus,
+                                                 MCE_SERVICE,
+                                                 MCE_REQUEST_PATH,
+                                                 MCE_REQUEST_IF);
+        }
     }
 
   return mce_proxy;
-}
-
-static DBusGConnection *
-get_system_dbus_connection (void)
-{
-  DBusGConnection *system_dbus;
-  GError *error = NULL;
-
-  system_dbus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
-
-  if (error)
-    {
-      g_warning ("%s. Could not connect to System D-Bus. %s",
-                 __FUNCTION__,
-                 error->message);
-      g_error_free (error);
-    }
-
-  return system_dbus;
 }
 
 static void

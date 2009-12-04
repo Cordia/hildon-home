@@ -22,8 +22,10 @@
 #ifndef __HD_BACKGROUNDS_H__
 #define __HD_BACKGROUNDS_H__
 
-#include <glib.h>
-#include <glib-object.h>
+#include <gdk/gdk.h>
+#include <gio/gio.h>
+
+#include "hd-command-thread-pool.h"
 
 G_BEGIN_DECLS
 
@@ -33,6 +35,9 @@ G_BEGIN_DECLS
 #define HD_IS_BACKGROUNDS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), HD_TYPE_BACKGROUNDS))
 #define HD_IS_BACKGROUNDS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  HD_TYPE_BACKGROUNDS))
 #define HD_BACKGROUNDS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  HD_TYPE_BACKGROUNDS, HDBackgroundsClass))
+
+#define SCREEN_WIDTH  800
+#define SCREEN_HEIGHT 480
 
 typedef struct _HDBackgrounds        HDBackgrounds;
 typedef struct _HDBackgroundsClass   HDBackgroundsClass;
@@ -54,21 +59,41 @@ GType          hd_backgrounds_get_type        (void);
 
 HDBackgrounds *hd_backgrounds_get             (void);
 
-void           hd_backgrounds_startup         (HDBackgrounds *backgrounds);
-void           hd_backgrounds_set_background  (HDBackgrounds *backgrounds,
-                                               guint          view,
-                                               const gchar   *uri,
-                                               GSourceFunc    done_callback,
-                                               gpointer       cb_data,
-                                               GDestroyNotify destroy_data);
-void           hd_backgrounds_set_image_set   (HDBackgrounds *backgrounds,
-                                               gchar        **uris,
-                                               GSourceFunc    done_callback,
-                                               gpointer       cb_data,
-                                               GDestroyNotify destroy_data);
+void           hd_backgrounds_startup         (HDBackgrounds  *backgrounds);
+void           hd_backgrounds_set_background  (HDBackgrounds  *backgrounds,
+                                               guint           view,
+                                               const gchar    *uri);
+void           hd_backgrounds_set_image_set   (HDBackgrounds  *backgrounds,
+                                               gchar         **uris);
+
+void           hd_backgrounds_add_done_cb     (HDBackgrounds  *backgrounds,
+                                               GSourceFunc     done_callback,
+                                               gpointer        cb_data,
+                                               GDestroyNotify  destroy_data);
+
+void           hd_backgrounds_add_create_cached_image (HDBackgrounds      *backgrounds,
+                                                       GFile              *source_file,
+                                                       GCancellable       *cancellable,
+                                                       HDCommandCallback   command,
+                                                       gpointer            data,
+                                                       GDestroyNotify      destroy_data);
+
+void           hd_backgrounds_add_update_current_files (HDBackgrounds  *backgrounds,
+                                                        GFile         **files,
+                                                        GCancellable   *cancellable);
 
 const gchar *  hd_backgrounds_get_background  (HDBackgrounds  *backgrounds,
                                                guint           view);
+
+/* Thread safe */
+gboolean       hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
+                                                 GdkPixbuf      *pixbuf,
+                                                 guint           view,
+                                                 GFile          *source_file,
+                                                 gboolean        error_dialogs,
+                                                 gboolean        update_gconf,
+                                                 GCancellable   *cancellable,
+                                                 GError        **error);
 
 G_END_DECLS
 

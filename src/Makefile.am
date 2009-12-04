@@ -95,6 +95,16 @@ hildon_home_SOURCES = \
 	hd-time-difference.h		\
 	hd-command-thread-pool.c	\
 	hd-command-thread-pool.h	\
+	hd-dbus-utils.c			\
+	hd-dbus-utils.h			\
+	hd-search-service.c		\
+	hd-search-service.h		\
+	hd-background.c			\
+	hd-background.h			\
+	hd-wallpaper-background.c	\
+	hd-wallpaper-background.h	\
+	hd-pixbuf-utils.c		\
+	hd-pixbuf-utils.h		\
 	hildon-home.c
 
 nodist_hildon_home_SOURCES = \

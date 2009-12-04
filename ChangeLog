@@ -1,3 +1,27 @@
+2009-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Add support for wallpaper backgrounds.
+
+	Fixes: NB#145131 - Support full size background jpeg files
+
+	* src/Makefile.am:
+	* src/hd-activate-views-dialog.c:
+	* src/hd-background.c:
+	* src/hd-background.h:
+	* src/hd-backgrounds.c:
+	* src/hd-backgrounds.h:
+	* src/hd-change-background-dialog.c:
+	* src/hd-dbus-utils.c:
+	* src/hd-dbus-utils.h:
+	* src/hd-led-pattern.c:
+	* src/hd-pixbuf-utils.c:
+	* src/hd-pixbuf-utils.h:
+	* src/hd-search-service.c:
+	* src/hd-search-service.h:
+	* src/hd-wallpaper-background.c:
+	* src/hd-wallpaper-background.h: Add support for wallpaper
+	backgrounds.
+
 2009-12-03  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Do not install /usr/share/doc files.
