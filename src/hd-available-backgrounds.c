@@ -196,7 +196,10 @@ backgrounds_iter_cmp (GtkTreeModel           *model,
       name_a = get_name (model, a);
       name_b = get_name (model, b);
 
-      result = g_strcmp0 (name_a, name_b);
+      if (name_a && name_b)
+        result = g_utf8_collate (name_a, name_b);
+      else
+        result = name_a && !name_b ? 1 : -1;
 
       g_free (name_a);
       g_free (name_b);
