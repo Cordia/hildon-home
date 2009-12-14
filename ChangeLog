@@ -1,3 +1,12 @@
+2009-12-14  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Strip spaces in path values from keyfiles
+
+	Fixes: NB#148916 - Hildon-home crashes always when trying to change
+	custom wallpaper
+
+	* src/hd-imageset-background.c: Strip spaces in path values.
+
 2009-12-04  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Release 0.3.59

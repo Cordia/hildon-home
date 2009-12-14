@@ -480,6 +480,7 @@ load_desktop_file (GFile        *file,
           goto complete;
         }
 
+      g_strstrip (value);
       if (g_path_is_absolute (value))
         image_file = g_file_new_for_path (value);
       else
