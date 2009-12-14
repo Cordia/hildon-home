@@ -68,6 +68,8 @@ typedef struct
 static void hd_wallpaper_background_set_for_current_view (HDBackground   *background,
                                                           guint           view,
                                                           GCancellable   *cancellable);
+static GFile *hd_wallpaper_background_get_image_file_for_view (HDBackground *background,
+                                                               guint         view);
 static void create_cached_image_command (CommandData *data);
 
 static void hd_wallpaper_background_dispose      (GObject *object);
@@ -93,6 +95,7 @@ hd_wallpaper_background_class_init (HDWallpaperBackgroundClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   background_class->set_for_current_view = hd_wallpaper_background_set_for_current_view;
+  background_class->get_image_file_for_view = hd_wallpaper_background_get_image_file_for_view;
 
   object_class->dispose = hd_wallpaper_background_dispose;
   object_class->get_property = hd_wallpaper_background_get_property;
@@ -116,12 +119,15 @@ hd_wallpaper_background_set_for_current_view (HDBackground   *background,
 {
   HDWallpaperBackgroundPrivate *priv = HD_WALLPAPER_BACKGROUND (background)->priv;
   CommandData *data;
+
+  gboolean error_dialogs = TRUE;
  
   data = command_data_new (priv->file,
                            cancellable);
 
   hd_backgrounds_add_create_cached_image (hd_backgrounds_get (),
                                           priv->file,
+                                          error_dialogs,
                                           cancellable,
                                           (HDCommandCallback) create_cached_image_command,
                                           data,
@@ -213,9 +219,9 @@ get_display_label (GFile *file)
 }
 
 static void
-search_service_cb (HDSearchService *service,
-                   GAsyncResult    *result,
-                   GtkListStore    *store)
+search_service_cb (HDSearchService        *service,
+                   GAsyncResult           *result,
+                   HDAvailableBackgrounds *backgrounds)
 {
   GStrv filenames;
   gint i;
@@ -235,35 +241,25 @@ search_service_cb (HDSearchService *service,
     {
       GFile *file;
       HDBackground *background;
-      GtkTreeIter iter;
       char *label;
 
       file = g_file_new_for_path (filenames[i]);
-     
       background = hd_wallpaper_background_new (file);
-
       label = get_display_label (file);
 
-      gtk_list_store_insert_with_values (store,
-                                         &iter,
-                                         -1,
-                                         HD_BACKGROUND_COL_LABEL, label,
-                                         HD_BACKGROUND_COL_OBJECT, background,
-                                         -1);
-
-      hd_background_set_thumbnail_from_file (background,
-                                             GTK_TREE_MODEL (store),
-                                             &iter,
-                                             file);
+      hd_available_backgrounds_add_with_file (backgrounds,
+                                              background,
+                                              label,
+                                              file);
 
       g_object_unref (file);
-
+      g_object_unref (background);
       g_free (label);
     }
 }
 
 void
-hd_wallpaper_background_get_available (GtkListStore *store)
+hd_wallpaper_background_get_available (HDAvailableBackgrounds *backgrounds)
 {
   HDSearchService *service = hd_search_service_new ();
 
@@ -272,7 +268,7 @@ hd_wallpaper_background_get_available (GtkListStore *store)
                                  QUERY_RDFQ,
                                  NULL,
                                  (GAsyncReadyCallback) search_service_cb,
-                                 store);
+                                 backgrounds);
 }
 
 static void
@@ -338,5 +334,14 @@ command_data_free (CommandData *data)
     g_object_unref (data->cancellable);
 
   g_slice_free (CommandData, data);
+}
+
+static GFile *
+hd_wallpaper_background_get_image_file_for_view (HDBackground *background,
+                                                 guint         view)
+{
+  HDWallpaperBackgroundPrivate *priv = HD_WALLPAPER_BACKGROUND (background)->priv;
+
+  return priv->file;
 }
 

@@ -73,6 +73,7 @@ void           hd_backgrounds_add_done_cb     (HDBackgrounds  *backgrounds,
 
 void           hd_backgrounds_add_create_cached_image (HDBackgrounds      *backgrounds,
                                                        GFile              *source_file,
+                                                       gboolean            error_dialogs,
                                                        GCancellable       *cancellable,
                                                        HDCommandCallback   command,
                                                        gpointer            data,
@@ -82,8 +83,8 @@ void           hd_backgrounds_add_update_current_files (HDBackgrounds  *backgrou
                                                         GFile         **files,
                                                         GCancellable   *cancellable);
 
-const gchar *  hd_backgrounds_get_background  (HDBackgrounds  *backgrounds,
-                                               guint           view);
+GFile *hd_backgrounds_get_background  (HDBackgrounds  *backgrounds,
+                                       guint           view);
 
 /* Thread safe */
 gboolean       hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
@@ -94,6 +95,7 @@ gboolean       hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
                                                  gboolean        update_gconf,
                                                  GCancellable   *cancellable,
                                                  GError        **error);
+void hd_backgrounds_report_corrupt_image        (const GError   *error);
 
 G_END_DECLS
 

@@ -287,8 +287,8 @@ hd_pixbuf_utils_load_at_size (GFile         *file,
   else
     g_set_error_literal (error,
                          GDK_PIXBUF_ERROR,
-                         GDK_PIXBUF_ERROR_FAILED,
-                         "NULL Pixbuf returned from loader");
+                         GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                         "No pixbuf in the correct size");
 
 cleanup:
   if (stream)

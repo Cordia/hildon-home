@@ -101,10 +101,20 @@ hildon_home_SOURCES = \
 	hd-search-service.h		\
 	hd-background.c			\
 	hd-background.h			\
+	hd-file-background.c		\
+	hd-file-background.h		\
+	hd-imageset-background.c	\
+	hd-imageset-background.h	\
+	hd-theme-background.c		\
+	hd-theme-background.h		\
 	hd-wallpaper-background.c	\
 	hd-wallpaper-background.h	\
+	hd-available-backgrounds.c	\
+	hd-available-backgrounds.h	\
 	hd-pixbuf-utils.c		\
 	hd-pixbuf-utils.h		\
+	hd-object-vector.c		\
+	hd-object-vector.h		\
 	hildon-home.c
 
 nodist_hildon_home_SOURCES = \

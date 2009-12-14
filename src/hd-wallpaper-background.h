@@ -24,8 +24,8 @@
 #define __HD_WALLPAPER_BACKGROUND_H__
 
 #include <gio/gio.h>
-#include <gtk/gtk.h>
 
+#include "hd-available-backgrounds.h"
 #include "hd-background.h"
 
 G_BEGIN_DECLS
@@ -57,7 +57,7 @@ GType         hd_wallpaper_background_get_type      (void);
 
 HDBackground *hd_wallpaper_background_new           (GFile *file);
 
-void          hd_wallpaper_background_get_available (GtkListStore *store);
+void          hd_wallpaper_background_get_available (HDAvailableBackgrounds *backgrounds);
 
 G_END_DECLS
 

@@ -40,9 +40,10 @@ typedef struct _HDBackgroundPrivate HDBackgroundPrivate;
 
 enum
 {
-  HD_BACKGROUND_COL_LABEL = 0,
-  HD_BACKGROUND_COL_THUMBNAIL = 9,
-  HD_BACKGROUND_COL_OBJECT = 10,
+  HD_BACKGROUND_COL_LABEL,
+  HD_BACKGROUND_COL_THUMBNAIL,
+  HD_BACKGROUND_COL_OBJECT,
+  HD_BACKGROUND_COL_VISIBLE,
   HD_BACKGROUND_NUM_COLS
 };
 
@@ -60,6 +61,9 @@ struct _HDBackgroundClass
   void (*set_for_current_view) (HDBackground   *background,
                                 guint           view,
                                 GCancellable   *cancellable);
+
+  GFile *(*get_image_file_for_view) (HDBackground *background,
+                                     guint         view);
 };
 
 GType hd_background_get_type      (void);
@@ -72,6 +76,9 @@ void  hd_background_set_thumbnail_from_file (HDBackground *background,
 void hd_background_set_for_current_view (HDBackground   *background,
                                          guint           view,
                                          GCancellable   *cancellable);
+
+GFile *hd_background_get_image_file_for_view (HDBackground *background,
+                                              guint         view);
 
 G_END_DECLS
 

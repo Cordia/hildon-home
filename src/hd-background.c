@@ -135,6 +135,17 @@ hd_background_set_for_current_view (HDBackground *background,
                                                               cancellable);
 }
 
+GFile *
+hd_background_get_image_file_for_view (HDBackground *background,
+                                       guint         view)
+{
+  if (HD_BACKGROUND_GET_CLASS (background)->get_image_file_for_view)
+   return HD_BACKGROUND_GET_CLASS (background)->get_image_file_for_view (background,
+                                                                         view);
+
+  return NULL;
+}
+
 /*
 const gchar *
 hd_background_get_title (HDBackground *background)

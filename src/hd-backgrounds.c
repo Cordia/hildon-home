@@ -78,6 +78,13 @@ typedef struct
   gboolean image_set : 1;
 } HDBackgroundData;
 
+typedef struct
+{
+  GFile *file;
+  gboolean error_dialogs;
+  GCancellable *cancellable;
+} CacheImageRequestData;
+
 struct _HDBackgroundsPrivate
 {
   GConfClient *gconf_client;
@@ -88,6 +95,8 @@ struct _HDBackgroundsPrivate
   /* Data used for the thread which creates the cached images */
   HDCommandThreadPool *thread_pool;
   GMutex              *mutex;
+
+  GPtrArray *requests;
 
   HDBackgroundData *current_requests[VIEWS];
   GFile            *current_bg_image[VIEWS];
@@ -101,6 +110,13 @@ struct _HDBackgroundsPrivate
 };
 
 static void create_cached_image (HDBackgroundData *data);
+
+static CacheImageRequestData *cache_image_request_data_new (GFile        *file,
+                                                            gboolean      error_dialogs,
+                                                            GCancellable *cancellable);
+static void cache_image_request_data_free (CacheImageRequestData *data);
+
+static gboolean remove_request (CacheImageRequestData *request);
 
 G_DEFINE_TYPE (HDBackgrounds, hd_backgrounds, G_TYPE_OBJECT);
 
@@ -266,13 +282,8 @@ create_cached_image (HDBackgroundData *data)
       gchar *uri;
 
       /* Display corrupt image notification banner */
-      if (data->display_banner &&
-          (g_error_matches (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE) ||
-           g_error_matches (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE)))
-        {
-          show_banner (dgettext ("hildon-common-strings",
-                                 "ckct_ni_unable_to_open_file_corrupted"));
-        }
+      if (data->display_banner)
+        hd_backgrounds_report_corrupt_image (error);
 
       /* Print warning to syslog */
       uri = g_file_get_uri (data->file);
@@ -825,30 +836,18 @@ mount_pre_unmount_cb (GVolumeMonitor *monitor,
 
   mount_root = g_mount_get_root (mount);
 
-  g_warning ("%s. Mount: %s", __FUNCTION__, g_file_get_path (mount_root));
-
-  g_mutex_lock (priv->mutex);
-  for (i = 0; i < VIEWS; i++)
+  for (i = 0; i < priv->requests->len; i++)
     {
-      HDBackgroundData *data = priv->current_requests[i];
+      CacheImageRequestData *request = g_ptr_array_index (priv->requests, i);
 
-      if (!data)
-        continue;
-
-      if (g_file_has_prefix (data->file,
+      if (g_file_has_prefix (request->file,
                              mount_root))
         {
-          g_warning ("%s. Mount: %s, File: %s", __FUNCTION__, g_file_get_path (mount_root), g_file_get_path (data->file));
+          display_banner = display_banner || request->error_dialogs;
 
-          /* Display banner if the background image was user initiated */
-          display_banner = (display_banner || data->display_banner);
-
-          /* Cancel the request */
-          g_cancellable_cancel (data->cancellable);
-          priv->current_requests[i] = NULL;
+          g_cancellable_cancel (request->cancellable);
         }
     }
-  g_mutex_unlock (priv->mutex);
 
   g_object_unref (mount_root);
 
@@ -878,32 +877,24 @@ volume_pre_unmount_cb (GnomeVFSVolumeMonitor *monitor,
 
   uri = gnome_vfs_volume_get_activation_uri (volume);
 
-  g_mutex_lock (priv->mutex);
-  for (i = 0; i < VIEWS; i++)
+  for (i = 0; i < priv->requests->len; i++)
     {
-      HDBackgroundData *data = priv->current_requests[i];
+      CacheImageRequestData *request = g_ptr_array_index (priv->requests, i);
       gchar *path;
       GnomeVFSVolume *other;
 
-      if (!data)
-        continue;
-
-      path = g_file_get_path (data->file);
+      path = g_file_get_path (request->file);
       other = gnome_vfs_volume_monitor_get_volume_for_path (priv->volume_monitor2,
                                                             path);
       g_free (path);
 
       if (other && !gnome_vfs_volume_compare (volume, other))
         {
-          /* Display banner if the background image was user initiated */
-          display_banner = (display_banner || data->display_banner);
+          display_banner = display_banner || request->error_dialogs;
 
-          /* Cancel the request */
-          g_cancellable_cancel (data->cancellable);
-          priv->current_requests[i] = NULL;
+          g_cancellable_cancel (request->cancellable);
         }
     }
-  g_mutex_unlock (priv->mutex);
 
   /* Display "Opening interrupted.\n Memory card cover open" banner */
   if (display_banner)
@@ -930,6 +921,8 @@ hd_backgrounds_init (HDBackgrounds *backgrounds)
   priv->gconf_client = gconf_client_get_default ();
 
   priv->mutex = g_mutex_new ();
+
+  priv->requests = g_ptr_array_new ();
 
   priv->thread_pool = hd_command_thread_pool_new ();
 
@@ -1067,7 +1060,7 @@ hd_backgrounds_add_done_cb (HDBackgrounds *backgrounds,
                                     destroy_data);
 }
 
-const gchar *
+GFile *
 hd_backgrounds_get_background (HDBackgrounds *backgrounds,
                                guint          view)
 {
@@ -1078,27 +1071,53 @@ hd_backgrounds_get_background (HDBackgrounds *backgrounds,
 
   priv = backgrounds->priv;
 
-  return g_file_get_path (priv->current_bg_image[view]);
+  return priv->current_bg_image[view];
 }
 
 void
 hd_backgrounds_add_create_cached_image (HDBackgrounds     *backgrounds,
                                         GFile             *source_file,
+                                        gboolean           error_dialogs,
                                         GCancellable      *cancellable,
                                         HDCommandCallback  command,
                                         gpointer           data,
                                         GDestroyNotify     destroy_data)
 {
   HDBackgroundsPrivate *priv;
+  CacheImageRequestData *request;
 
   g_return_if_fail (HD_IS_BACKGROUNDS (backgrounds));
 
   priv = backgrounds->priv;
 
+  request = cache_image_request_data_new (source_file,
+                                          error_dialogs,
+                                          cancellable);
+  g_ptr_array_add (priv->requests,
+                   request);
+
   hd_command_thread_pool_push (priv->thread_pool,
                                command,
                                data,
                                destroy_data);
+
+  hd_command_thread_pool_push_idle (priv->thread_pool,
+                                    G_PRIORITY_HIGH_IDLE,
+                                    (GSourceFunc) remove_request,
+                                    request,
+                                    (GDestroyNotify) cache_image_request_data_free);
+}
+
+static gboolean
+remove_request (CacheImageRequestData *request)
+{
+  HDBackgrounds *backgrounds = hd_backgrounds_get ();
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+
+  g_ptr_array_remove_fast (priv->requests,
+                           request);
+
+  return FALSE;
 }
 
 gboolean
@@ -1145,7 +1164,6 @@ hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
 
       g_propagate_error (error,
                          local_error);
-      g_error_free (local_error);
 
       return FALSE;
     }
@@ -1190,3 +1208,43 @@ hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
   return TRUE;
 }
 
+void
+hd_backgrounds_report_corrupt_image (const GError *error)
+{
+  if (g_error_matches (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE) ||
+      g_error_matches (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE))
+    {
+      show_banner (dgettext ("hildon-common-strings",
+                             "ckct_ni_unable_to_open_file_corrupted"));
+    }
+}
+
+static CacheImageRequestData *
+cache_image_request_data_new (GFile        *file,
+                              gboolean      error_dialogs,
+                              GCancellable *cancellable)
+{
+  CacheImageRequestData *data = g_slice_new0 (CacheImageRequestData);
+
+  data->file = g_object_ref (file);
+  data->error_dialogs = error_dialogs;
+  if (cancellable)
+    data->cancellable = g_object_ref (cancellable);
+
+  return data;
+}
+
+static void
+cache_image_request_data_free (CacheImageRequestData *data)
+{
+  if (!data)
+    return;
+
+  if (data->file)
+    g_object_unref (data->file);
+
+  if (data->cancellable)
+    g_object_unref (data->cancellable);
+
+  g_slice_free (CacheImageRequestData, data);
+}
