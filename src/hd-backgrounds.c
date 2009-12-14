@@ -995,57 +995,6 @@ hd_backgrounds_get (void)
 }
 
 void
-hd_backgrounds_set_background (HDBackgrounds *backgrounds,
-                               guint          view,
-                               const gchar   *uri)
-{
-  GFile *file;
-
-  g_return_if_fail (HD_IS_BACKGROUNDS (backgrounds));
-  g_return_if_fail (view < VIEWS);
-
-  if (g_path_is_absolute (uri))
-    file = g_file_new_for_path (uri);
-  else
-    file = g_file_new_for_uri (uri);
-
-  create_cached_background (backgrounds,
-                            file,
-                            view,
-                            TRUE,
-                            TRUE);
-
-  g_object_unref (file);
-}
-
-void
-hd_backgrounds_set_image_set   (HDBackgrounds *backgrounds,
-                                gchar        **uris)
-{
-  guint i;
-
-  g_return_if_fail (HD_IS_BACKGROUNDS (backgrounds));
-
-  for (i = 0; i < VIEWS; i++)
-    {
-      GFile *file;
-
-      if (g_path_is_absolute (uris[i]))
-        file = g_file_new_for_path (uris[i]);
-      else
-        file = g_file_new_for_uri (uris[i]);
-
-      create_cached_background (backgrounds,
-                                file,
-                                i,
-                                TRUE,
-                                TRUE);
-
-      g_object_unref (file);
-    }
-}
-
-void
 hd_backgrounds_add_done_cb (HDBackgrounds *backgrounds,
                             GSourceFunc    done_callback,
                             gpointer       cb_data,

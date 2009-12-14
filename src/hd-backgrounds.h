@@ -60,11 +60,6 @@ GType          hd_backgrounds_get_type        (void);
 HDBackgrounds *hd_backgrounds_get             (void);
 
 void           hd_backgrounds_startup         (HDBackgrounds  *backgrounds);
-void           hd_backgrounds_set_background  (HDBackgrounds  *backgrounds,
-                                               guint           view,
-                                               const gchar    *uri);
-void           hd_backgrounds_set_image_set   (HDBackgrounds  *backgrounds,
-                                               gchar         **uris);
 
 void           hd_backgrounds_add_done_cb     (HDBackgrounds  *backgrounds,
                                                GSourceFunc     done_callback,
