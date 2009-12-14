@@ -1,3 +1,14 @@
+hildon-home (0.3.60) unstable; urgency=low
+
+  Jan Arne:
+  * Fixes: NB#149520 - Hildon Home crashes when change background
+  * Fixes: NB#148916 - Hildon-home crashes always when trying to change custom
+    wallpaper
+  * Fixes: NB#131294 - unable to stop loading background image
+  * Fixes: NB#149974 - live search is not working in layout mode
+
+ -- Jan Arne Petersen <jpetersen@openismus.com>  Mon, 14 Dec 2009 12:36:40 +0100
+
 hildon-home (0.3.59) unstable; urgency=low
 
   Jan Arne:
