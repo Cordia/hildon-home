@@ -1,5 +1,9 @@
 2009-12-17  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Release 0.3.61.
+
+2009-12-17  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fixes: NB#150971 - hildon-home crashed while changing background.
 
 	* src/hd-available-backgrounds.c: Unref models correctly.

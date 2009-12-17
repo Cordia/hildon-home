@@ -1,3 +1,13 @@
+hildon-home (0.3.61) unstable; urgency=low
+
+  Jan Arne
+  * Fixes: NB#150971 - hildon-home crashed while changing background.
+  * Fixes: NB#149133 - Remove doc files from hildon-home deb
+  * Fixes: NB#151194 - The "Choose background image" dialog can refer to
+    deleted images
+
+ -- Jan Arne Petersen <jpetersen@openismus.com>  Thu, 17 Dec 2009 15:24:43 +0100
+
 hildon-home (0.3.60) unstable; urgency=low
 
   Jan Arne:
@@ -15,8 +25,6 @@ hildon-home (0.3.59) unstable; urgency=low
   * Fixes: NB#145131 - Support full size background jpeg files
   * Fixes: NB#149133 - Remove doc files from hildon-home deb.
   * Fixes: NB#142790 - Group chat invitation notifications are not implemented
-  * Fixes: NB#132200 - Icon for application installed from application manger
-    is not showing in shortcut list
 
  -- Kimmo Hämäläinen <kimmo.hamalainen@nokia.com>  Fri,  4 Dec 2009 10:00:43 +0100
 
