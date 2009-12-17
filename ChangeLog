@@ -1,3 +1,9 @@
+2009-12-17  Jan Arne Petersen  <jpetersen@openismus.com>
+
+	Fixes: NB#149133 - Remove doc files from hildon-home deb
+
+	* debian/rules: disable dh_installdocs.
+
 2009-12-14  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Release 0.3.60.
