@@ -46,7 +46,7 @@ G_DEFINE_TYPE (HDInstallWidgetsDialog, hd_install_widgets_dialog, HILDON_TYPE_PI
 
 static void
 hd_install_widgets_dialog_response (GtkDialog *dialog,
-                                 gint       response_id)
+                                    gint       response_id)
 {
   HDInstallWidgetsDialogPrivate *priv = HD_INSTALL_WIDGETS_DIALOG (dialog)->priv;
 

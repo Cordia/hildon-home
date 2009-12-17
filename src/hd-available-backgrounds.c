@@ -95,21 +95,18 @@ is_user_path_iter (HDAvailableBackgrounds *backgrounds,
                    GtkTreeIter            *sort_iter)
 {
   HDAvailableBackgroundsPrivate *priv = backgrounds->priv;
-  GtkTreePath *path; //, *user_path;
+  GtkTreePath *path;
   gboolean result = FALSE;
 
   if (!priv->user_path)
     return result;
 
-/*  user_path = gtk_tree_model_sort_convert_child_path_to_path (GTK_TREE_MODEL_SORT (priv->sorted_model),
-                                                              priv->user_path);*/
   path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->backgrounds_store),
                                   sort_iter);
 
   result = (gtk_tree_path_compare (path, priv->user_path) == 0);
 
   gtk_tree_path_free (path);
-//  gtk_tree_path_free (user_path);
 
   return result;
 }
@@ -242,11 +239,17 @@ hd_available_backgrounds_dispose (GObject *object)
   HDAvailableBackgrounds *available_backgrounds = HD_AVAILABLE_BACKGROUNDS (object);
   HDAvailableBackgroundsPrivate *priv = available_backgrounds->priv;
 
+  if (priv->user_path)
+    priv->user_path = (gtk_tree_path_free (priv->user_path), NULL);
+
   if (priv->backgrounds_store)
     priv->backgrounds_store = (g_object_unref (priv->backgrounds_store), NULL);
 
   if (priv->sorted_model)
     priv->sorted_model = (g_object_unref (priv->sorted_model), NULL);
+
+  if (priv->filter_model)
+    priv->filter_model = (g_object_unref (priv->filter_model), NULL);
 
   G_OBJECT_CLASS (hd_available_backgrounds_parent_class)->dispose (object);
 }
@@ -384,6 +387,7 @@ hd_available_backgrounds_run (HDAvailableBackgrounds *backgrounds,
                                          GTK_TREE_MODEL (priv->backgrounds_store),
                                          &iter,
                                          image_file);
+  g_object_unref (background);
 
   priv->user_path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->backgrounds_store),
                                              &iter);
@@ -427,6 +431,7 @@ hd_available_backgrounds_set_user_selected (HDAvailableBackgrounds *backgrounds,
                                          GTK_TREE_MODEL (priv->backgrounds_store),
                                          &iter,
                                          image_file);
+  g_object_unref (background);
 
   gtk_tree_model_sort_convert_child_iter_to_iter (GTK_TREE_MODEL_SORT (priv->sorted_model),
                                                   &sort_iter,
