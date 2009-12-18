@@ -172,7 +172,7 @@ query_cb (DBusGProxy         *proxy,
       GStrv filenames;
       guint i;
 
-      filenames = g_new0 (gchar *, strv_array->len);
+      filenames = g_new0 (char*, strv_array->len + 1);
 
       for (i = 0; i < strv_array->len; i++)
         {
