@@ -9,6 +9,7 @@ endif
 
 DEB_DH_INSTALLCHANGELOGS_ARGS=--no-act
 DEB_DH_INSTALLDOCS_ARGS=--no-act
+DEB_INSTALL_DOCS_ALL=
 
 makebuilddir::
 	AUTOGEN_SUBDIR_MODE=1 NOCONFIGURE=yes ./autogen.sh
