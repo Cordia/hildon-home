@@ -1,5 +1,9 @@
 2009-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
+	Release 0.3.62.
+
+2009-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
+
 	Fix length of NULL-terminated string array.
 
 	Fixes: NB#151417 - Hildon Crashes always in a scenario
