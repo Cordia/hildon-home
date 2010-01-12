@@ -26,73 +26,99 @@
 
 #include "hd-pixbuf-utils.h"
 
+/*
+ * Background image should be resized and cropped. That means the image
+ * is centered and scaled to make sure the shortest side fit the home 
+ * background exactly with keeping the aspect ratio of the original image
+ */
+
+static double
+get_scale_for_aspect_ratio (HDImageSize *image_size,
+                            HDImageSize *destination_size)
+{
+  double destination_ratio, ratio, scale;
+
+  destination_ratio = (1. * destination_size->width) / destination_size->height;
+  ratio = (1. * image_size->width) / image_size->height;
+
+  if (ratio > destination_ratio)
+    scale = ((double) destination_size->height) / ((double) image_size->height);
+  else
+    scale = ((double) destination_size->width) / ((double) image_size->width);
+
+  return scale;
+}
+
 static void
 size_prepared_cb (GdkPixbufLoader *loader,
                   gint             width,
                   gint             height,
-                  GdkRectangle    *desired_size)
+                  HDImageSize     *destination_size)
 {
-  double desired_ratio, ratio, w, h;
+  HDImageSize image_size;
+  double scale;
 
-  /*
-   * Background image should be resized and cropped. That means the image
-   * is centered and scaled to make sure the shortest side fit the home 
-   * background exactly with keeping the aspect ratio of the original image
-   */
+  image_size.width = width;
+  image_size.height = height;
 
-  desired_ratio = (1. * desired_size->width) / desired_size->height;
-  ratio = (1. * width) / height;
+  scale = get_scale_for_aspect_ratio (&image_size, destination_size);
 
-  if (ratio > desired_ratio)
+  /* Do not load images bigger than neccesary */
+  if (scale < 1)
     {
-      h = desired_size->height;
-      w = ratio * desired_size->height;
-    }
-  else
-    {
-      h = desired_size->width / ratio;
-      w = desired_size->width;
+      image_size.width *= scale;
+      image_size.height *= scale;
     }
 
-  gdk_pixbuf_loader_set_size (loader, w, h);
+  gdk_pixbuf_loader_set_size (loader, image_size.width, image_size.height);
 }
 
-GdkPixbuf *
-hd_pixbuf_utils_load_scaled_and_cropped (GFile         *file,
-                                         gint           width,
-                                         gint           height,
-                                         GCancellable  *cancellable,
-                                         GError       **error)
+static GdkPixbuf *
+scale_and_crop_pixbuf (const GdkPixbuf *source,
+                       HDImageSize     *destination_size)
 {
-  GFileInputStream *stream = NULL;
-  GdkPixbufLoader *loader = NULL;
+  HDImageSize image_size;
+  double scale;
+  GdkPixbuf *pixbuf;
+
+  image_size.width = gdk_pixbuf_get_width (source);
+  image_size.height = gdk_pixbuf_get_height (source);
+
+  scale = get_scale_for_aspect_ratio (&image_size, destination_size);
+
+  pixbuf = gdk_pixbuf_new (gdk_pixbuf_get_colorspace (source),
+                           gdk_pixbuf_get_has_alpha (source),
+                           gdk_pixbuf_get_bits_per_sample (source),
+                           destination_size->width,
+                           destination_size->height);
+
+  gdk_pixbuf_scale (source,
+                    pixbuf,
+                    0, 0,
+                    destination_size->width,
+                    destination_size->height,
+                    - (image_size.width * scale - destination_size->width) / 2,
+                    - (image_size.height * scale - destination_size->height) / 2,
+                    scale,
+                    scale,
+                    GDK_INTERP_BILINEAR);
+
+  return pixbuf;
+}
+
+static gboolean
+read_from_input_stream_into_pixbuf_loader (GInputStream     *stream,
+                                           GdkPixbufLoader  *loader,
+                                           GCancellable     *cancellable,
+                                           GError          **error)
+{
   guchar buffer[8192];
   gssize read_bytes;
-  GdkPixbuf *pixbuf = NULL;
-  GdkRectangle *desired_size;
-
-  /* Open file for read */
-  stream = g_file_read (file, cancellable, error);
-
-  if (!stream)
-    goto cleanup;
-
-  /* Create pixbuf loader */
-  desired_size = g_new0 (GdkRectangle, 1);
-  desired_size->width = width;
-  desired_size->height = height;
-
-  loader = gdk_pixbuf_loader_new ();
-  g_signal_connect_data (loader, "size-prepared",
-                         G_CALLBACK (size_prepared_cb),
-                         desired_size,
-                         (GClosureNotify) g_free,
-                         0);
 
   /* Parse input stream into the loader */
   do
     {
-      read_bytes = g_input_stream_read (G_INPUT_STREAM (stream),
+      read_bytes = g_input_stream_read (stream,
                                         buffer,
                                         sizeof (buffer),
                                         cancellable,
@@ -100,7 +126,7 @@ hd_pixbuf_utils_load_scaled_and_cropped (GFile         *file,
       if (read_bytes < 0)
         {
           gdk_pixbuf_loader_close (loader, NULL);
-          goto cleanup;
+          return FALSE;
         }
 
       if (!gdk_pixbuf_loader_write (loader,
@@ -109,34 +135,53 @@ hd_pixbuf_utils_load_scaled_and_cropped (GFile         *file,
                                     error))
         {
           gdk_pixbuf_loader_close (loader, NULL);
-          goto cleanup;
+          return FALSE;
         }
     } while (read_bytes > 0);
 
-  /* Close pixbuf loader */
   if (!gdk_pixbuf_loader_close (loader, error))
-    {
-      goto cleanup;
-    }
+    return FALSE;
 
-  /* Close input stream */
-  if (!g_input_stream_close (G_INPUT_STREAM (stream),
+  if (!g_input_stream_close (stream,
                              cancellable,
                              error))
-    {
-      goto cleanup;
-    }
+    return FALSE;
+
+  return TRUE;
+}
+
+GdkPixbuf *
+hd_pixbuf_utils_load_scaled_and_cropped (GFile         *file,
+                                         HDImageSize   *size,
+                                         GCancellable  *cancellable,
+                                         GError       **error)
+{
+  GFileInputStream *stream = NULL;
+  GdkPixbufLoader *loader = NULL;
+  GdkPixbuf *pixbuf = NULL;
+
+  /* Open file for read */
+  stream = g_file_read (file, cancellable, error);
+
+  if (!stream)
+    goto cleanup;
+
+  /* Create pixbuf loader */
+  loader = gdk_pixbuf_loader_new ();
+  g_signal_connect (loader, "size-prepared",
+                    G_CALLBACK (size_prepared_cb),
+                    size);
+
+  if (!read_from_input_stream_into_pixbuf_loader (G_INPUT_STREAM (stream),
+                                                  loader,
+                                                  cancellable,
+                                                  error))
+    goto cleanup;
 
   /* Set resulting pixbuf */
   pixbuf = gdk_pixbuf_loader_get_pixbuf (loader);
   if (pixbuf)
-    {
-      pixbuf = gdk_pixbuf_new_subpixbuf (pixbuf,
-                                         (gdk_pixbuf_get_width (pixbuf) - width) / 2,
-                                         (gdk_pixbuf_get_height (pixbuf) - height) / 2,
-                                         width,
-                                         height);
-    }
+    pixbuf = scale_and_crop_pixbuf (pixbuf, size);
   else
     g_set_error_literal (error,
                          GDK_PIXBUF_ERROR,
@@ -190,35 +235,31 @@ static void
 size_prepared_exact_cb (GdkPixbufLoader *loader,
                         gint             width,
                         gint             height,
-                        GdkRectangle    *desired_size)
+                        HDImageSize     *destination_size)
 {
-  if (width == desired_size->width &&
-      height == desired_size->height)
+  if (width == destination_size->width &&
+      height == destination_size->height)
     {
       gdk_pixbuf_loader_set_size (loader, width, height);
     }
   else
     {
       gdk_pixbuf_loader_set_size (loader,
-                                  MIN (width, desired_size->width - 1),
-                                  MIN (height, desired_size->height - 1));
+                                  MIN (width, destination_size->width - 1),
+                                  MIN (height, destination_size->height - 1));
     }
 }
 
 
 GdkPixbuf *
 hd_pixbuf_utils_load_at_size (GFile         *file,
-                              gint           width,
-                              gint           height,
+                              HDImageSize   *size,
                               GCancellable  *cancellable,
                               GError       **error)
 {
   GFileInputStream *stream = NULL;
   GdkPixbufLoader *loader = NULL;
-  guchar buffer[8192];
-  gssize read_bytes;
   GdkPixbuf *pixbuf = NULL;
-  GdkRectangle *desired_size;
 
   /* Open file for read */
   stream = g_file_read (file, cancellable, error);
@@ -227,60 +268,21 @@ hd_pixbuf_utils_load_at_size (GFile         *file,
     goto cleanup;
 
   /* Create pixbuf loader */
-  desired_size = g_new0 (GdkRectangle, 1);
-  desired_size->width = width;
-  desired_size->height = height;
-
   loader = gdk_pixbuf_loader_new ();
-  g_signal_connect_data (loader, "size-prepared",
-                         G_CALLBACK (size_prepared_exact_cb),
-                         desired_size,
-                         (GClosureNotify) g_free,
-                         0);
+  g_signal_connect (loader, "size-prepared",
+                    G_CALLBACK (size_prepared_exact_cb), size);
 
-  /* Parse input stream into the loader */
-  do
-    {
-      read_bytes = g_input_stream_read (G_INPUT_STREAM (stream),
-                                        buffer,
-                                        sizeof (buffer),
-                                        cancellable,
-                                        error);
-      if (read_bytes < 0)
-        {
-          gdk_pixbuf_loader_close (loader, NULL);
-          goto cleanup;
-        }
-
-      if (!gdk_pixbuf_loader_write (loader,
-                                    buffer,
-                                    read_bytes,
-                                    error))
-        {
-          gdk_pixbuf_loader_close (loader, NULL);
-          goto cleanup;
-        }
-    } while (read_bytes > 0);
-
-  /* Close pixbuf loader */
-  if (!gdk_pixbuf_loader_close (loader, error))
-    {
-      goto cleanup;
-    }
-
-  /* Close input stream */
-  if (!g_input_stream_close (G_INPUT_STREAM (stream),
-                             cancellable,
-                             error))
-    {
-      goto cleanup;
-    }
+  if (!read_from_input_stream_into_pixbuf_loader (G_INPUT_STREAM (stream),
+                                                  loader,
+                                                  cancellable,
+                                                  error))
+    goto cleanup;
 
   /* Set resulting pixbuf */
   pixbuf = gdk_pixbuf_loader_get_pixbuf (loader);
   if (pixbuf && 
-      gdk_pixbuf_get_width (pixbuf) == width &&
-      gdk_pixbuf_get_height (pixbuf) == height)
+      gdk_pixbuf_get_width (pixbuf) == size->width &&
+      gdk_pixbuf_get_height (pixbuf) == size->height)
     {
       g_object_ref (pixbuf);
     }

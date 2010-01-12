@@ -27,15 +27,19 @@
 
 G_BEGIN_DECLS
 
+typedef struct
+{
+  int width;
+  int height;
+} HDImageSize;
+
 GdkPixbuf *hd_pixbuf_utils_load_at_size (GFile         *file,
-                                         gint           width,
-                                         gint           height,
+                                         HDImageSize   *size,
                                          GCancellable  *cancellable,
                                          GError       **error);
 
 GdkPixbuf *hd_pixbuf_utils_load_scaled_and_cropped  (GFile         *file,
-                                                     gint           width,
-                                                     gint           height,
+                                                     HDImageSize   *size,
                                                      GCancellable  *cancellable,
                                                      GError       **error);
 

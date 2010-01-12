@@ -138,6 +138,7 @@ create_cached_image_command (CommandData *data)
 {
   GdkPixbuf *pixbuf = NULL;
   GError    *error = NULL;
+  HDImageSize screen_size = {SCREEN_WIDTH, SCREEN_HEIGHT};
 
   gboolean error_dialogs = TRUE, update_gconf = TRUE;
 
@@ -145,8 +146,7 @@ create_cached_image_command (CommandData *data)
     goto cleanup;
 
   pixbuf = hd_pixbuf_utils_load_scaled_and_cropped (data->file,
-                                                    SCREEN_WIDTH,
-                                                    SCREEN_HEIGHT,
+                                                    &screen_size,
                                                     data->cancellable,
                                                     &error);
   if (error)

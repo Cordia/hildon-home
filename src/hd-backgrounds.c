@@ -256,6 +256,7 @@ create_cached_image (HDBackgroundData *data)
   HDBackgroundsPrivate *priv = backgrounds->priv;
   GdkPixbuf *pixbuf = NULL;
   GError *error = NULL;
+  HDImageSize screen_size = {SCREEN_WIDTH, SCREEN_HEIGHT};
 
   /* Cancel if it is already the current background image */
   g_mutex_lock (priv->mutex);
@@ -272,8 +273,7 @@ create_cached_image (HDBackgroundData *data)
   /* Read pixbuf from background image, check if the
    * image needs to be scaled */
   pixbuf = hd_pixbuf_utils_load_scaled_and_cropped (data->file,
-                                                    SCREEN_WIDTH,
-                                                    SCREEN_HEIGHT,
+                                                    &screen_size,
                                                     data->cancellable,
                                                     &error);
 

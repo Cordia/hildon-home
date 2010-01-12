@@ -140,12 +140,12 @@ create_cached_image_command (CommandData *data)
   GdkPixbuf *pixbuf;
   GError    *error = NULL;
   guint      view;
+  HDImageSize wallpaper_size = {WALLPAPER_WIDTH, WALLPAPER_HEIGHT};
 
   gboolean error_dialogs = TRUE, update_gconf = TRUE;
 
   pixbuf = hd_pixbuf_utils_load_at_size (data->file,
-                                         WALLPAPER_WIDTH,
-                                         WALLPAPER_HEIGHT,
+                                         &wallpaper_size,
                                          data->cancellable,
                                          &error);
 
