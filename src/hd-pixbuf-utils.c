@@ -53,15 +53,15 @@ static void
 size_prepared_cb (GdkPixbufLoader *loader,
                   gint             width,
                   gint             height,
-                  HDImageSize     *destination_size)
+                  HDImageSize     *size)
 {
-  HDImageSize image_size;
+  HDImageSize image_size = {width, height};
+  HDImageSize minimum_size;
   double scale;
 
-  image_size.width = width;
-  image_size.height = height;
+  minimum_size.width = minimum_size.height = MAX (size->width, size->height);
 
-  scale = get_scale_for_aspect_ratio (&image_size, destination_size);
+  scale = get_scale_for_aspect_ratio (&image_size, &minimum_size);
 
   /* Do not load images bigger than neccesary */
   if (scale < 1)
@@ -181,7 +181,11 @@ hd_pixbuf_utils_load_scaled_and_cropped (GFile         *file,
   /* Set resulting pixbuf */
   pixbuf = gdk_pixbuf_loader_get_pixbuf (loader);
   if (pixbuf)
-    pixbuf = scale_and_crop_pixbuf (pixbuf, size);
+    {
+      GdkPixbuf *rotated = gdk_pixbuf_apply_embedded_orientation (pixbuf);
+      pixbuf = scale_and_crop_pixbuf (rotated, size);
+      g_object_unref (rotated);
+    }
   else
     g_set_error_literal (error,
                          GDK_PIXBUF_ERROR,
