@@ -14,6 +14,14 @@
       <arg type="u" name="current_view" direction="in" />
     </method>
 
+    <method name="SetBackgroundImage">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="hd_hildon_home_dbus_set_background_image"/>
+
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+
+      <arg type="s" name="uri" direction="in" />
+    </method>
+
   </interface>
 
 </node>

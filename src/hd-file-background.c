@@ -27,6 +27,7 @@
 #include <glib/gi18n.h>
 
 #include "hd-backgrounds.h"
+#include "hd-desktop.h"
 #include "hd-object-vector.h"
 #include "hd-pixbuf-utils.h"
 
@@ -48,6 +49,8 @@ typedef struct
   GFile *file;
   guint  view;
   GCancellable *cancellable;
+  gboolean error_dialogs;
+  gboolean update_gconf;
 } CommandData;
 
 #define HD_FILE_BACKGROUND_GET_PRIVATE(object) \
@@ -72,7 +75,9 @@ static void hd_file_background_set_property (GObject      *object,
 
 static CommandData* command_data_new  (GFile        *file,
                                        guint         view,
-                                       GCancellable *cancellable);
+                                       GCancellable *cancellable,
+                                       gboolean      error_dialogs,
+                                       gboolean      update_gconf);
 static void         command_data_free (CommandData  *data);
 
 G_DEFINE_TYPE (HDFileBackground, hd_file_background, HD_TYPE_BACKGROUND);
@@ -106,18 +111,32 @@ hd_file_background_set_for_current_view (HDBackground   *background,
                                          guint           current_view,
                                          GCancellable   *cancellable)
 {
+  hd_file_background_set_for_view_full (HD_FILE_BACKGROUND (background),
+                                        current_view,
+                                        cancellable,
+                                        TRUE,
+                                        TRUE);
+}
+
+void
+hd_file_background_set_for_view_full (HDFileBackground *background,
+                                      guint             current_view,
+                                      GCancellable     *cancellable,
+                                      gboolean          error_dialogs,
+                                      gboolean          update_gconf)
+{
   HDFileBackgroundPrivate *priv = HD_FILE_BACKGROUND (background)->priv;
   CommandData *data;
 
-  gboolean error_dialogs = TRUE;
-
   data = command_data_new (priv->image_file,
                            current_view,
-                           cancellable);
+                           cancellable,
+                           error_dialogs,
+                           update_gconf);
 
   hd_backgrounds_add_create_cached_image (hd_backgrounds_get (),
                                           priv->image_file,
-                                          error_dialogs,
+                                          data->error_dialogs,
                                           cancellable,
                                           (HDCommandCallback) create_cached_image_command,
                                           data,
@@ -136,24 +155,24 @@ hd_file_background_get_image_file_for_view (HDBackground *background,
 static void
 create_cached_image_command (CommandData *data)
 {
+  HDImageSize screen_size = {HD_SCREEN_WIDTH, HD_SCREEN_HEIGHT};
   GdkPixbuf *pixbuf = NULL;
-  GError    *error = NULL;
-  HDImageSize screen_size = {SCREEN_WIDTH, SCREEN_HEIGHT};
-
-  gboolean error_dialogs = TRUE, update_gconf = TRUE;
+  char *etag = NULL;
+  GError *error = NULL;
 
   if (g_cancellable_is_cancelled (data->cancellable))
     goto cleanup;
 
   pixbuf = hd_pixbuf_utils_load_scaled_and_cropped (data->file,
                                                     &screen_size,
+                                                    &etag,
                                                     data->cancellable,
                                                     &error);
   if (error)
     {
       char *uri;
 
-      if (error_dialogs)
+      if (data->error_dialogs)
         hd_backgrounds_report_corrupt_image (error);
 
       uri = g_file_get_uri (data->file);
@@ -176,19 +195,19 @@ create_cached_image_command (CommandData *data)
                                     pixbuf,
                                     data->view,
                                     data->file,
-                                    error_dialogs,
-                                    update_gconf,
+                                    etag,
+                                    data->error_dialogs,
+                                    data->update_gconf,
                                     data->cancellable,
                                     &error);
 
   if (error)
-    {
-      g_error_free (error);
-    }
+    g_error_free (error);
 
 cleanup:
   if (pixbuf)
     g_object_unref (pixbuf);
+  g_free (etag);
 }
 
 static void
@@ -299,13 +318,18 @@ hd_file_background_set_property (GObject      *object,
 static CommandData*
 command_data_new  (GFile        *file,
                    guint         view,
-                   GCancellable *cancellable)
+                   GCancellable *cancellable,
+                   gboolean      error_dialogs,
+                   gboolean      update_gconf)
 {
   CommandData *data = g_slice_new0 (CommandData);
 
   data->file = g_object_ref (file);
   data->view = view;
   data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+
+  data->error_dialogs = error_dialogs;
+  data->update_gconf = update_gconf;
 
   return data;
 }

@@ -63,6 +63,12 @@ void          hd_file_background_add_to_store (HDFileBackground       *backgroun
 char         *hd_file_background_get_label      (HDFileBackground *background);
 GFile        *hd_file_background_get_image_file (HDFileBackground *background);
 
+void          hd_file_background_set_for_view_full (HDFileBackground *background,
+                                                    guint             current_view,
+                                                    GCancellable     *cancellable,
+                                                    gboolean          error_dialogs,
+                                                    gboolean          update_gconf);
+
 G_END_DECLS
 
 #endif

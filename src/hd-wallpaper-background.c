@@ -27,13 +27,14 @@
 #include <glib/gi18n.h>
 
 #include "hd-backgrounds.h"
+#include "hd-desktop.h"
 #include "hd-pixbuf-utils.h"
 #include "hd-search-service.h"
 
 #include "hd-wallpaper-background.h"
 
-#define WALLPAPER_WIDTH  (4 * SCREEN_WIDTH)
-#define WALLPAPER_HEIGHT SCREEN_HEIGHT
+#define WALLPAPER_WIDTH  (HD_DESKTOP_VIEWS * HD_SCREEN_WIDTH)
+#define WALLPAPER_HEIGHT HD_SCREEN_HEIGHT
 
 #define QUERY_RDFQ                      "" \
   "<rdfq:Condition>"                       \
@@ -137,39 +138,43 @@ hd_wallpaper_background_set_for_current_view (HDBackground   *background,
 static void
 create_cached_image_command (CommandData *data)
 {
-  GdkPixbuf *pixbuf;
-  GError    *error = NULL;
-  guint      view;
   HDImageSize wallpaper_size = {WALLPAPER_WIDTH, WALLPAPER_HEIGHT};
+  GdkPixbuf *pixbuf;
+  char *etag;
+  guint view;
+  GError *error = NULL;
 
   gboolean error_dialogs = TRUE, update_gconf = TRUE;
 
   pixbuf = hd_pixbuf_utils_load_at_size (data->file,
                                          &wallpaper_size,
+                                         &etag,
                                          data->cancellable,
                                          &error);
 
   if (!pixbuf)
     goto cleanup;
 
-  for (view = 0; view < 4; view++)
+  for (view = 0; view < HD_DESKTOP_VIEWS; view++)
     {
       GdkPixbuf *sub = gdk_pixbuf_new_subpixbuf (pixbuf,
-                                                 view * SCREEN_WIDTH,
+                                                 view * HD_SCREEN_WIDTH,
                                                  0,
-                                                 SCREEN_WIDTH,
-                                                 SCREEN_HEIGHT);
+                                                 HD_SCREEN_WIDTH,
+                                                 HD_SCREEN_HEIGHT);
 
-      if (!hd_backgrounds_save_cached_image (hd_backgrounds_get (),
-                                             sub,
-                                             view,
-                                             data->file,
-                                             error_dialogs,
-                                             update_gconf,
-                                             data->cancellable,
-                                             &error))
-        {
-        }
+      hd_backgrounds_save_cached_image (hd_backgrounds_get (),
+                                        sub,
+                                        view,
+                                        data->file,
+                                        etag,
+                                        error_dialogs,
+                                        update_gconf,
+                                        data->cancellable,
+                                        &error);
+
+      if (error)
+        g_clear_error (&error);
 
       g_object_unref (sub);
     }
@@ -177,6 +182,7 @@ create_cached_image_command (CommandData *data)
 cleanup:
   if (pixbuf)
     g_object_unref (pixbuf);
+  g_free (etag);
 }
 
 static void

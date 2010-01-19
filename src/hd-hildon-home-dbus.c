@@ -35,6 +35,7 @@
 
 #include <libosso.h>
 
+#include "hd-backgrounds.h"
 #include "hd-edit-mode-menu.h"
 
 #include "hd-hildon-home-dbus.h"
@@ -209,17 +210,25 @@ hd_hildon_home_dbus_get (void)
 }
 
 void
-hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *dbus,
-                                    guint             current_view)
+hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus      *dbus,
+                                    guint                  current_view,
+                                    DBusGMethodInvocation *context)
 {
   HDHildonHomeDBusPrivate *priv = dbus->priv;
 
-  g_debug ("hd_hildon_home_dbus_show_edit_menu (current_view: %u):", current_view);
-
-  /* Set current view */
   hd_edit_mode_menu_set_current_view (HD_EDIT_MODE_MENU (priv->menu),
                                       current_view);
-
-  /* Show menu */
   gtk_widget_show (priv->menu);
+
+  dbus_g_method_return (context);
+}
+
+void
+hd_hildon_home_dbus_set_background_image (HDHildonHomeDBus      *dbus,
+                                          const char            *uri,
+                                          DBusGMethodInvocation *context)
+{
+  hd_backgrounds_set_current_background (hd_backgrounds_get (),
+                                         uri);
+  dbus_g_method_return (context);
 }

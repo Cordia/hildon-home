@@ -27,6 +27,7 @@
 #include <glib/gi18n.h>
 
 #include "hd-backgrounds.h"
+#include "hd-desktop.h"
 #include "hd-object-vector.h"
 #include "hd-pixbuf-utils.h"
 
@@ -153,9 +154,10 @@ hd_imageset_background_set_for_current_view (HDBackground   *background,
 static void
 create_cached_image_command (CommandData *data)
 {
+  HDImageSize screen_size = {HD_SCREEN_WIDTH, HD_SCREEN_HEIGHT};
   GdkPixbuf *pixbuf = NULL;
-  GError    *error = NULL;
-  HDImageSize screen_size = {SCREEN_WIDTH, SCREEN_HEIGHT};
+  char *etag = NULL;
+  GError *error = NULL;
 
   gboolean error_dialogs = TRUE, update_gconf = TRUE;
 
@@ -164,6 +166,7 @@ create_cached_image_command (CommandData *data)
 
   pixbuf = hd_pixbuf_utils_load_scaled_and_cropped (data->file,
                                                     &screen_size,
+                                                    &etag,
                                                     data->cancellable,
                                                     &error);
   if (error)
@@ -193,19 +196,19 @@ create_cached_image_command (CommandData *data)
                                     pixbuf,
                                     data->view,
                                     data->file,
+                                    etag,
                                     error_dialogs,
                                     update_gconf,
                                     data->cancellable,
                                     &error);
 
   if (error)
-    {
-      g_error_free (error);
-    }
+    g_error_free (error);
 
 cleanup:
   if (pixbuf)
     g_object_unref (pixbuf);
+  g_free (etag);
 }
 
 static GFile *
@@ -460,7 +463,7 @@ load_desktop_file (GFile        *file,
       goto complete;
     }
 
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < HD_DESKTOP_VIEWS; i++)
     {
       gchar *key, *value;
       GFile *image_file;

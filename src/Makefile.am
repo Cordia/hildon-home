@@ -59,6 +59,8 @@ hildon_home_SOURCES = \
 	hd-applet-manager.h		\
 	hd-backgrounds.c		\
 	hd-backgrounds.h		\
+	hd-background-info.c		\
+	hd-background-info.h		\
 	hd-bookmark-shortcut.c		\
 	hd-bookmark-shortcut.h		\
 	hd-cairo-surface-cache.c	\

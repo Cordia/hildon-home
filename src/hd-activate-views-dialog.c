@@ -33,9 +33,10 @@
 
 #include <gconf/gconf-client.h>
 
+#include "hd-desktop.h"
+
 #include "hd-activate-views-dialog.h"
 
-#define HD_MAX_HOME_VIEWS 4
 #define HD_GCONF_KEY_ACTIVE_VIEWS "/apps/osso/hildon-desktop/views/active"
 
 /* Images folder */
@@ -180,7 +181,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   guint i;
   GtkWidget *pannable;
   GSList *list = NULL;
-  gboolean active_views[HD_MAX_HOME_VIEWS] = { 0,};
+  gboolean active_views[HD_DESKTOP_VIEWS] = { 0,};
   gboolean none_active = TRUE;
   GList *selected;
   GError *error = NULL;
@@ -201,7 +202,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gtk_icon_view_set_selection_mode (GTK_ICON_VIEW (priv->icon_view),
                                     GTK_SELECTION_MULTIPLE);
   gtk_icon_view_set_columns (GTK_ICON_VIEW (priv->icon_view),
-                             HD_MAX_HOME_VIEWS);
+                             HD_DESKTOP_VIEWS);
 
   renderer = gtk_cell_renderer_pixbuf_new ();
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (priv->icon_view),
@@ -228,9 +229,9 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
         {
           gint id = GPOINTER_TO_INT (l->data);
 
-          /* Stored in GConf 1..HD_MAX_HOME_VIEWS */
+          /* Stored in GConf 1..HD_DESKTOP_VIEWS */
 
-          if (id > 0 && id <= HD_MAX_HOME_VIEWS)
+          if (id > 0 && id <= HD_DESKTOP_VIEWS)
             {
               active_views[id - 1] = TRUE;
               none_active = FALSE;
@@ -254,7 +255,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
     }
 
   /* Append views */
-  for (i = 1; i <= HD_MAX_HOME_VIEWS; i++)
+  for (i = 1; i <= HD_DESKTOP_VIEWS; i++)
     {
       gchar *bg_image;
       GdkPixbuf *pixbuf;

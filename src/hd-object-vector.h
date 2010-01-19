@@ -50,16 +50,21 @@ struct _HDObjectVectorClass
   GInitiallyUnownedClass parent;
 };
 
-GType           hd_object_vector_get_type  (void);
+GType           hd_object_vector_get_type    (void);
 
-HDObjectVector *hd_object_vector_new       (void);
+HDObjectVector *hd_object_vector_new         (void);
+HDObjectVector *hd_object_vector_new_at_size (size_t          n,
+                                              gpointer        value);
 
-gpointer        hd_object_vector_at        (HDObjectVector *object_vector,
-                                            size_t          index);
-void            hd_object_vector_clear     (HDObjectVector *object_vector);
-void            hd_object_vector_push_back (HDObjectVector *object_vector,
-                                            gpointer        value);
-size_t          hd_object_vector_size      (HDObjectVector *object_vector);
+gpointer        hd_object_vector_at          (HDObjectVector *object_vector,
+                                              size_t          index);
+void            hd_object_vector_set_at      (HDObjectVector *object_vector,
+                                              size_t          index,
+                                              gpointer        value);
+void            hd_object_vector_clear       (HDObjectVector *object_vector);
+void            hd_object_vector_push_back   (HDObjectVector *object_vector,
+                                              gpointer        value);
+size_t          hd_object_vector_size        (HDObjectVector *object_vector);
 
 G_END_DECLS
 

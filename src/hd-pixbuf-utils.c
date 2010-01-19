@@ -150,9 +150,33 @@ read_from_input_stream_into_pixbuf_loader (GInputStream     *stream,
   return TRUE;
 }
 
+static gboolean
+get_etag_from_file_input_stream (GFileInputStream  *stream,
+                                 char             **etag,
+                                 GCancellable      *cancellable,
+                                 GError           **error)
+{
+  GFileInfo *info;
+
+  info = g_file_input_stream_query_info (stream,
+                                         G_FILE_ATTRIBUTE_ETAG_VALUE,
+                                         cancellable,
+                                         error);
+  if (!info)
+    return FALSE;
+
+  if (etag)
+    *etag = g_strdup (g_file_info_get_etag (info));
+
+  g_object_unref (info);
+
+  return TRUE;
+}
+
 GdkPixbuf *
 hd_pixbuf_utils_load_scaled_and_cropped (GFile         *file,
                                          HDImageSize   *size,
+                                         char         **etag,
                                          GCancellable  *cancellable,
                                          GError       **error)
 {
@@ -171,6 +195,12 @@ hd_pixbuf_utils_load_scaled_and_cropped (GFile         *file,
   g_signal_connect (loader, "size-prepared",
                     G_CALLBACK (size_prepared_cb),
                     size);
+
+  if (!get_etag_from_file_input_stream (stream,
+                                        etag,
+                                        cancellable,
+                                        error))
+    goto cleanup;
 
   if (!read_from_input_stream_into_pixbuf_loader (G_INPUT_STREAM (stream),
                                                   loader,
@@ -258,6 +288,7 @@ size_prepared_exact_cb (GdkPixbufLoader *loader,
 GdkPixbuf *
 hd_pixbuf_utils_load_at_size (GFile         *file,
                               HDImageSize   *size,
+                              char         **etag,
                               GCancellable  *cancellable,
                               GError       **error)
 {
@@ -265,7 +296,6 @@ hd_pixbuf_utils_load_at_size (GFile         *file,
   GdkPixbufLoader *loader = NULL;
   GdkPixbuf *pixbuf = NULL;
 
-  /* Open file for read */
   stream = g_file_read (file, cancellable, error);
 
   if (!stream)
@@ -275,6 +305,12 @@ hd_pixbuf_utils_load_at_size (GFile         *file,
   loader = gdk_pixbuf_loader_new ();
   g_signal_connect (loader, "size-prepared",
                     G_CALLBACK (size_prepared_exact_cb), size);
+
+  if (!get_etag_from_file_input_stream (stream,
+                                        etag,
+                                        cancellable,
+                                        error))
+    goto cleanup;
 
   if (!read_from_input_stream_into_pixbuf_loader (G_INPUT_STREAM (stream),
                                                   loader,

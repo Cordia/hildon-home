@@ -35,11 +35,13 @@ typedef struct
 
 GdkPixbuf *hd_pixbuf_utils_load_at_size (GFile         *file,
                                          HDImageSize   *size,
+                                         char         **etag,
                                          GCancellable  *cancellable,
                                          GError       **error);
 
 GdkPixbuf *hd_pixbuf_utils_load_scaled_and_cropped  (GFile         *file,
                                                      HDImageSize   *size,
+                                                     char         **etag,
                                                      GCancellable  *cancellable,
                                                      GError       **error);
 

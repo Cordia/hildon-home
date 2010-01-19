@@ -36,9 +36,6 @@ G_BEGIN_DECLS
 #define HD_IS_BACKGROUNDS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  HD_TYPE_BACKGROUNDS))
 #define HD_BACKGROUNDS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  HD_TYPE_BACKGROUNDS, HDBackgroundsClass))
 
-#define SCREEN_WIDTH  800
-#define SCREEN_HEIGHT 480
-
 typedef struct _HDBackgrounds        HDBackgrounds;
 typedef struct _HDBackgroundsClass   HDBackgroundsClass;
 typedef struct _HDBackgroundsPrivate HDBackgroundsPrivate;
@@ -78,14 +75,17 @@ void           hd_backgrounds_add_update_current_files (HDBackgrounds  *backgrou
                                                         GFile         **files,
                                                         GCancellable   *cancellable);
 
-GFile *hd_backgrounds_get_background  (HDBackgrounds  *backgrounds,
-                                       guint           view);
+GFile         *hd_backgrounds_get_background  (HDBackgrounds  *backgrounds,
+                                               guint           view);
+void           hd_backgrounds_set_current_background (HDBackgrounds *backgrounds,
+                                                      const char    *uri);
 
-/* Thread safe */
+/* The following functions can be called from the command callback */
 gboolean       hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
                                                  GdkPixbuf      *pixbuf,
                                                  guint           view,
                                                  GFile          *source_file,
+                                                 const char     *source_etag,
                                                  gboolean        error_dialogs,
                                                  gboolean        update_gconf,
                                                  GCancellable   *cancellable,

@@ -51,6 +51,22 @@ hd_object_vector_new (void)
   return object_vector;
 }
 
+HDObjectVector *
+hd_object_vector_new_at_size (size_t   n,
+                              gpointer value)
+{
+  HDObjectVector *object_vector = hd_object_vector_new ();
+  guint i;
+
+  for (i = 0; i < n; i++)
+    {
+      hd_object_vector_push_back (object_vector,
+                                  value);
+    }
+
+  return object_vector;
+}
+
 static void
 hd_object_vector_class_init (HDObjectVectorClass *klass)
 {
@@ -103,6 +119,28 @@ hd_object_vector_at (HDObjectVector *object_vector,
 }
 
 void
+hd_object_vector_set_at (HDObjectVector *object_vector,
+                         size_t          index,
+                         gpointer        value)
+{
+  HDObjectVectorPrivate *priv;
+
+  g_return_if_fail (HD_IS_OBJECT_VECTOR (object_vector));
+
+  priv = object_vector->priv;
+
+  g_return_if_fail (index < priv->array->len);
+
+  if (value)
+    g_object_ref_sink (value);
+
+  if (g_ptr_array_index (priv->array, index))
+    g_object_unref (g_ptr_array_index (priv->array, index));
+
+  g_ptr_array_index (priv->array, index) = value;
+}
+
+void
 hd_object_vector_clear (HDObjectVector *object_vector)
 {
   HDObjectVectorPrivate *priv;
@@ -120,7 +158,11 @@ remove_all_objects_from_array (GPtrArray *array)
   guint i;
 
   for (i = 0; i < array->len; i++)
-    g_object_unref (g_ptr_array_index (array, i));
+    {
+      gpointer value = g_ptr_array_index (array, i);
+      if (value)
+        g_object_unref (value);
+    }
 
   g_ptr_array_remove_range (array, 0, array->len);
 }
@@ -132,12 +174,15 @@ hd_object_vector_push_back (HDObjectVector *object_vector,
   HDObjectVectorPrivate *priv;
 
   g_return_if_fail (HD_IS_OBJECT_VECTOR (object_vector));
-  g_return_if_fail (G_IS_OBJECT (value));
+  g_return_if_fail (!value || G_IS_OBJECT (value));
 
   priv = object_vector->priv;
 
+  if (value)
+    g_object_ref_sink (value);
+
   g_ptr_array_add (priv->array,
-                   g_object_ref_sink (value));
+                   value);
 }
 
 size_t

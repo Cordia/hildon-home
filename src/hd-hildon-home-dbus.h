@@ -54,8 +54,12 @@ GType             hd_hildon_home_dbus_get_type       (void);
 
 HDHildonHomeDBus *hd_hildon_home_dbus_get            (void);
 
-void              hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus *home,
-                                                      guint             current_view);
+void              hd_hildon_home_dbus_show_edit_menu (HDHildonHomeDBus      *home,
+                                                      guint                  current_view,
+                                                      DBusGMethodInvocation *context);
+void              hd_hildon_home_dbus_set_background_image (HDHildonHomeDBus      *dbus,
+                                                            const char            *uri,
+                                                            DBusGMethodInvocation *context);
 
 G_END_DECLS
 
