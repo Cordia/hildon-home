@@ -1,3 +1,15 @@
+hildon-home (0.3.64) unstable; urgency=low
+
+  Jan Arne:
+  * Fixes: NB#144115 - Changing the background image fails with certain oddly
+    shaped pictures without error message
+  * Fixes: NB#152783 - Voicemail notification doesn't show sender name
+  * Fixes: NB#110962 - Hildon desktop doesn't take into account
+    EXIF:Orientation for background images
+  * Add D-Bus method com.nokia.HildonHome.SetBackgroundImage
+
+ -- Jan Arne Petersen <jpetersen@openismus.com>  Fri, 22 Jan 2010 11:02:19 +0100
+
 hildon-home (0.3.63) unstable; urgency=low
 
   * Fixes: NB#149133 - Remove doc files from hildon-home deb
