@@ -1,7 +1,7 @@
 /*
  * This file is part of hildon-home
  *
- * Copyright (C) 2008, 2009 Nokia Corporation.
+ * Copyright (C) 2008, 2009, 2010 Nokia Corporation.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -26,6 +26,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <glib-object.h>
+#include <hildon/hildon.h>
 
 #include <gconf/gconf-client.h>
 #include <libgnomevfs/gnome-vfs.h>
@@ -295,6 +296,7 @@ hd_bookmark_widgets_setup_column_renderes (HDWidgets     *widgets,
 
   /* Add the label renderer */
   renderer = gtk_cell_renderer_text_new ();
+  g_object_set (renderer, "xpad", HILDON_MARGIN_DOUBLE, NULL);
   gtk_cell_layout_pack_start (column,
                               renderer,
                               FALSE);

@@ -723,6 +723,7 @@ hd_shortcut_widgets_setup_column_renderes (HDWidgets     *widgets,
 
   /* Add the label renderer */
   renderer = gtk_cell_renderer_text_new ();
+  g_object_set (renderer, "xpad", HILDON_MARGIN_DOUBLE, NULL);
   gtk_cell_layout_pack_start (column,
                               renderer,
                               FALSE);

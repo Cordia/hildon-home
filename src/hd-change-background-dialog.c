@@ -1,7 +1,7 @@
 /*
- * This file is part of hildon-desktop
+ * This file is part of hildon-home
  *
- * Copyright (C) 2008 Nokia Corporation.
+ * Copyright (C) 2008, 2009, 2010 Nokia Corporation.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -366,6 +366,7 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
 
   /* Add the label renderer */
   renderer = gtk_cell_renderer_text_new ();
+  g_object_set (renderer, "xpad", HILDON_MARGIN_DOUBLE, NULL);
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (column),
                               renderer,
                               FALSE);
