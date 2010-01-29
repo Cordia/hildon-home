@@ -1,7 +1,7 @@
 /*
- * This file is part of hildon-desktop
+ * This file is part of hildon-home
  *
- * Copyright (C) 2008 Nokia Corporation.
+ * Copyright (C) 2008-2010 Nokia Corporation.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -82,6 +82,71 @@ hd_plugin_info_free (HDPluginInfo *info)
   g_slice_free (HDPluginInfo, info);
 }
 
+static HDPluginInfo *
+load_desktop_widget_from_desktop_file (const char *desktop_file)
+{
+  GKeyFile *key_file = g_key_file_new ();
+  GError *error = NULL;
+  gchar *text_domain = NULL, *name = NULL;
+  HDPluginInfo *info = NULL;
+
+  g_key_file_load_from_file (key_file, desktop_file,
+                             G_KEY_FILE_NONE, &error);
+  if (error)
+    {
+      g_warning ("%s. Could not read plugin .desktop file %s: %s",
+                 __FUNCTION__,
+                 desktop_file,
+                 error->message);
+      goto cleanup;
+    }
+
+  text_domain = g_key_file_get_string (key_file,
+                                       G_KEY_FILE_DESKTOP_GROUP,
+                                       DESKTOP_KEY_TEXT_DOMAIN,
+                                       NULL);
+
+  name = g_key_file_get_string (key_file,
+                                G_KEY_FILE_DESKTOP_GROUP,
+                                G_KEY_FILE_DESKTOP_KEY_NAME,
+                                &error);
+
+  if (error)
+    {
+      g_warning ("%s. Could not read plugin .desktop file %s: %s",
+                 __FUNCTION__,
+                 desktop_file,
+                 error->message);
+      goto cleanup;
+    }
+
+  info = g_slice_new (HDPluginInfo);
+
+  /* Translate name with given or default text domain */
+  if (text_domain)
+    info->name = dgettext (text_domain, name);
+  else
+    info->name = dgettext (GETTEXT_PACKAGE, name);
+
+  if (info->name == name)
+    info->name = g_strdup (name);
+
+  info->multiple = g_key_file_get_boolean (key_file,
+                                           G_KEY_FILE_DESKTOP_GROUP,
+                                           DESKTOP_KEY_MULTIPLE,
+                                           NULL);
+
+cleanup:
+  if (error)
+    g_error_free (error);
+  g_key_file_free (key_file);
+
+  g_free (text_domain);
+  g_free (name);
+
+  return info;
+}
+
 static void
 items_configuration_loaded_cb (HDPluginConfiguration *configuration,
                                GKeyFile              *key_file,
@@ -114,7 +179,6 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
                                             groups[i],
                                             ITEMS_KEY_DESKTOP_FILE,
                                             NULL);
-      g_debug ("Group: %s, desktop-id: %s", groups[i], desktop_file);
 
       if (desktop_file != NULL)
         g_hash_table_insert (priv->displayed_applets,
@@ -129,64 +193,12 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
     {
       if (!g_hash_table_lookup (priv->installed, plugins[i]))
         {
-          GKeyFile *key_file = g_key_file_new ();
-          GError *error = NULL;
-          HDPluginInfo *info;
-          gchar *text_domain, *name;
+          HDPluginInfo *info = load_desktop_widget_from_desktop_file (plugins[i]);
 
-          g_key_file_load_from_file (key_file, plugins[i],
-                                     G_KEY_FILE_NONE, &error);
-
-          if (error)
-            {
-              g_debug ("Could not read plugin .desktop file %s: %s", plugins[i], error->message);
-              g_error_free (error);
-              g_key_file_free (key_file);
-              continue;
-            }
-
-          text_domain = g_key_file_get_string (key_file,
-                                               G_KEY_FILE_DESKTOP_GROUP,
-                                               DESKTOP_KEY_TEXT_DOMAIN,
-                                               NULL);
-
-          name = g_key_file_get_string (key_file,
-                                        G_KEY_FILE_DESKTOP_GROUP,
-                                        G_KEY_FILE_DESKTOP_KEY_NAME,
-                                        &error);
-
-          if (error)
-            {
-              g_warning ("Could not read plugin .desktop file %s. %s",
-                         plugins[i],
-                         error->message);
-              g_error_free (error);
-              g_key_file_free (key_file);
-              g_free (text_domain);
-              continue;
-            }
-
-          info = g_slice_new (HDPluginInfo);
-
-          /* Translate name with given or default text domain */
-          if (text_domain)
-            info->name = dgettext (text_domain, name);
-          else
-            info->name = dgettext (GETTEXT_PACKAGE, name);
-
-          g_free (text_domain);
-          if (info->name != name)
-            g_free (name);
-
-          info->multiple = g_key_file_get_boolean (key_file,
-                                                   G_KEY_FILE_DESKTOP_GROUP,
-                                                   DESKTOP_KEY_MULTIPLE,
-                                                   NULL);
-
-          g_hash_table_insert (priv->installed, g_strdup (plugins[i]),
-                               info);
-
-          g_key_file_free (key_file);
+          if (info)
+            g_hash_table_insert (priv->installed,
+                                 g_strdup (plugins[i]),
+                                 info);
         }
     }
   g_strfreev (plugins);
@@ -196,8 +208,6 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
   g_hash_table_iter_init (&iter, priv->installed);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      g_debug (".desktop: %s, %d, %x", (gchar *) key, ((HDPluginInfo *)value)->multiple, GPOINTER_TO_UINT (g_hash_table_lookup (priv->displayed_applets, key)));
-
       if (((HDPluginInfo *)value)->multiple ||
           g_hash_table_lookup (priv->displayed_applets, key) == NULL)
         {
@@ -240,7 +250,7 @@ plugin_added_cb (HDPluginManager *pm,
       g_signal_connect (plugin, "delete-event",
                         G_CALLBACK (delete_event_cb), manager);
 
-      /* Set menu transient for root window */
+      /* Set widget transient for root window */
       gtk_widget_realize (GTK_WIDGET (plugin));
       display = GDK_DISPLAY_XDISPLAY (gtk_widget_get_display (GTK_WIDGET (plugin)));
       root = RootWindow (display, GDK_SCREEN_XNUMBER (gtk_widget_get_screen (GTK_WIDGET (plugin))));
