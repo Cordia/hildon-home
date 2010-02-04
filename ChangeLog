@@ -1,3 +1,11 @@
+2010-02-04  Adam Endrodi <ext-adam.endrodi@nokia.com>
+
+	NB#154418 Text in chat-invitation notifications is unchangeable
+
+	* src/notification-groups.conf:
+	  Copied [chat-invitation] to [group-chat-invitation] with
+	  a different Secondary-Text.
+
 2009-12-18  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Release 0.3.62.
