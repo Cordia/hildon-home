@@ -98,7 +98,7 @@ typedef struct
   gchar *secondary_text;
   gchar *secondary_text_empty;
   gchar *icon;
-  gchar *dbus_callback;
+  gchar **dbus_callbacks;
   gchar *text_domain;
   gchar *account_hint;
   gchar *account_call;
@@ -506,13 +506,23 @@ notifications_activate (Notifications *ns)
           return;
         }
 
-      if (info && info->dbus_callback && !ns->thread)
+      /* Call D-Bus callback if available.  If not or there's a special
+       * "default" dbus_call description call the default action on each
+       * notification. */
+      if (info && info->dbus_callbacks && !ns->thread)
         {
-          /* Call D-Bus callback if available else call default action on each notification */
-          hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
-                                                      info->dbus_callback);
-          notifications_close_all (ns, FALSE);
-          return;
+          gboolean call_default = FALSE;
+          for (i = 0; info->dbus_callbacks[i]; i++)
+            if (!strcmp(info->dbus_callbacks[i], "default"))
+              call_default = TRUE;
+            else
+              hd_notification_manager_call_dbus_callback (hd_notification_manager_get (),
+                                                          info->dbus_callbacks[i]);
+          if (!call_default)
+            {
+              notifications_close_all (ns, FALSE);
+              return;
+            }
         }
     }
 
@@ -1212,7 +1222,7 @@ category_info_free (CategoryInfo *info)
   g_free (info->secondary_text);
   g_free (info->secondary_text_empty);
   g_free (info->icon);
-  g_free (info->dbus_callback);
+  g_strfreev (info->dbus_callbacks);
   g_free (info->text_domain);
   g_free (info->account_call);
   g_free (info->account_hint);
@@ -1344,10 +1354,11 @@ load_category_infos (HDIncomingEvents *ie)
                                           NOTIFICATION_GROUP_KEY_ICON,
                                           NULL);
 
-      info->dbus_callback = g_key_file_get_string (key_file,
-                                                   infos[i],
-                                                   NOTIFICATION_GROUP_KEY_DBUS_CALL,
-                                                   NULL);
+      info->dbus_callbacks = g_key_file_get_string_list (key_file,
+                                                         infos[i],
+                                                         NOTIFICATION_GROUP_KEY_DBUS_CALL,
+                                                         NULL,
+                                                         NULL);
 
       info->account_hint = g_key_file_get_string (key_file,
                                                   infos[i],

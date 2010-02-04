@@ -1,5 +1,18 @@
 2010-02-04  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
+	NB#152279 Tapping grouped message preview doesn't bring
+		  conversation to foreground
+
+	Because we just sent GroupMessageInvoked but messaging-ui needs
+	ActionInvoked.  So send both of them, just in case.
+
+	* src/hd-incoming-events.c:
+	  Make it possible for D-Bus-Callback to have a list of values,
+	  and recognize "default" to indicate sending the ActionInvoked
+	  signal.
+
+2010-02-04  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
 	Release 0.3.65.
 
 2010-02-04  Adam Endrodi <adam.endrodi@blumsoft.eu>
