@@ -1,16 +1,16 @@
-hildon-home (0.3.65) unstable; urgency=low
+hildon-home (0.3.65-1) unstable; urgency=low
 
   * Fixes: NB#154418 - Text in chat-invitation notifications is unchangeable
 
- -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Thu, 04 Feb 2010 10:32:42 +0200
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Mon, 08 Feb 2010 10:28:36 +0200
 
 hildon-home (0.3.64) unstable; urgency=low
 
   Jan Arne:
-  * Fixes: NB#144115 - Changing the background image fails with certain oddly
-    shaped pictures without error message
+  * Silently fixes NB#144115 - Changing the background image fails with
+    certain oddly shaped pictures without error message
   * Fixes: NB#152783 - Voicemail notification doesn't show sender name
-  * Fixes: NB#110962 - Hildon desktop doesn't take into account
+  * Silently fixes NB#110962 - Hildon desktop doesn't take into account
     EXIF:Orientation for background images
   * Add D-Bus method com.nokia.HildonHome.SetBackgroundImage
 
