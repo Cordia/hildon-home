@@ -1,5 +1,14 @@
 2010-02-17  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
+	Send ActionInvoked signals without a concrete destination.
+	The unique names we used as destinations become invalid after
+	rebooting so the intended address didn't get it eventually.
+
+	* src/hd-notification-manager.c (hd_notification_manager_create_signal):
+	  Don't specify a concrete destination.
+
+2010-02-17  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
 	NB#152279 Tapping grouped message preview doesn't bring
 		  conversation to foreground
 

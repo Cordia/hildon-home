@@ -1081,18 +1081,13 @@ hd_notification_manager_class_init (HDNotificationManagerClass *class)
 static DBusMessage *
 hd_notification_manager_create_signal (HDNotificationManager *nm, 
                                        guint id,
-                                       const gchar *dest, 
                                        const gchar *signal_name)
 {
   DBusMessage *message;
 
-  g_assert(dest != NULL);
-
   message = dbus_message_new_signal ("/org/freedesktop/Notifications",
                                      "org.freedesktop.Notifications",
                                      signal_name);
-
-  dbus_message_set_destination (message, dest);
 
   dbus_message_append_args (message,
                             DBUS_TYPE_UINT32, &id,
@@ -1109,7 +1104,6 @@ hd_notification_manager_notification_closed (HDNotificationManager *nm,
 
   message = hd_notification_manager_create_signal (nm,
                                                    hd_notification_get_id (notification),
-                                                   hd_notification_get_sender (notification),
                                                    "NotificationClosed");
 
   if (message == NULL) return;
@@ -1705,7 +1699,6 @@ hd_notification_manager_call_action (HDNotificationManager *nm,
     {
       message = hd_notification_manager_create_signal (nm, 
                                                        hd_notification_get_id (notification),
-                                                       hd_notification_get_sender (notification),
                                                        "ActionInvoked");
 
       g_assert (message != NULL);
@@ -1713,7 +1706,6 @@ hd_notification_manager_call_action (HDNotificationManager *nm,
       dbus_message_append_args (message,
                                 DBUS_TYPE_STRING, &action_id,
                                 DBUS_TYPE_INVALID);
-
       dbus_connection_send (dbus_g_connection_get_connection (nm->priv->connection), 
                             message, 
                             NULL);
