@@ -1,8 +1,4 @@
-2010-02-08  Adam Endrodi <adam.endrodi@blumsoft.eu>
-
-	Release 0.3.65-1.
-
-2010-02-04  Adam Endrodi <adam.endrodi@blumsoft.eu>
+2010-02-17  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	NB#152279 Tapping grouped message preview doesn't bring
 		  conversation to foreground
@@ -14,6 +10,10 @@
 	  Make it possible for D-Bus-Callback to have a list of values,
 	  and recognize "default" to indicate sending the ActionInvoked
 	  signal.
+
+2010-02-08  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
+	Release 0.3.65-1.
 
 2010-02-04  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
