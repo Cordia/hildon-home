@@ -33,6 +33,7 @@
 #include "hd-backgrounds.h"
 
 #include "hd-change-background-dialog.h"
+#include "hd-dbus-utils.h"
 
 /* Add Image dialog */
 #define RESPONSE_ADD 1
@@ -105,6 +106,32 @@ backgrounds_selection_changed (HDAvailableBackgrounds   *backgrounds,
 }
 
 static void
+_hd_background_selector_changed (HildonTouchSelector* widget,
+                                 gint column,
+                                 HDChangeBackgroundDialog *dialog)
+{
+  GtkTreeModel *model = NULL;
+  GtkTreeIter iter;
+  gboolean is_ovi = FALSE;
+
+  model = hildon_touch_selector_get_model (widget, column);
+  if (!model ||
+      !hildon_touch_selector_get_selected (widget, column, &iter))
+      {
+        g_debug ("%s: Couldn't get selected item", __FUNCTION__);
+        return;
+      }
+  gtk_tree_model_get (model,
+                      &iter,
+                      HD_BACKGROUND_COL_OVI, &is_ovi,
+                      -1);
+  if (is_ovi)
+    {
+      hd_utils_open_link (HD_OVI_LINK_BACKGROUNDS);
+    }
+}
+
+static void
 hd_change_background_dialog_constructed (GObject *object)
 {
   HDChangeBackgroundDialog *dialog = HD_CHANGE_BACKGROUND_DIALOG (object);
@@ -119,6 +146,10 @@ hd_change_background_dialog_constructed (GObject *object)
   g_signal_connect (priv->backgrounds, "selection-changed",
                     G_CALLBACK (backgrounds_selection_changed),
                     object);
+
+  g_signal_connect (priv->selector, "changed",
+                    G_CALLBACK (_hd_background_selector_changed),
+                                object);
 }
 
 static void
@@ -267,9 +298,21 @@ hd_change_background_dialog_response (GtkDialog *dialog,
         {
           GtkTreeModel *model;
           HDBackground *background;
+          gboolean is_ovi;
+
+          model = hd_available_backgrounds_get_model (priv->backgrounds);
+
+          gtk_tree_model_get (model, &iter,
+                              HD_BACKGROUND_COL_OVI, &is_ovi,
+                              -1);
+          if (is_ovi)
+            {
+              /* We shouldn't really get here, but just in case. */
+              gtk_widget_destroy (GTK_WIDGET (dialog));
+              return;
+            }
 
           /* Get selected background image */
-          model = hd_available_backgrounds_get_model (priv->backgrounds);
           gtk_tree_model_get (model, &iter,
                               HD_BACKGROUND_COL_OBJECT, &background,
                               -1);

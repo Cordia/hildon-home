@@ -24,6 +24,8 @@
 #include <config.h>
 #endif
 
+#include <glib/gi18n.h>
+
 #include "hd-backgrounds.h"
 #include "hd-file-background.h"
 #include "hd-imageset-background.h"
@@ -118,6 +120,14 @@ get_priority (HDAvailableBackgrounds *backgrounds,
 {
   HDAvailableBackgroundsPrivate *priv = backgrounds->priv;
   guint priority = 0;
+  gboolean is_ovi = FALSE;
+
+  gtk_tree_model_get (model,
+                      iter,
+                      HD_BACKGROUND_COL_OVI, &is_ovi,
+                      -1);
+  if (is_ovi)
+    return 4;
 
   if (!is_user_path_iter (backgrounds,
                           iter))
@@ -216,6 +226,7 @@ hd_available_backgrounds_init (HDAvailableBackgrounds *backgrounds)
                                                 G_TYPE_STRING,
                                                 GDK_TYPE_PIXBUF,
                                                 HD_TYPE_BACKGROUND,
+                                                G_TYPE_BOOLEAN,
                                                 G_TYPE_BOOLEAN);
 
   priv->sorted_model = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (priv->backgrounds_store));
@@ -314,6 +325,7 @@ hd_available_backgrounds_add_with_file (HDAvailableBackgrounds *backgrounds,
                                      HD_BACKGROUND_COL_LABEL, label,
                                      HD_BACKGROUND_COL_OBJECT, background,
                                      HD_BACKGROUND_COL_VISIBLE, TRUE,
+                                     HD_BACKGROUND_COL_OVI, FALSE,
                                      -1);
 
   hd_background_set_thumbnail_from_file (HD_BACKGROUND (background),
@@ -345,6 +357,7 @@ hd_available_backgrounds_add_with_icon (HDAvailableBackgrounds *backgrounds,
                                      HD_BACKGROUND_COL_THUMBNAIL, icon,
                                      HD_BACKGROUND_COL_OBJECT, background,
                                      HD_BACKGROUND_COL_VISIBLE, TRUE,
+                                     HD_BACKGROUND_COL_OVI, FALSE,
                                      -1);
 
   check_current_background (backgrounds,
@@ -359,6 +372,8 @@ hd_available_backgrounds_run (HDAvailableBackgrounds *backgrounds,
   HDBackground *background;
   char *label;
   GFile *image_file;
+  GtkIconTheme *icon_theme;
+  GdkPixbuf *ovi_icon = NULL;
   GtkTreeIter iter;
 
   g_return_if_fail (HD_IS_AVAILABLE_BACKGROUNDS (backgrounds));
@@ -380,6 +395,7 @@ hd_available_backgrounds_run (HDAvailableBackgrounds *backgrounds,
                                      HD_BACKGROUND_COL_LABEL, label,
                                      HD_BACKGROUND_COL_OBJECT, background,
                                      HD_BACKGROUND_COL_VISIBLE, TRUE,
+                                     HD_BACKGROUND_COL_OVI, FALSE,
                                      -1);
 
   image_file = hd_file_background_get_image_file (HD_FILE_BACKGROUND (background));
@@ -388,13 +404,30 @@ hd_available_backgrounds_run (HDAvailableBackgrounds *backgrounds,
                                          &iter,
                                          image_file);
   g_object_unref (background);
-
   priv->user_path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->backgrounds_store),
                                              &iter);
 
   hd_imageset_background_get_available (backgrounds);
   hd_wallpaper_background_get_available (backgrounds);
   hd_theme_background_get_available (backgrounds);
+
+  /* Add the Ovi link at the end. */
+  icon_theme = gtk_icon_theme_get_default ();
+  if (icon_theme)
+    ovi_icon = gtk_icon_theme_load_icon (icon_theme,
+                                         "general_ovi_store",
+                                         60, GTK_ICON_LOOKUP_NO_SVG,
+                                         NULL);
+
+  gtk_list_store_insert_with_values (priv->backgrounds_store,
+                                     NULL,
+                                     10000,
+                                     HD_BACKGROUND_COL_THUMBNAIL, ovi_icon,
+                                     HD_BACKGROUND_COL_LABEL, gettext ("home_li_get_ovi"),
+                                     HD_BACKGROUND_COL_OBJECT, NULL,
+                                     HD_BACKGROUND_COL_VISIBLE, TRUE,
+                                     HD_BACKGROUND_COL_OVI, TRUE,
+                                     -1);
 }
 
 void

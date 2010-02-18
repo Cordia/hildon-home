@@ -1,3 +1,13 @@
+2010-02-18  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
+	Fixes: NB#155462 - Ovi Store Promotional links to themes and backgrounds
+
+	* src/hd-available-backgrounds.c
+	* src/hd-background.h
+	* src/hd-change-background-dialog.c
+	* src/hd-dbus-utils.c
+	* src/hd-dbus-utils.h
+
 2010-02-18  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	NB#155904 Task Switcher is not glowing after reboot in case of
