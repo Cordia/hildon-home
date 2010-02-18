@@ -1,7 +1,9 @@
 2010-02-18  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
-	For NB#155904: we didn't exit cleanly when we received the
-	shutdown_ind signal.
+	NB#155904 Task Switcher is not glowing after reboot in case of
+		  new unread SMS message
+
+	We didn't exit cleanly when we received the shutdown_ind signal.
 
 	* src/hd-hildon-home-dbus.c (hd_hildon_home_system_bus_signal_handler):
 	  Only quit the main loop, not main(), and let it clean up.
