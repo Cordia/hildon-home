@@ -1,3 +1,17 @@
+hildon-home (0.3.66-1) unstable; urgency=low
+
+  Adam:
+  * NB#152279 Tapping grouped message preview doesn't bring conversation to
+  foreground
+  * Send ActionInvoked signals without a concrete destination.
+  * NB#155904 Task Switcher is not glowing after reboot in case of new unread
+  SMS message
+  
+  Marc:
+  * Fixes: NB#155462 - Ovi Store Promotional links to themes and backgrounds
+
+ -- Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>  Thu, 18 Feb 2010 14:43:36 +0200
+
 hildon-home (0.3.65-1) unstable; urgency=low
 
   * Fixes: NB#154418 - Text in chat-invitation notifications is unchangeable

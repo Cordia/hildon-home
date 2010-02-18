@@ -1,5 +1,9 @@
 2010-02-18  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
+	Release 0.3.66-1.
+
+2010-02-18  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
+
 	Fixes: NB#155462 - Ovi Store Promotional links to themes and backgrounds
 
 	* src/hd-available-backgrounds.c
