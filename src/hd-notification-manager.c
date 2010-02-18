@@ -495,6 +495,7 @@ hd_notification_manager_db_commit (HDNotificationManager *nm)
     /* Not yet. */
     return TRUE;
 
+g_warning("COMMIT");
   if (hd_notification_manager_db_prepare_and_exec (nm, "COMMIT")
       != SQLITE_OK)
     /* We can lose more than one notification here but if COMMIT
@@ -868,6 +869,19 @@ rollback:
   return SQLITE_ERROR;
 }
 
+void
+hd_notification_manager_db_commit_now (HDNotificationManager *nm)
+{
+  HDNotificationManagerPrivate *priv = nm->priv;
+
+  if (priv->commit_callback)
+    { /* Remove the source first because _commit() clears it. */
+      priv->commit_timeout = 0;
+      g_source_remove (priv->commit_callback);
+      hd_notification_manager_db_commit (nm);
+    }
+}
+
 static void
 hd_notification_manager_setup_interface (HDNotificationManager *nm,
                                          DBusGConnection *conn)
@@ -1033,12 +1047,7 @@ hd_notification_manager_finalize (GObject *object)
   if (priv->db)
     {
       /* Save uncommitted work. */
-      if (priv->commit_callback)
-        { /* Remove the source first because _commit() clears it. */
-          priv->commit_timeout = 0;
-          g_source_remove (priv->commit_callback);
-          hd_notification_manager_db_commit (HD_NOTIFICATION_MANAGER (object));
-        }
+      hd_notification_manager_db_commit_now (HD_NOTIFICATION_MANAGER (object));
 
       /* Release the prepared statements we know about. */
       if (priv->prepared_statements)

@@ -1510,6 +1510,9 @@ hd_incoming_events_system_bus_signal_handler (DBusConnection *conn,
             g_signal_emit (ie,
                            incoming_events_signals[DISPLAY_STATUS_CHANGED],
                            0, display_on);
+
+            if (!display_on)
+              hd_notification_manager_db_commit_now (hd_notification_manager_get ());
           }
      }
 

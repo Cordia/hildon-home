@@ -1,3 +1,10 @@
+2010-02-18  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
+	For NB#154984: commit uncommitted work when the display goes off
+
+	* src/hd-notification-manager.c (hd_notification_manager_db_commit_now)
+	* src/hd-incoming-events.c (hd_incoming_events_system_bus_signal_handler)
+
 2010-02-18  Marc Ordinas i Llopis <marc.ordinasillopis@collabora.co.uk>
 
 	Fixes: NB#155462 - Ovi Store Promotional links to themes and backgrounds
