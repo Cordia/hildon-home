@@ -71,13 +71,7 @@ hd_hildon_home_system_bus_signal_handler (DBusConnection *conn,
 {
   if (dbus_message_is_signal(msg, DSME_SIGNAL_INTERFACE,
                              DSME_SHUTDOWN_SIGNAL_NAME))
-    {
-            /*
-      g_warning ("%s: " DSME_SHUTDOWN_SIGNAL_NAME " from DSME", __func__);
-      */
-      exit (0);
-    }
-
+    gtk_main_quit ();
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 

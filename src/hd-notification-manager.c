@@ -1034,7 +1034,7 @@ hd_notification_manager_finalize (GObject *object)
     {
       /* Save uncommitted work. */
       if (priv->commit_callback)
-        { /* Remove the source first beca use _commit() clears it. */
+        { /* Remove the source first because _commit() clears it. */
           priv->commit_timeout = 0;
           g_source_remove (priv->commit_callback);
           hd_notification_manager_db_commit (HD_NOTIFICATION_MANAGER (object));
