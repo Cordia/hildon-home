@@ -53,7 +53,7 @@ if test "x${hildon_use_instrumenting}" = "xyes"
 then
     CFLAGS="$CFLAGS -Wall -Wmissing-prototypes -Wmissing-declarations -Werror -Wno-format-extra-args -g -finstrument-functions"
 else
-    CFLAGS="$CFLAGS -Wall -Wmissing-prototypes -Wmissing-declarations -Werror -Wno-format-extra-args"
+    CFLAGS="$CFLAGS -Wall -Wmissing-prototypes -Wmissing-declarations -Werror -Wno-format-extra-args -DG_DISABLE_CAST_CHECKS"
 fi
 
 AC_SUBST(CFLAGS)
