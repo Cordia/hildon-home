@@ -495,7 +495,6 @@ hd_notification_manager_db_commit (HDNotificationManager *nm)
     /* Not yet. */
     return TRUE;
 
-g_warning("COMMIT");
   if (hd_notification_manager_db_prepare_and_exec (nm, "COMMIT")
       != SQLITE_OK)
     /* We can lose more than one notification here but if COMMIT
