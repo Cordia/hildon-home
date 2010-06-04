@@ -329,6 +329,7 @@ hd_incoming_event_window_realize (GtkWidget *widget)
   cairo_destroy (cr);
 
   gdk_window_set_back_pixmap (widget->window, pixmap, FALSE);
+  g_object_unref(pixmap);
 }
 
 static gboolean

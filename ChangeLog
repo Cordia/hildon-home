@@ -1,3 +1,11 @@
+2010-06-04  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
+	NB#172384 hildon-home leaks X resources: Pixmaps during generic use
+
+	* src/hd-incoming-event-window.c (hd_incoming_event_window_realize):
+	  Once passed to the notification window, release the background
+	  pixmap.
+
 2010-05-25  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	Release 0.3.67.
