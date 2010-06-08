@@ -1,8 +1,8 @@
-hildon-home (0.3.68~unreleased) unstable; urgency=low
+hildon-home (0.3.68) unstable; urgency=low
 
-  * :)
+  * Fixes: NB#172384 hildon-home leaks X resources: Pixmaps during generic use
 
- -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Tue, 25 May 2010 14:24:30 +0300
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Tue, 08 Jun 2010 13:00:52 +0300
 
 hildon-home (0.3.67) unstable; urgency=low
 
