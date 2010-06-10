@@ -1,3 +1,12 @@
+2010-06-10  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
+	NB#159589 Change background. Logical ID for 'Get more from Ovi Store'
+		  "home_li_get_ovi"
+
+	* src/hd-available-backgrounds.c (hd_available_backgrounds_run):
+	  Use explicit message catalog with dgettext() because plugins
+	  may decide to change the default.
+
 2010-05-25  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	Release 0.3.68.
