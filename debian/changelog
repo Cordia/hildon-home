@@ -1,6 +1,12 @@
+hildon-home (0.3.69) unstable; urgency=low
+
+  * Fixes: NB#159589 - Change background. Logical ID for 'Get more from Ovi Store' "home_li_get_ovi"
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Thu, 10 Jun 2010 13:20:22 +0300
+
 hildon-home (0.3.68) unstable; urgency=low
 
-  * Fixes: NB#172384 hildon-home leaks X resources: Pixmaps during generic use
+  * Fixes: NB#172384 - hildon-home leaks X resources: Pixmaps during generic use
 
  -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Tue, 08 Jun 2010 13:00:52 +0300
 
