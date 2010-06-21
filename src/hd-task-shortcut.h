@@ -51,6 +51,8 @@ struct _HDTaskShortcutClass
 
 GType hd_task_shortcut_get_type (void);
 
+extern HDShortcuts *hd_shortcuts_task_shortcuts;
+
 G_END_DECLS
 
 #endif

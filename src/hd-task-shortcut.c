@@ -73,13 +73,16 @@ hd_task_shortcut_desktop_file_changed_cb (HDShortcutWidgets *manager,
                                         desktop_id))
     {
       GdkPixbuf *pixbuf;
+      gboolean throttled;
 
       pixbuf = hd_shortcut_widgets_get_icon (manager, desktop_id);
 
       gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon),
                                  pixbuf);
-
-      gtk_widget_show (GTK_WIDGET (shortcut));
+      g_object_get (hd_shortcuts_task_shortcuts, "throttled",
+                    &throttled, NULL);
+      if (!throttled)
+        gtk_widget_show (GTK_WIDGET (shortcut));
     }
 
   g_free (desktop_id);
