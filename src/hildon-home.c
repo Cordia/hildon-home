@@ -277,6 +277,7 @@ main (int argc, char **argv)
 {
   GConfClient *client;
   GError *error = NULL;
+  gboolean firsttime;
 
   setlocale (LC_ALL, "");
   bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
@@ -306,6 +307,7 @@ main (int argc, char **argv)
   signal (SIGINT,  signal_handler);
   signal (SIGTERM, signal_handler);
 
+  firsttime = !g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS);
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
 
   /* Backgrounds */
@@ -316,7 +318,7 @@ main (int argc, char **argv)
 
   /* Initialize applet manager */
   hd_applet_manager_throttled (HD_APPLET_MANAGER (hd_applet_manager_get ()),
-                               TRUE);
+                               firsttime);
 
   /* Intialize notifications */
   hd_notification_manager_get ();
@@ -345,7 +347,7 @@ main (int argc, char **argv)
     g_object_new (HD_TYPE_SHORTCUTS,
                   "gconf-key",      HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,
                   "shortcut-type",  HD_TYPE_TASK_SHORTCUT,
-                  "throttled",      TRUE, NULL);
+                  "throttled",      firsttime, NULL);
 
   /* Bookmark Shortcuts */
   hd_bookmark_widgets_get ();
@@ -353,13 +355,14 @@ main (int argc, char **argv)
     g_object_new (HD_TYPE_SHORTCUTS,
                   "gconf-key",      HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
                   "shortcut-type",  HD_TYPE_BOOKMARK_SHORTCUT,
-                  "throttled",      TRUE, NULL);
+                  "throttled",      firsttime, NULL);
 
   /* D-Bus */
   hd_hildon_home_dbus_get ();
 
   /* Start the main loop */
-  g_timeout_add_seconds (1, waitidle, NULL);
+  if (firsttime)
+    g_timeout_add_seconds (1, waitidle, NULL);
   gtk_main ();
   
   hd_stamp_file_finalize (HD_HOME_STAMP_FILE);
