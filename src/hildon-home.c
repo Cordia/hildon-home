@@ -154,6 +154,7 @@ static gboolean
 waitidle (gpointer unused)
 {
   static FILE *st;
+  static GtkWidget *bar;
   static gboolean smiley;
   static gdouble *idles, threshold;
   static long long prev_total, prev_idle;
@@ -185,14 +186,15 @@ waitidle (gpointer unused)
         ttl = 20;
       maxidles  = g_key_file_get_integer (conf, "Waitidle", "window", &err);
       if (check_error(&err))
-        maxidles = 3;
+        maxidles = 5;
       threshold = g_key_file_get_double (conf,  "Waitidle", "threshold", &err);
       if (check_error(&err))
-        threshold = 0.6;
+        threshold = 0.8;
       smiley = g_key_file_get_boolean (conf,  "Waitidle", "smiley", NULL);
       g_key_file_free (conf);
 
       idles = g_slice_alloc (sizeof (*idles) * maxidles);
+      bar = gtk_progress_bar_new ();
     }
 
   /* Read the jiffies. */
@@ -210,6 +212,7 @@ waitidle (gpointer unused)
   if (prev_total)
     {
       static GtkWidget *banner;
+      static double prev_idlef;
       gdouble idlef;
 
       /* Calculate the ratio spent in idle. */
@@ -227,12 +230,12 @@ waitidle (gpointer unused)
       if (nidles >= maxidles)
         {
           guint i;
-          gdouble idlesum;
 
           idlep %= nidles;
-          for (idlesum = i = 0; i < nidles; i++)
-            idlesum += idles[i];
-          if (idlesum / nidles >= threshold)
+          for (idlef = i = 0; i < nidles; i++)
+            idlef += idles[i];
+          idlef /= nidles;
+          if (idlef >= threshold)
             { /* Finish ourselves and show the widgets. */
               g_object_set (hd_shortcuts_task_shortcuts,
                             "throttled", FALSE, NULL);
@@ -241,6 +244,7 @@ waitidle (gpointer unused)
               hd_applet_manager_throttled (
                            HD_APPLET_MANAGER (hd_applet_manager_get ()),
                            FALSE);
+              gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (bar), 1.0);
               if (smiley) g_signal_connect (banner, "hide",
                                 G_CALLBACK (waitidle_wait), NULL);
               goto done;
@@ -248,8 +252,12 @@ waitidle (gpointer unused)
         }
 
       /* Update the progress with the current idle%. */
-      banner = hildon_banner_show_informationf (NULL, NULL,
-                                                "%u%%", (int)(idlef*100));
+      if (!banner || ABS(idlef-prev_idlef) >= 0.05)
+        gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (bar), idlef);
+      else
+        gtk_progress_bar_pulse (GTK_PROGRESS_BAR (bar));
+      banner = hildon_banner_show_custom_widget (NULL, bar);
+      prev_idlef = idlef;
     }
 
   /* Do we still have time to live? */
