@@ -155,10 +155,10 @@ waitidle (gpointer unused)
 {
   static FILE *st;
   static GtkWidget *bar;
-  static gboolean smiley;
+  static gboolean tuning, smiley;
   static gdouble *idles, threshold;
   static long long prev_total, prev_idle;
-  static guint ttl, maxidles, nidles, idlep;
+  static guint ttl, window, nidles, idlep;
   long long total, usr, nic, sys, idle, iowait, irq, softirq, steal;
 
   if (!st)
@@ -176,25 +176,29 @@ waitidle (gpointer unused)
       /* Don't buffer, we'll reread the file periodically. */
       setvbuf (st, NULL, _IONBF, 0);
 
-      /* Read @ttl, @maxidles, @threashol from the configuration. */
+      /* Read @ttl, @window, @threshold from the configuration. */
       err = NULL;
       conf = g_key_file_new ();
       g_key_file_load_from_file (conf, "/etc/hildon-desktop/home.conf",
                                  G_KEY_FILE_NONE, NULL);
       ttl       = g_key_file_get_integer (conf, "Waitidle", "timeout", &err);
       if (check_error(&err))
-        ttl = 20;
-      maxidles  = g_key_file_get_integer (conf, "Waitidle", "window", &err);
+        ttl = 60;
+      window  = g_key_file_get_integer (conf, "Waitidle", "window", &err);
       if (check_error(&err))
-        maxidles = 5;
+        window = 3;
       threshold = g_key_file_get_double (conf,  "Waitidle", "threshold", &err);
       if (check_error(&err))
-        threshold = 0.8;
+        threshold = 0.1;
+      tuning = g_key_file_get_boolean (conf,  "Waitidle", "tuning", NULL);
       smiley = g_key_file_get_boolean (conf,  "Waitidle", "smiley", NULL);
       g_key_file_free (conf);
 
-      idles = g_slice_alloc (sizeof (*idles) * maxidles);
+      idles = g_slice_alloc (sizeof (*idles) * window);
       bar = gtk_progress_bar_new ();
+      if (tuning)
+        /* We're running forever if @tuning, use @ttl as a counter. */
+        ttl = 0;
     }
 
   /* Read the jiffies. */
@@ -223,11 +227,11 @@ waitidle (gpointer unused)
 
       /* Add it to the window. */
       idles[idlep++] = idlef;
-      if (nidles < maxidles)
+      if (nidles < window)
         nidles++;
 
       /* If the window is full see if the average has reached @threshold. */
-      if (nidles >= maxidles)
+      if (bar && nidles >= window)
         {
           guint i;
 
@@ -247,26 +251,42 @@ waitidle (gpointer unused)
               gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (bar), 1.0);
               if (smiley) g_signal_connect (banner, "hide",
                                 G_CALLBACK (waitidle_wait), NULL);
-              goto done;
+              if (tuning)
+                { /* Just keep going on. */
+                  g_warning ("waitidle done");
+                  bar = NULL;
+                }
+              else
+                goto done;
             }
         }
 
-      /* Update the progress with the current idle%. */
-      if (!banner || ABS(idlef-prev_idlef) >= 0.05)
-        gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (bar), idlef);
-      else
-        gtk_progress_bar_pulse (GTK_PROGRESS_BAR (bar));
-      banner = hildon_banner_show_custom_widget (NULL, bar);
+      if (bar != NULL)
+        { /* Update the progress with the current idle%. */
+          if (!banner || ABS(idlef-prev_idlef) >= 0.05)
+            gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (bar), idlef);
+          else
+            gtk_progress_bar_pulse (GTK_PROGRESS_BAR (bar));
+          banner = hildon_banner_show_custom_widget (NULL, bar);
+        }
+
       prev_idlef = idlef;
+      if (tuning)
+        g_warning ("waitidle: %u. %f", ttl, idlef);
     }
+  else if (tuning)
+    g_warning ("waitidle started");
 
   /* Do we still have time to live? */
-  if (!ttl)
+  if (tuning)
+    ttl++;
+  else if (ttl > 0)
+    ttl--;
+  else
     {
-      g_warning ("timeout reached");
+      g_warning ("waitidle: timeout reached");
       goto done;
     }
-  ttl--;
 
   /* Prepare for the next turn. */
   fseek(st, 0, SEEK_SET);
@@ -275,7 +295,7 @@ waitidle (gpointer unused)
   return TRUE;
 
 done: /* Final clean up. */
-  g_slice_free1 (sizeof (*idles) * maxidles, idles);
+  g_slice_free1 (sizeof (*idles) * window, idles);
   fclose (st);
   return FALSE;
 }
