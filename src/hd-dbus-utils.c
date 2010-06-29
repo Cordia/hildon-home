@@ -24,6 +24,7 @@
 #include <config.h>
 #endif
 
+#include <string.h>
 #include <dbus/dbus.h>
 
 #include "hd-dbus-utils.h"
@@ -82,7 +83,7 @@ hd_utils_open_link (const gchar *link)
   conn = dbus_bus_get (DBUS_BUS_SESSION, NULL);
   if (!conn)
     {
-      g_debug ("%s: Couldn't connect to session bus", __FUNCTION__);
+      g_critical ("%s: Couldn't connect to session bus", __FUNCTION__);
       return;
     }
 
@@ -91,17 +92,43 @@ hd_utils_open_link (const gchar *link)
                                       DBUS_BROWSER_SERVICE,
                                       DBUS_BROWSER_METHOD);
   if (!msg)
-    {
-      return;
-    }
+    return;
 
   dbus_message_set_auto_start (msg, TRUE);
   dbus_message_set_no_reply (msg, TRUE);
   dbus_message_append_args (msg, DBUS_TYPE_STRING, &link, DBUS_TYPE_INVALID);
-  if (!dbus_connection_send (conn, msg, NULL))
+  dbus_connection_send (conn, msg, NULL);
+  dbus_message_unref (msg);
+}
+
+/* App mgr D-Bus interface to launch tasks */
+#define APP_MGR_DBUS_NAME "com.nokia.HildonDesktop.AppMgr"
+#define APP_MGR_DBUS_PATH "/com/nokia/HildonDesktop/AppMgr"
+#define APP_MGR_LAUNCH_APPLICATION "LaunchApplication"
+
+void
+hd_utils_launch_task (const gchar *id)
+{
+  DBusConnection *conn = NULL;
+  DBusMessage *msg = NULL;
+
+  g_debug ("%s: launching %s", __FUNCTION__, id);
+
+  conn = dbus_bus_get (DBUS_BUS_SESSION, NULL);
+  if (!conn)
     {
+      g_critical ("%s: Couldn't connect to session bus", __FUNCTION__);
       return;
     }
+  msg = dbus_message_new_method_call (APP_MGR_DBUS_NAME,
+                                      APP_MGR_DBUS_PATH,
+                                      APP_MGR_DBUS_NAME,
+                                      APP_MGR_LAUNCH_APPLICATION);
+  if (!msg)
+    return;
 
+  dbus_message_set_no_reply (msg, TRUE);
+  dbus_message_append_args (msg, DBUS_TYPE_STRING, &id, DBUS_TYPE_INVALID);
+  dbus_connection_send (conn, msg, NULL);
   dbus_message_unref (msg);
 }

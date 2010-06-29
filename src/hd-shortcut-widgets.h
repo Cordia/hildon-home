@@ -59,8 +59,6 @@ gboolean      hd_shortcut_widgets_is_available (HDShortcutWidgets *widgets,
                                                 const gchar       *desktop_id);
 GdkPixbuf    *hd_shortcut_widgets_get_icon     (HDShortcutWidgets *manager,
                                                 const gchar       *desktop_id);
-void          hd_shortcut_widgets_launch_task  (HDShortcutWidgets *manager,
-                                                const gchar       *desktop_id);
 
 
 G_END_DECLS

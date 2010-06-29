@@ -33,7 +33,8 @@ DBusGConnection *hd_get_system_dbus_connection (void);
 /* Function to open the web browser with Ovi on it. */
 #define HD_OVI_LINK_BACKGROUNDS "http://store.ovi.mobi/personalize?categoryId=13"
 
-void hd_utils_open_link (const gchar *link);
+void hd_utils_open_link   (const gchar *link);
+void hd_utils_launch_task (const gchar *desktop_id);
 
 G_END_DECLS
 

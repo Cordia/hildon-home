@@ -5,6 +5,8 @@
 
 	Don't show the widgets as long as the load is high.
 	Configurable via /etc/hildon-desktop/home.conf.
+	Also initiate the application-loading transition rather than
+	waiting for the application when opening a web bookmark.
 
 	* debian/control:
 	  Depend on new version of libhildondesktop.
@@ -19,6 +21,14 @@
 	  Right when entering the main loop start watching the CPU activity,
 	  show the idle-percentage on a banner and show the widgets when it
 	  reaches the desired level.
+	* src/hd-shortcut-widgets.c (hd_shortcut_widgets_launch_task):
+	  Replaced...
+	* src/hd-dbus-utils.c (hd_utils_launch_task):
+	  ...by this...
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_activate):
+	  ...and used by this.
+	* src/hd-shortcut-widgets.c (hd_shortcut_widgets_get_app_mgr_proxy):
+	  Removed as unused.
 
 2010-06-10  Adam Endrodi <adam.endrodi@blumsoft.eu>
 

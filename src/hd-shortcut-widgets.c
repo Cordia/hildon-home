@@ -52,7 +52,6 @@
 /* App mgr D-Bus interface to launch tasks */
 #define APP_MGR_DBUS_NAME "com.nokia.HildonDesktop.AppMgr"
 #define APP_MGR_DBUS_PATH "/com/nokia/HildonDesktop/AppMgr"
-
 #define APP_MGR_LAUNCH_APPLICATION "LaunchApplication"
 
 struct _HDShortcutWidgetsPrivate
@@ -66,8 +65,6 @@ struct _HDShortcutWidgetsPrivate
   GHashTable *monitors;
 
   GConfClient *gconf_client;
-
-  DBusGProxy *app_mgr_proxy;
 };
 
 typedef struct
@@ -673,9 +670,6 @@ hd_shortcut_widgets_dispose (GObject *obj)
   if (priv->model)
     priv->model = (g_object_unref (priv->model), NULL);
 
-  if (priv->app_mgr_proxy)
-    priv->app_mgr_proxy = (g_object_unref (priv->app_mgr_proxy), NULL);
-
   G_OBJECT_CLASS (hd_shortcut_widgets_parent_class)->dispose (obj);
 }
 
@@ -902,63 +896,3 @@ hd_shortcut_widgets_get_icon (HDShortcutWidgets *widgets,
 
   return info->icon;
 }
-
-static DBusGProxy *
-hd_shortcut_widgets_get_app_mgr_proxy (HDShortcutWidgets *widgets)
-{
-  HDShortcutWidgetsPrivate *priv = widgets->priv;
-
-  /* Get app mgr proxy if not there yet */
-  if (!priv->app_mgr_proxy)
-    {
-      DBusGConnection *connection;
-      GError *error = NULL;
-
-      /* Connect to D-Bus */
-      connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-
-      if (error)
-        {
-          g_warning ("%s. Could not connect to session bus. %s",
-                     __FUNCTION__,
-                     error->message);
-          g_error_free (error);
-          return NULL;
-        }
-
-      priv->app_mgr_proxy = dbus_g_proxy_new_for_name (connection,
-                                                       APP_MGR_DBUS_NAME,
-                                                       APP_MGR_DBUS_PATH,
-                                                       APP_MGR_DBUS_NAME);
-    }
-
-  return priv->app_mgr_proxy;
-}
-
-void
-hd_shortcut_widgets_launch_task (HDShortcutWidgets *widgets,
-                                 const gchar       *desktop_id)
-{
-  DBusGProxy *app_mgr_proxy;
-
-  g_return_if_fail (HD_IS_SHORTCUT_WIDGETS (widgets));
-  g_return_if_fail (desktop_id);
-
-  app_mgr_proxy = hd_shortcut_widgets_get_app_mgr_proxy (widgets);
-
-  if (app_mgr_proxy)
-    {
-      /* App mgr takes the id without the .desktop suffix */
-      gchar *id = g_strndup (desktop_id, strlen (desktop_id) - strlen (".desktop"));
-
-      dbus_g_proxy_call_no_reply (app_mgr_proxy,
-                                  APP_MGR_LAUNCH_APPLICATION,
-                                  G_TYPE_STRING,
-                                  id,
-                                  G_TYPE_INVALID,
-                                  G_TYPE_INVALID);
-
-      g_free (id);
-    }
-}
-
