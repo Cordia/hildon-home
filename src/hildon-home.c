@@ -335,7 +335,8 @@ main (int argc, char **argv)
   signal (SIGINT,  signal_handler);
   signal (SIGTERM, signal_handler);
 
-  firsttime = !g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS);
+  firsttime = !g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS)
+    && !isatty (STDIN_FILENO);
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
 
   /* Backgrounds */
