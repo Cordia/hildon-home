@@ -1,3 +1,16 @@
+2010-07-05  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
+	NB#127188 3PO: Uninstalled applications are still present in the
+		  Add Widget list
+
+	* src/hd-applet-manager.c:
+	  -- load_desktop_widget_from_desktop_file(): always dup
+	     the gettext()ed string
+	  -- items_configuration_loaded_cb(): remove those entries
+	     not anymore in @plugins from @installed_plugins
+	  -- plugin_module_removed_cb(): remove the removed plugin
+	     from the Add widget list as well.
+
 2010-06-10  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	Release 0.3.69.
