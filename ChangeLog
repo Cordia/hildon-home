@@ -1,5 +1,12 @@
 2010-07-07  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
+	NB#162298 hildon-sv-notification-daemon memory leak during long chat.
+
+	* src/hd-sv-notification-daemon.c (hd_sv_notification_daemon_stop_event):
+	  Free the invocation context.
+
+2010-07-07  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
 	Release 0.3.70.
 
 2010-07-05  Adam Endrodi <adam.endrodi@blumsoft.eu>
