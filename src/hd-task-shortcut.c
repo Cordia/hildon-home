@@ -31,6 +31,7 @@
 #include "hd-cairo-surface-cache.h"
 #include "hd-shortcut-widgets.h"
 #include "hd-task-shortcut.h"
+#include "hd-dbus-utils.h"
 
 /* Layout from Task navigation layout guide 1.2 */
 #define SHORTCUT_WIDTH 96
@@ -73,13 +74,16 @@ hd_task_shortcut_desktop_file_changed_cb (HDShortcutWidgets *manager,
                                         desktop_id))
     {
       GdkPixbuf *pixbuf;
+      gboolean throttled;
 
       pixbuf = hd_shortcut_widgets_get_icon (manager, desktop_id);
 
       gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon),
                                  pixbuf);
-
-      gtk_widget_show (GTK_WIDGET (shortcut));
+      g_object_get (hd_shortcuts_task_shortcuts, "throttled",
+                    &throttled, NULL);
+      if (!throttled)
+        gtk_widget_show (GTK_WIDGET (shortcut));
     }
 
   g_free (desktop_id);
@@ -280,18 +284,17 @@ button_release_event_cb (GtkWidget      *widget,
   if (event->button == 1 &&
       priv->button_pressed)
     {
-      gchar *desktop_id;
+      gchar *id, *p;
 
       priv->button_pressed = FALSE;
 
       gtk_widget_queue_draw (widget);
 
-      desktop_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
-
-      hd_shortcut_widgets_launch_task (HD_SHORTCUT_WIDGETS (hd_shortcut_widgets_get ()),
-                                       desktop_id);
-
-      g_free (desktop_id);
+      id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
+      if ((p = strstr (id, ".desktop")) != NULL)
+          *p = '\0';
+      hd_utils_launch_task (id);
+      g_free (id);
 
       return TRUE;
     }

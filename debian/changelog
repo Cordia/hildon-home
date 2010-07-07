@@ -1,3 +1,9 @@
+hildon-home (0.3.70~unreleased) unstable; urgency=low
+
+  * GRRRRRRRRR!!!!!
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Thu, 10 Jun 2010 13:20:22 +0300
+
 hildon-home (0.3.69) unstable; urgency=low
 
   * Fixes: NB#159589 - Change background. Logical ID for 'Get more from Ovi Store' "home_li_get_ovi"

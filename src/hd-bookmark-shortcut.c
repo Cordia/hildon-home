@@ -33,6 +33,7 @@
 
 #include "hd-cairo-surface-cache.h"
 #include "hd-bookmark-shortcut.h"
+#include "hd-dbus-utils.h"
 
 /* Size from Home layout guide 1.2 */
 #define SHORTCUT_WIDTH 176
@@ -422,6 +423,7 @@ hd_bookmark_shortcut_activate (HDBookmarkShortcut  *shortcut,
   HDBookmarkShortcutPrivate *priv = shortcut->priv;
 
   hd_bookmark_shortcut_activate_service (priv->url);
+  hd_utils_launch_task ("browser");
 
   return TRUE;
 }

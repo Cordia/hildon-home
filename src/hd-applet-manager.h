@@ -55,6 +55,8 @@ HDWidgets *hd_applet_manager_get            (void);
 
 void       hd_applet_manager_remove_applet  (HDAppletManager *manager,
                                              const gchar     *applet_id);
+void       hd_applet_manager_throttled      (HDAppletManager *manager,
+                                             gboolean         throttled);
 
 G_END_DECLS
 

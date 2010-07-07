@@ -4,3 +4,12 @@ X-Load-New-Plugins=false
 X-Load-All-Plugins=false
 X-Plugin-Configuration=home.plugins
 X-Safe-Set=home.safe-set
+
+# These parameters control when the system will be considered idle enough
+# to show the desktop widgets.
+# [Waitidle]
+# window	= 3	# Take samples of the CPU statistics
+#			# for this many seconds...
+# threshold	= 0.1	# ...and if the average idle time reaches
+#			# this threshold then go...
+# timeout	= 60	# ...but keep waiting for no more than this time.

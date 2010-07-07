@@ -57,6 +57,9 @@
 #define HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS HD_GCONF_DIR_HILDON_HOME "/task-shortcuts"
 #define HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS HD_GCONF_DIR_HILDON_HOME "/bookmark-shortcuts"
 
+HDShortcuts *hd_shortcuts_task_shortcuts;
+static HDShortcuts *hd_shortcuts_bookmarks;
+
 static gboolean enable_debug = FALSE;
 static GOptionEntry entries[] =
 {
@@ -116,11 +119,193 @@ log_ignore_debug_handler (const gchar *log_domain,
                            unused_data);
 }
 
+static gboolean
+waitidle_go (gpointer unused)
+{
+  hildon_banner_show_information_with_markup (NULL, NULL,
+      "<span font=\"120\">&#x263A;&#x263A;&#x263A;</span>");
+  return FALSE;
+}
+
+static gboolean
+waitidle_wait (gpointer unused)
+{ /* Our banner is going away, wait until it completely disappears.
+   * With the default transitions.init settings it takes 500ms. */  
+  g_timeout_add (500, waitidle_go, NULL);
+  return FALSE;
+}
+
+static gboolean 
+check_error (GError **errp)
+{
+  if (*errp)
+    {
+      g_error_free (*errp);
+      *errp = NULL;
+      return TRUE;
+    }
+  else
+    return FALSE;
+}
+
+/* g_timeout_add() callback to check the idle time of the CPU periodically
+ * until it reaches a certain percentage, then show the desktop widgets. */
+static gboolean
+waitidle (gpointer unused)
+{
+  static FILE *st;
+  static GtkWidget *bar;
+  static gboolean tuning, smiley;
+  static gdouble *idles, threshold;
+  static long long prev_total, prev_idle;
+  static guint ttl, window, nidles, idlep;
+  long long total, usr, nic, sys, idle, iowait, irq, softirq, steal;
+
+  if (!st)
+    { /* Initialize */
+      GError *err;
+      GKeyFile *conf;
+
+      /* Where we can get the time spent in idle. */
+      if (!(st = fopen ("/proc/stat", "r")))
+        {
+          g_critical ("/proc/stat: %m");
+          return FALSE;
+        }
+
+      /* Don't buffer, we'll reread the file periodically. */
+      setvbuf (st, NULL, _IONBF, 0);
+
+      /* Read @ttl, @window, @threshold from the configuration. */
+      err = NULL;
+      conf = g_key_file_new ();
+      g_key_file_load_from_file (conf, "/etc/hildon-desktop/home.conf",
+                                 G_KEY_FILE_NONE, NULL);
+      ttl       = g_key_file_get_integer (conf, "Waitidle", "timeout", &err);
+      if (check_error(&err))
+        ttl = 60;
+      window  = g_key_file_get_integer (conf, "Waitidle", "window", &err);
+      if (check_error(&err))
+        window = 3;
+      threshold = g_key_file_get_double (conf,  "Waitidle", "threshold", &err);
+      if (check_error(&err))
+        threshold = 0.1;
+      tuning = g_key_file_get_boolean (conf,  "Waitidle", "tuning", NULL);
+      smiley = g_key_file_get_boolean (conf,  "Waitidle", "smiley", NULL);
+      g_key_file_free (conf);
+
+      idles = g_slice_alloc (sizeof (*idles) * window);
+      bar = gtk_progress_bar_new ();
+      if (tuning)
+        /* We're running forever if @tuning, use @ttl as a counter. */
+        ttl = 0;
+    }
+
+  /* Read the jiffies. */
+  if (fscanf (st, "cpu  "
+              "%lld %lld %lld %lld %lld %lld %lld %lld",
+              &usr, &nic, &sys, &idle, &iowait, &irq,
+              &softirq, &steal) < 8)
+    {
+      g_critical ("/proc/stat: nonsense");
+      goto done;
+    }
+  total = usr + nic + sys + idle + iowait + irq + softirq + steal;
+
+  /* We need two consecutive samples to calculate idle%. */
+  if (prev_total)
+    {
+      static GtkWidget *banner;
+      static double prev_idlef;
+      gdouble idlef;
+
+      /* Calculate the ratio spent in idle. */
+      if (!(idlef = total-prev_total))
+        idlef = idle - prev_idle;
+      else
+        idlef = (gdouble)(idle-prev_idle) / idlef;
+
+      /* Add it to the window. */
+      idles[idlep++] = idlef;
+      if (nidles < window)
+        nidles++;
+
+      /* If the window is full see if the average has reached @threshold. */
+      if (bar && nidles >= window)
+        {
+          guint i;
+
+          idlep %= nidles;
+          for (idlef = i = 0; i < nidles; i++)
+            idlef += idles[i];
+          idlef /= nidles;
+          if (idlef >= threshold)
+            { /* Finish ourselves and show the widgets. */
+              g_object_set (hd_shortcuts_task_shortcuts,
+                            "throttled", FALSE, NULL);
+              g_object_set (hd_shortcuts_bookmarks,
+                            "throttled", FALSE, NULL);
+              hd_applet_manager_throttled (
+                           HD_APPLET_MANAGER (hd_applet_manager_get ()),
+                           FALSE);
+              gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (bar), 1.0);
+              if (smiley) g_signal_connect (banner, "hide",
+                                G_CALLBACK (waitidle_wait), NULL);
+              if (tuning)
+                { /* Just keep going on. */
+                  g_warning ("waitidle done");
+                  bar = NULL;
+                }
+              else
+                goto done;
+            }
+        }
+
+      if (bar != NULL)
+        { /* Update the progress with the current idle%. */
+          if (!banner || ABS(idlef-prev_idlef) >= 0.05)
+            gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (bar), idlef);
+          else
+            gtk_progress_bar_pulse (GTK_PROGRESS_BAR (bar));
+          banner = hildon_banner_show_custom_widget (NULL, bar);
+        }
+
+      prev_idlef = idlef;
+      if (tuning)
+        g_warning ("waitidle: %u. %f", ttl, idlef);
+    }
+  else if (tuning)
+    g_warning ("waitidle started");
+
+  /* Do we still have time to live? */
+  if (tuning)
+    ttl++;
+  else if (ttl > 0)
+    ttl--;
+  else
+    {
+      g_warning ("waitidle: timeout reached");
+      goto done;
+    }
+
+  /* Prepare for the next turn. */
+  fseek(st, 0, SEEK_SET);
+  prev_total = total;
+  prev_idle  = idle;
+  return TRUE;
+
+done: /* Final clean up. */
+  g_slice_free1 (sizeof (*idles) * window, idles);
+  fclose (st);
+  return FALSE;
+}
+
 int
 main (int argc, char **argv)
 {
   GConfClient *client;
   GError *error = NULL;
+  gboolean firsttime;
 
   setlocale (LC_ALL, "");
   bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
@@ -150,6 +335,8 @@ main (int argc, char **argv)
   signal (SIGINT,  signal_handler);
   signal (SIGTERM, signal_handler);
 
+  firsttime = !g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS)
+    && !isatty (STDIN_FILENO);
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
 
   /* Backgrounds */
@@ -159,7 +346,8 @@ main (int argc, char **argv)
   load_operator_applet ();
 
   /* Initialize applet manager */
-  hd_applet_manager_get ();
+  hd_applet_manager_throttled (HD_APPLET_MANAGER (hd_applet_manager_get ()),
+                               firsttime);
 
   /* Intialize notifications */
   hd_notification_manager_get ();
@@ -184,18 +372,26 @@ main (int argc, char **argv)
 
   /* Task Shortcuts */
   hd_shortcut_widgets_get ();
-  hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,
-                    HD_TYPE_TASK_SHORTCUT);
+  hd_shortcuts_task_shortcuts =
+    g_object_new (HD_TYPE_SHORTCUTS,
+                  "gconf-key",      HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,
+                  "shortcut-type",  HD_TYPE_TASK_SHORTCUT,
+                  "throttled",      firsttime, NULL);
 
   /* Bookmark Shortcuts */
   hd_bookmark_widgets_get ();
-  hd_shortcuts_new (HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
-                    HD_TYPE_BOOKMARK_SHORTCUT);
+  hd_shortcuts_bookmarks =
+    g_object_new (HD_TYPE_SHORTCUTS,
+                  "gconf-key",      HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
+                  "shortcut-type",  HD_TYPE_BOOKMARK_SHORTCUT,
+                  "throttled",      firsttime, NULL);
 
   /* D-Bus */
   hd_hildon_home_dbus_get ();
 
   /* Start the main loop */
+  if (firsttime)
+    g_timeout_add_seconds (1, waitidle, NULL);
   gtk_main ();
   
   hd_stamp_file_finalize (HD_HOME_STAMP_FILE);

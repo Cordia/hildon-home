@@ -58,6 +58,9 @@ struct _HDAppletManagerPrivate
 
   GHashTable *installed;
 
+  gboolean plugins_throttled;
+  GPtrArray *throttled_plugins;
+
   GKeyFile *applets_key_file;
 };
 
@@ -246,6 +249,8 @@ plugin_added_cb (HDPluginManager *pm,
                  GObject         *plugin,
                  HDAppletManager *manager)
 {
+  HDAppletManagerPrivate *priv = manager->priv;
+
   if (HD_IS_HOME_PLUGIN_ITEM (plugin))
     {
       Display *display;
@@ -260,17 +265,31 @@ plugin_added_cb (HDPluginManager *pm,
       root = RootWindow (display, GDK_SCREEN_XNUMBER (gtk_widget_get_screen (GTK_WIDGET (plugin))));
       XSetTransientForHint (display, GDK_WINDOW_XID (GTK_WIDGET (plugin)->window), root);
 
-      gtk_widget_show (GTK_WIDGET (plugin));
+      if (priv->plugins_throttled)
+        {
+          if (!priv->throttled_plugins)
+            priv->throttled_plugins = g_ptr_array_new ();
+          g_assert (!g_ptr_array_remove (priv->throttled_plugins, plugin));
+          g_ptr_array_add (priv->throttled_plugins, plugin);
+        }
+      else
+        gtk_widget_show (GTK_WIDGET (plugin));
     }
 }
 
 static void
 plugin_removed_cb (HDPluginManager *pm,
                    GObject         *plugin,
-                   gpointer         data)
+                   HDAppletManager *manager)
 {
+  HDAppletManagerPrivate *priv = manager->priv;
+
   if (HD_IS_HOME_PLUGIN_ITEM (plugin))
-    gtk_widget_destroy (GTK_WIDGET (plugin));
+    {
+      gtk_widget_destroy (GTK_WIDGET (plugin));
+      if (priv->throttled_plugins)
+        g_ptr_array_remove (priv->throttled_plugins, plugin);
+    }
 }
 
 static void
@@ -569,3 +588,17 @@ hd_applet_manager_remove_applet (HDAppletManager *manager,
     }
 }
 
+void
+hd_applet_manager_throttled (HDAppletManager *manager, gboolean throttled)
+{
+  HDAppletManagerPrivate *priv = manager->priv;
+
+  if ((priv->plugins_throttled = throttled) != FALSE)
+    return;
+  if (!priv->throttled_plugins)
+    return;
+
+  g_ptr_array_foreach (priv->throttled_plugins, (GFunc)gtk_widget_show, NULL);
+  g_ptr_array_free (priv->throttled_plugins, TRUE);
+  priv->throttled_plugins = NULL;
+}

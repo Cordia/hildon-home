@@ -11,6 +11,38 @@
 	  -- plugin_module_removed_cb(): remove the removed plugin
 	     from the Add widget list as well.
 
+2010-06-21  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
+	NB#137880 Selecting bookmark is slow to launch site, resulting
+		  in multiple clicks and multiple browser instances
+
+	Don't show the widgets as long as the load is high.
+	Configurable via /etc/hildon-desktop/home.conf.
+	Also initiate the application-loading transition rather than
+	waiting for the application when opening a web bookmark.
+
+	* debian/control:
+	  Depend on new version of libhildondesktop.
+	* src/home.conf.in:
+	  New configuration settings.
+	* src/hd-applet-manager.c (plugin_added_cb):
+	  If hd_applet_manager_throttled() keep a list of @throttled_plugins
+	  and only gtk_widget_show() them when we're ready.
+	* src/hd-task-shortcut.c (hd_task_shortcut_desktop_file_changed_cb):
+	  Don't show the shortcut if the HDShortcuts is throttled.
+	* src/hildon-home.c (waitidle):
+	  Right when entering the main loop start watching the CPU activity,
+	  show the idle-percentage on a banner and show the widgets when it
+	  reaches the desired level.
+	* src/hd-shortcut-widgets.c (hd_shortcut_widgets_launch_task):
+	  Replaced...
+	* src/hd-dbus-utils.c (hd_utils_launch_task):
+	  ...by this...
+	* src/hd-bookmark-shortcut.c (hd_bookmark_shortcut_activate):
+	  ...and used by this.
+	* src/hd-shortcut-widgets.c (hd_shortcut_widgets_get_app_mgr_proxy):
+	  Removed as unused.
+
 2010-06-10  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	Release 0.3.69.
