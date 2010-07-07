@@ -1,3 +1,9 @@
+hildon-home (0.3.71~unreleased) unstable; urgency=low
+
+  * :)
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Wed, 07 Jul 2010 14:58:59 +0300
+
 hildon-home (0.3.70) unstable; urgency=low
 
   * Fixes: NB#137880 - Selecting bookmark is slow to launch site, resulting in multiple clicks and multiple browser instances
