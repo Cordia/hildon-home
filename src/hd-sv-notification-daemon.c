@@ -241,6 +241,8 @@ hd_sv_notification_daemon_stop_event  (HDSVNotificationDaemon *sv_nd,
   if (priv->nsv_plugin_stop_event)
     priv->nsv_plugin_stop_event (id);
 
+  dbus_g_method_return (context, id);
+
   return TRUE;
 }
 
