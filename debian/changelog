@@ -1,8 +1,14 @@
-hildon-home (0.3.70~unreleased) unstable; urgency=low
+hildon-home (0.3.71~unreleased) unstable; urgency=low
 
-  * GRRRRRRRRR!!!!!
+  * :)
 
  -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Thu, 10 Jun 2010 13:20:22 +0300
+
+hildon-home (0.3.70-1) unstable; urgency=low
+
+  * Fixes: NB#162298 - hildon-sv-notification-daemon memory leak during long chat
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Thu, 08 Jul 2010 12:25:09 +0300
 
 hildon-home (0.3.69) unstable; urgency=low
 
