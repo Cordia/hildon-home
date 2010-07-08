@@ -5,10 +5,6 @@
 	* src/hd-sv-notification-daemon.c (hd_sv_notification_daemon_stop_event):
 	  Free the invocation context.
 
-2010-07-07  Adam Endrodi <adam.endrodi@blumsoft.eu>
-
-	Release 0.3.70.
-
 2010-07-05  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	NB#127188 3PO: Uninstalled applications are still present in the
@@ -2079,7 +2075,6 @@
 
 	* debian/changelog: Update.
 
->>>>>>> .r35222
 2009-02-05  Jan Arne Petersen  <jpetersen@openismus.com>
 
 	Code cleanup.
