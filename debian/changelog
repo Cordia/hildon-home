@@ -1,3 +1,9 @@
+hildon-home (0.3.70-1) unstable; urgency=low
+
+  * Fixes: NB#162298 - hildon-sv-notification-daemon memory leak during long chat
+
+ -- Adam Endrodi <adam.endrodi@blumsoft.eu>  Thu, 08 Jul 2010 12:25:09 +0300
+
 hildon-home (0.3.69) unstable; urgency=low
 
   * Fixes: NB#159589 - Change background. Logical ID for 'Get more from Ovi Store' "home_li_get_ovi"
