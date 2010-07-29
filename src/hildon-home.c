@@ -332,8 +332,11 @@ main (int argc, char **argv)
   signal (SIGINT,  signal_handler);
   signal (SIGTERM, signal_handler);
 
+  /* May do waitidle if we're started the first time since boot
+   * and not from the terminal. */
   conf = NULL;
-  if (!g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS)
+  if (g_unlink (HD_HOME_STAMP_FILE".sav") < 0
+      && !g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS)
       && !isatty (STDIN_FILENO))
     {
       conf = g_key_file_new ();
@@ -402,7 +405,7 @@ main (int argc, char **argv)
     g_timeout_add_seconds (1, (GSourceFunc)waitidle, conf);
   gtk_main ();
   
-  hd_stamp_file_finalize (HD_HOME_STAMP_FILE);
+  g_rename (HD_HOME_STAMP_FILE, HD_HOME_STAMP_FILE".sav");
 
   /* We got a signal, flush the database.  How we do it breaks
    * if somebody has taken reference of the nm, but we don't. */

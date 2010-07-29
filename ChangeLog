@@ -1,5 +1,13 @@
 2010-07-29  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
+	Don't run waitidle if we exited because of a theme change.
+
+	* src/hildon-home.c (main):
+	  Rename the stamp file and check for it too on startup
+	  when deciding about enabling waitidle.
+
+2010-07-29  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
 	Make waitidle compatible with libhildondesktop 2.1.42,
 	and disable it by default.  This allows for independent
 	releasing of hildon-home with the waitidle feature and
