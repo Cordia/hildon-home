@@ -126,8 +126,13 @@ load_desktop_widget_from_desktop_file (const char *desktop_file)
   info = g_slice_new (HDPluginInfo);
 
   /* Translate name with given or default text domain */
-  info->name = g_strdup (dgettext (text_domain ? text_domain : GETTEXT_PACKAGE,
-                                   name));
+  if (text_domain)
+    info->name = dgettext (text_domain, name);
+  else
+    info->name = dgettext (GETTEXT_PACKAGE, name);
+
+  if (info->name == name)
+    info->name = g_strdup (name);
 
   info->multiple = g_key_file_get_boolean (key_file,
                                            G_KEY_FILE_DESKTOP_GROUP,
@@ -145,12 +150,6 @@ cleanup:
   return info;
 }
 
-static gboolean
-remove_unavailable (gpointer key, gpointer value, gpointer available)
-{
-  return !g_hash_table_lookup(available, key);
-}
-
 static void
 items_configuration_loaded_cb (HDPluginConfiguration *configuration,
                                GKeyFile              *key_file,
@@ -159,7 +158,7 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
   HDAppletManagerPrivate *priv = manager->priv;
   gchar **groups;
   guint i;
-  GHashTable *plugins;
+  gchar **plugins;
   GHashTableIter iter;
   gpointer key, value;
 
@@ -192,23 +191,20 @@ items_configuration_loaded_cb (HDPluginConfiguration *configuration,
   g_strfreev (groups);
 
   /* Get all plugin paths FIXME: does not need to be done all times */
-  plugins = hd_plugin_configuration_get_available_plugins (HD_PLUGIN_CONFIGURATION (configuration));
-  g_hash_table_iter_init (&iter, plugins);
-  while (g_hash_table_iter_next (&iter, &key, NULL))
+  plugins = hd_plugin_configuration_get_all_plugin_paths (HD_PLUGIN_CONFIGURATION (configuration));
+  for (i = 0; plugins[i]; i++)
     {
-      const char *path = (char const *)key;
-      if (!g_hash_table_lookup (priv->installed, path))
+      if (!g_hash_table_lookup (priv->installed, plugins[i]))
         {
-          HDPluginInfo *info = load_desktop_widget_from_desktop_file (path);
+          HDPluginInfo *info = load_desktop_widget_from_desktop_file (plugins[i]);
 
           if (info)
             g_hash_table_insert (priv->installed,
-                                 g_strdup (path),
+                                 g_strdup (plugins[i]),
                                  info);
         }
     }
-  if (g_hash_table_size (priv->installed) > g_hash_table_size (plugins))
-    g_hash_table_foreach_remove (priv->installed, remove_unavailable, plugins);
+  g_strfreev (plugins);
 
   gtk_list_store_clear (GTK_LIST_STORE (priv->model));
 
@@ -316,23 +312,6 @@ plugin_module_removed_cb (HDPluginConfiguration *pc,
   guint i;
   gboolean changed = FALSE;
   GError *error = NULL;
-  GtkTreeIter iter;
-
-  /* Remove the widget from "Add widget". */
-  if (gtk_tree_model_get_iter_first (priv->model, &iter))
-    {
-      do
-        {
-          char const *path;
-
-          gtk_tree_model_get (priv->model, &iter, 1, &path, -1);
-          if (!strcmp (path, desktop_file))
-            {
-              gtk_list_store_remove (GTK_LIST_STORE (priv->model), &iter);
-              break;
-            }
-        } while (gtk_tree_model_iter_next (priv->model, &iter));
-    }
 
   /* 
    * Iterate over all groups and remove plugin instance of the removed module

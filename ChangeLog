@@ -1,7 +1,7 @@
 2010-07-29  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	Make waitidle compatible with libhildondesktop 2.1.42,
-	and disable it by default.  this allows for independent
+	and disable it by default.  This allows for independent
 	releasing of hildon-home with the waitidle feature and
 	libhildondesktop with the necessary enablers.
 
@@ -23,19 +23,6 @@
 
 	* src/hd-sv-notification-daemon.c (hd_sv_notification_daemon_stop_event):
 	  Free the invocation context.
-
-2010-07-05  Adam Endrodi <adam.endrodi@blumsoft.eu>
-
-	NB#127188 3PO: Uninstalled applications are still present in the
-		  Add Widget list
-
-	* src/hd-applet-manager.c:
-	  -- load_desktop_widget_from_desktop_file(): always dup
-	     the gettext()ed string
-	  -- items_configuration_loaded_cb(): remove those entries
-	     not anymore in @plugins from @installed_plugins
-	  -- plugin_module_removed_cb(): remove the removed plugin
-	     from the Add widget list as well.
 
 2010-06-21  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
