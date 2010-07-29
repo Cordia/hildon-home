@@ -313,7 +313,7 @@ main (int argc, char **argv)
     g_thread_init (NULL);
 
   /* Ignore debug output */
-if (0)  g_log_set_default_handler (log_ignore_debug_handler, NULL);
+  g_log_set_default_handler (log_ignore_debug_handler, NULL);
 
   /* Initialize Gtk+ */
   gtk_init_with_args (&argc, &argv,
@@ -333,8 +333,8 @@ if (0)  g_log_set_default_handler (log_ignore_debug_handler, NULL);
   signal (SIGTERM, signal_handler);
 
   conf = NULL;
-  if (1 /*!g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS)
-      && !isatty (STDIN_FILENO)*/)
+  if (!g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS)
+      && !isatty (STDIN_FILENO))
     {
       conf = g_key_file_new ();
       g_key_file_load_from_file (conf, "/etc/hildon-desktop/home.conf",
