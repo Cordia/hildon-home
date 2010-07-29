@@ -151,7 +151,7 @@ check_error (GError **errp)
 /* g_timeout_add() callback to check the idle time of the CPU periodically
  * until it reaches a certain percentage, then show the desktop widgets. */
 static gboolean
-waitidle (gpointer unused)
+waitidle (GKeyFile *conf)
 {
   static FILE *st;
   static GtkWidget *bar;
@@ -164,12 +164,12 @@ waitidle (gpointer unused)
   if (!st)
     { /* Initialize */
       GError *err;
-      GKeyFile *conf;
 
       /* Where we can get the time spent in idle. */
       if (!(st = fopen ("/proc/stat", "r")))
         {
           g_critical ("/proc/stat: %m");
+          g_key_file_free (conf);
           return FALSE;
         }
 
@@ -178,9 +178,6 @@ waitidle (gpointer unused)
 
       /* Read @ttl, @window, @threshold from the configuration. */
       err = NULL;
-      conf = g_key_file_new ();
-      g_key_file_load_from_file (conf, "/etc/hildon-desktop/home.conf",
-                                 G_KEY_FILE_NONE, NULL);
       ttl       = g_key_file_get_integer (conf, "Waitidle", "timeout", &err);
       if (check_error(&err))
         ttl = 60;
@@ -192,14 +189,13 @@ waitidle (gpointer unused)
         threshold = 0.1;
       tuning = g_key_file_get_boolean (conf,  "Waitidle", "tuning", NULL);
       smiley = g_key_file_get_boolean (conf,  "Waitidle", "smiley", NULL);
-      g_key_file_free (conf);
 
       idles = g_slice_alloc (sizeof (*idles) * window);
       bar = gtk_progress_bar_new ();
       if (tuning)
         /* We're running forever if @tuning, use @ttl as a counter. */
         ttl = 0;
-    }
+    } /* Initialize */
 
   /* Read the jiffies. */
   if (fscanf (st, "cpu  "
@@ -297,6 +293,7 @@ waitidle (gpointer unused)
 done: /* Final clean up. */
   g_slice_free1 (sizeof (*idles) * window, idles);
   fclose (st);
+  g_key_file_free (conf);
   return FALSE;
 }
 
@@ -305,7 +302,7 @@ main (int argc, char **argv)
 {
   GConfClient *client;
   GError *error = NULL;
-  gboolean firsttime;
+  GKeyFile *conf;
 
   setlocale (LC_ALL, "");
   bindtextdomain (GETTEXT_PACKAGE, "/usr/share/locale");
@@ -316,7 +313,7 @@ main (int argc, char **argv)
     g_thread_init (NULL);
 
   /* Ignore debug output */
-  g_log_set_default_handler (log_ignore_debug_handler, NULL);
+if (0)  g_log_set_default_handler (log_ignore_debug_handler, NULL);
 
   /* Initialize Gtk+ */
   gtk_init_with_args (&argc, &argv,
@@ -335,8 +332,19 @@ main (int argc, char **argv)
   signal (SIGINT,  signal_handler);
   signal (SIGTERM, signal_handler);
 
-  firsttime = !g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS)
-    && !isatty (STDIN_FILENO);
+  conf = NULL;
+  if (1 /*!g_file_test (HD_HOME_STAMP_FILE, G_FILE_TEST_EXISTS)
+      && !isatty (STDIN_FILENO)*/)
+    {
+      conf = g_key_file_new ();
+      g_key_file_load_from_file (conf, "/etc/hildon-desktop/home.conf",
+                                 G_KEY_FILE_NONE, NULL);
+      if (!g_key_file_get_boolean (conf,  "Waitidle", "enabled", NULL))
+        {
+          g_key_file_free (conf);
+          conf = NULL;
+        }
+    }
   hd_stamp_file_init (HD_HOME_STAMP_FILE);
 
   /* Backgrounds */
@@ -347,7 +355,7 @@ main (int argc, char **argv)
 
   /* Initialize applet manager */
   hd_applet_manager_throttled (HD_APPLET_MANAGER (hd_applet_manager_get ()),
-                               firsttime);
+                               !!conf);
 
   /* Intialize notifications */
   hd_notification_manager_get ();
@@ -376,7 +384,7 @@ main (int argc, char **argv)
     g_object_new (HD_TYPE_SHORTCUTS,
                   "gconf-key",      HD_GCONF_KEY_HILDON_HOME_TASK_SHORTCUTS,
                   "shortcut-type",  HD_TYPE_TASK_SHORTCUT,
-                  "throttled",      firsttime, NULL);
+                  "throttled",      !!conf, NULL);
 
   /* Bookmark Shortcuts */
   hd_bookmark_widgets_get ();
@@ -384,14 +392,14 @@ main (int argc, char **argv)
     g_object_new (HD_TYPE_SHORTCUTS,
                   "gconf-key",      HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
                   "shortcut-type",  HD_TYPE_BOOKMARK_SHORTCUT,
-                  "throttled",      firsttime, NULL);
+                  "throttled",      !!conf, NULL);
 
   /* D-Bus */
   hd_hildon_home_dbus_get ();
 
   /* Start the main loop */
-  if (firsttime)
-    g_timeout_add_seconds (1, waitidle, NULL);
+  if (conf)
+    g_timeout_add_seconds (1, (GSourceFunc)waitidle, conf);
   gtk_main ();
   
   hd_stamp_file_finalize (HD_HOME_STAMP_FILE);

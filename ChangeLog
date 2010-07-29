@@ -1,3 +1,18 @@
+2010-07-29  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
+	Make waitidle compatible with libhildondesktop 2.1.42,
+	and disable it by default.  this allows for independent
+	releasing of hildon-home with the waitidle feature and
+	libhildondesktop with the necessary enablers.
+
+	* src/hildon-home.c:
+	  Recognize the Waitidle::enabled configuration parameter.
+	* src/home.conf.in:
+	  Move comments around.
+	* src/hd-task-shortcut.c (hd_task_shortcut_desktop_file_changed_cb):
+	  Check the existence of the "throttled" property before getting
+	  its value to prevent the emission of warnings.
+
 2010-07-08  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
 	Release 0.3.70-1.

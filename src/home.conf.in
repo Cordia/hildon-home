@@ -7,9 +7,17 @@ X-Safe-Set=home.safe-set
 
 # These parameters control when the system will be considered idle enough
 # to show the desktop widgets.
+# -- enabled:		Take the trouble at all?
+# -- window:		Take samples of the CPU statistics
+#			for this many seconds...
+# -- threshold:		...and if the average idle time reaches
+#			this threshold then go...
+# -- timeout:		...but keep waiting for no more than this time.
+# -- tuning:		Log diagnostic information to help tuning the
+#			parameters above.
 # [Waitidle]
-# window	= 3	# Take samples of the CPU statistics
-#			# for this many seconds...
-# threshold	= 0.1	# ...and if the average idle time reaches
-#			# this threshold then go...
-# timeout	= 60	# ...but keep waiting for no more than this time.
+# enabled	= true
+# window	= 3
+# threshold	= 0.1
+# timeout	= 60
+# tuning	= false

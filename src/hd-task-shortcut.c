@@ -80,8 +80,13 @@ hd_task_shortcut_desktop_file_changed_cb (HDShortcutWidgets *manager,
 
       gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon),
                                  pixbuf);
-      g_object_get (hd_shortcuts_task_shortcuts, "throttled",
-                    &throttled, NULL);
+      if (g_object_class_find_property (
+                       G_OBJECT_GET_CLASS (hd_shortcuts_task_shortcuts),
+                       "throttled"))
+        g_object_get (hd_shortcuts_task_shortcuts, "throttled",
+                      &throttled, NULL);
+      else /* Object doesn't have this property in this version of lhd. */
+        throttled = FALSE;
       if (!throttled)
         gtk_widget_show (GTK_WIDGET (shortcut));
     }
