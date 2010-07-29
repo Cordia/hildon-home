@@ -297,6 +297,12 @@ done: /* Final clean up. */
   return FALSE;
 }
 
+static GdkFilterReturn
+dont_reread_rcfiles (GdkXEvent *xevent, GdkEvent *event, gpointer data)
+{
+  return GDK_FILTER_REMOVE;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -399,6 +405,12 @@ main (int argc, char **argv)
 
   /* D-Bus */
   hd_hildon_home_dbus_get ();
+
+  /* Don't bother re-styling widgets because we're restarted if the
+   * theme changes anyway. */
+  gdk_add_client_message_filter (
+                    gdk_atom_intern_static_string ("_GTK_READ_RCFILES"),
+                    dont_reread_rcfiles, NULL);
 
   /* Start the main loop */
   if (conf)

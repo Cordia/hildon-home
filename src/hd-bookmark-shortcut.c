@@ -665,8 +665,6 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
                                                         BACKGROUND_ACTIVE_IMAGE_FILE);
   priv->thumb_mask = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
                                                          THUMBNAIL_MASK_FILE);
-  g_signal_connect_object (hd_cairo_surface_cache_get (), "changed",
-                           G_CALLBACK (gtk_widget_queue_draw), applet, G_CONNECT_SWAPPED);
 
   priv->gconf_client = gconf_client_get_default ();
 }

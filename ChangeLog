@@ -1,5 +1,24 @@
 2010-07-29  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
+	NB#165381 Hildon-home is not responding if theme is changed
+	          when all shortcuts are added to home view.
+
+	We were super-busy restyling widgets when the theme was changed
+	and couldn't respond to the window manager in time.  This task
+	not only takes ages but also unnecessary because we exit anyway
+	to prevent memory leaks.
+
+	* hildon-home.c:
+	  Make gtk ignore _GTK_READ_RCFILES completely.
+	* hd-cairo-surface-cache.c:
+	  Don't monitor the theme link and don't react to its changes.
+	* hd-task-shortcut.c
+	* hd-bookmark-shortcut.c
+	* hd-incoming-event-window.c:
+	  Don't react to theme change.
+
+2010-07-29  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
 	Add as tight D-BUS message matches as possible.
 
 	* src/hd-hildon-home-dbus.c

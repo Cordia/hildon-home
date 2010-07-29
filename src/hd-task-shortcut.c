@@ -358,6 +358,4 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
                                                        BACKGROUND_IMAGE_FILE);
   priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
                                                         BACKGROUND_ACTIVE_IMAGE_FILE);
-  g_signal_connect_object (hd_cairo_surface_cache_get (), "changed",
-                           G_CALLBACK (gtk_widget_queue_draw), applet, G_CONNECT_SWAPPED);
 }
