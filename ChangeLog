@@ -1,5 +1,13 @@
 2010-07-29  Adam Endrodi <adam.endrodi@blumsoft.eu>
 
+	Add as tight D-BUS message matches as possible.
+
+	* src/hd-hildon-home-dbus.c
+	* src/hd-incoming-events.c:
+	  Use dbus_message_get_args() rather than iterators.
+
+2010-07-29  Adam Endrodi <adam.endrodi@blumsoft.eu>
+
 	Don't run waitidle if we exited because of a theme change.
 
 	* src/hildon-home.c (main):

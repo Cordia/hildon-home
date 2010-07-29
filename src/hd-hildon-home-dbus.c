@@ -146,9 +146,11 @@ hd_hildon_home_dbus_init (HDHildonHomeDBus *dbus)
                                                          HD_HILDON_DESKTOP_HOME_DBUS_NAME);
 
   /* listen to shutdown_ind from DSME */
-  dbus_bus_add_match (dbus->priv->sysbus_conn, "type='signal', interface='"
-                      DSME_SIGNAL_INTERFACE "'", NULL);
-
+  dbus_bus_add_match (dbus->priv->sysbus_conn,
+                      "type='signal', "
+                      "interface='" DSME_SIGNAL_INTERFACE "', "
+                      "member='" DSME_SHUTDOWN_SIGNAL_NAME "'",
+                      NULL);
   dbus_connection_add_filter (dbus->priv->sysbus_conn,
                               hd_hildon_home_system_bus_signal_handler,
                               NULL, NULL);

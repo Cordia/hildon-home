@@ -1442,79 +1442,74 @@ hd_incoming_events_system_bus_signal_handler (DBusConnection *conn,
 {
   HDIncomingEvents *ie = data;
   HDIncomingEventsPrivate *priv = ie->priv;
+  const char *value;
 
   if (dbus_message_is_signal(msg,
                              MCE_SIGNAL_IF,
                              MCE_DEVLOCK_MODE_SIG))
     {
-      DBusMessageIter iter;
+      if (dbus_message_get_args (msg, NULL,
+                                 DBUS_TYPE_STRING, &value,
+                                 DBUS_TYPE_INVALID))
+        {
+          gboolean locked = FALSE;
 
-      if (dbus_message_iter_init (msg, &iter))
-        if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING)
-          {
-            const char *value;
-            gboolean locked = FALSE;
+          if (strcmp (value, MCE_DEVICE_LOCKED) == 0)
+            locked = TRUE;
+          else if (strcmp (value, MCE_DEVICE_UNLOCKED) == 0)
+            locked = FALSE;
+          else
+            g_warning ("%s. Unknown value %s for signal %s.%s",
+                       __FUNCTION__,
+                       value,
+                       MCE_SIGNAL_IF,
+                       MCE_DEVLOCK_MODE_SIG);
 
-            dbus_message_iter_get_basic(&iter, &value);
-            if (strcmp (value, MCE_DEVICE_LOCKED) == 0)
-              locked = TRUE;
-            else if (strcmp (value, MCE_DEVICE_UNLOCKED) == 0)
-              locked = FALSE;
-            else
-              g_warning ("%s. Unknown value %s for signal %s.%s",
-                         __FUNCTION__,
-                         value,
-                         MCE_SIGNAL_IF,
-                         MCE_DEVLOCK_MODE_SIG);
-
-            priv->device_locked = locked;
-            if (priv->device_locked && priv->preview_window)
-              gtk_dialog_response (GTK_DIALOG (priv->preview_window),
-                                   GTK_RESPONSE_DELETE_EVENT);
-          }
+          priv->device_locked = locked;
+          if (priv->device_locked && priv->preview_window)
+            gtk_dialog_response (GTK_DIALOG (priv->preview_window),
+                                 GTK_RESPONSE_DELETE_EVENT);
+        }
     }
   else if (dbus_message_is_signal (msg,
                                    MCE_SIGNAL_IF,
                                    MCE_DISPLAY_SIG))
     {
-      DBusMessageIter iter;
+      if (dbus_message_get_args (msg, NULL,
+                                 DBUS_TYPE_STRING, &value,
+                                 DBUS_TYPE_INVALID))
+        {
+          gboolean display_on = TRUE;
 
-      if (dbus_message_iter_init (msg, &iter))
-        if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING)
-          {
-            const char *value;
-            gboolean display_on = TRUE;
+          if (strcmp (value, MCE_DISPLAY_ON_STRING) == 0)
+            display_on = TRUE;
+          else if (strcmp (value, MCE_DISPLAY_DIM_STRING) == 0)
+            display_on = TRUE;
+          else if (strcmp (value, MCE_DISPLAY_OFF_STRING) == 0)
+            display_on = FALSE;
+          else
+            g_warning ("%s. Unknown value %s for signal %s.%s",
+                       __FUNCTION__,
+                       value,
+                       MCE_SIGNAL_IF,
+                       MCE_DISPLAY_SIG);
 
-            dbus_message_iter_get_basic(&iter, &value);
-            if (strcmp (value, MCE_DISPLAY_ON_STRING) == 0)
-              display_on = TRUE;
-            else if (strcmp (value, MCE_DISPLAY_DIM_STRING) == 0)
-              display_on = TRUE;
-            else if (strcmp (value, MCE_DISPLAY_OFF_STRING) == 0)
-              display_on = FALSE;
-            else
-              g_warning ("%s. Unknown value %s for signal %s.%s",
-                         __FUNCTION__,
-                         value,
-                         MCE_SIGNAL_IF,
-                         MCE_DISPLAY_SIG);
+          priv->display_on = display_on;
 
-            priv->display_on = display_on;
+          if (display_on && priv->task_switcher_shown)
+            {
+              hd_led_pattern_deactivate_all ();
+              hd_multi_map_remove_all (priv->unperceived_notifications);
+            }
 
-            if (display_on && priv->task_switcher_shown)
-              {
-                hd_led_pattern_deactivate_all ();
-                hd_multi_map_remove_all (priv->unperceived_notifications);
-              }
+          g_signal_emit (ie,
+                         incoming_events_signals[DISPLAY_STATUS_CHANGED],
+                         0, display_on);
 
-            g_signal_emit (ie,
-                           incoming_events_signals[DISPLAY_STATUS_CHANGED],
-                           0, display_on);
-
-            if (!display_on)
-              hd_notification_manager_db_commit_now (hd_notification_manager_get ());
-          }
-     }
+          if (!display_on)
+            hd_notification_manager_db_commit_now (hd_notification_manager_get ());
+        }
+    }
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
@@ -1689,8 +1684,16 @@ hd_incoming_events_init (HDIncomingEvents *ie)
       /* The proxy for signals */
       sysbus_conn = dbus_g_connection_get_connection (connection);
       
-      dbus_bus_add_match (sysbus_conn, "type='signal', interface='"
-                          MCE_SIGNAL_IF "'", NULL);
+      dbus_bus_add_match (sysbus_conn,
+                          "type='signal', "
+                          "interface='" MCE_SIGNAL_IF "', "
+                          "member='" MCE_DEVLOCK_MODE_SIG "'",
+                          NULL);
+      dbus_bus_add_match (sysbus_conn,
+                          "type='signal', "
+                          "interface='" MCE_SIGNAL_IF "', "
+                          "member='" MCE_DISPLAY_SIG "'",
+                          NULL);
       dbus_connection_add_filter (sysbus_conn,
                                   hd_incoming_events_system_bus_signal_handler,
                                   ie,
