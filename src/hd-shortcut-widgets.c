@@ -858,6 +858,8 @@ hd_shortcut_widgets_get (void)
 
       gdk_threads_add_idle ((GSourceFunc) hd_shortcut_widgets_scan_for_desktop_files,
                             HD_APPLICATIONS_DIR);
+      gdk_threads_add_idle ((GSourceFunc) hd_shortcut_widgets_scan_for_desktop_files,
+                            HD_USER_APPLICATIONS_DIR);
     }
 
   return widgets;

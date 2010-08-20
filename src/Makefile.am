@@ -13,6 +13,7 @@ hildon_home_CFLAGS = \
 	-DHD_DESKTOP_CONFIG_PATH=\"$(hildondesktopconfdir)\"			\
 	-D_XOPEN_SOURCE=500							\
 	-DHD_APPLICATIONS_DIR=\"$(datadir)/applications/hildon\"		\
+	-DHD_USER_APPLICATIONS_DIR=\"/home/user/.local/share/applications/hildon\"		\
 	$(MAEMO_LAUNCHER_CFLAGS)
 
 BUILT_SOURCES =				 \
