@@ -24,7 +24,7 @@
 #define __HD_DESKTOP_H__
 
 /* Define amount of pannable desktop views default is 4 */
-#define HD_DESKTOP_VIEWS 4
+#define HD_DESKTOP_VIEWS 9
 
 /* Define the desktop size default is 800x480 */
 #define HD_SCREEN_WIDTH  800

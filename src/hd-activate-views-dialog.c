@@ -341,9 +341,9 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
 
   pannable = hildon_pannable_area_new ();
   g_object_set (pannable,
-                "mov_mode", 0,
+                "mov_mode", HILDON_MOVEMENT_MODE_HORIZ,
                 "vscrollbar_policy", GTK_POLICY_NEVER,
-                "hscrollbar_policy", GTK_POLICY_NEVER,
+                "hscrollbar_policy", GTK_POLICY_AUTOMATIC,
 /*                "size-request-policy", HILDON_SIZE_REQUEST_CHILDREN, */
                 NULL);
   gtk_widget_show (pannable);
