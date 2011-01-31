@@ -423,7 +423,6 @@ hd_bookmark_shortcut_activate (HDBookmarkShortcut  *shortcut,
   HDBookmarkShortcutPrivate *priv = shortcut->priv;
 
   hd_bookmark_shortcut_activate_service (priv->url);
-  hd_utils_launch_task ("browser");
 
   return TRUE;
 }
