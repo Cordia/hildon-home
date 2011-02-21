@@ -41,7 +41,6 @@
 
 /* Images folder */
 #define USER_IMAGES_FOLDER "MyDocs", ".images"
-#define HD_DESKTOP_VIEWS_COLUMNS 4
 enum
 {
   COL_PIXBUF,
@@ -202,7 +201,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gtk_icon_view_set_selection_mode (GTK_ICON_VIEW (priv->icon_view),
                                     GTK_SELECTION_MULTIPLE);
   gtk_icon_view_set_columns (GTK_ICON_VIEW (priv->icon_view),
-                             HD_DESKTOP_VIEWS_COLUMNS);
+                             HD_DESKTOP_VIEWS);
 
   renderer = gtk_cell_renderer_pixbuf_new ();
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (priv->icon_view),
@@ -341,9 +340,9 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
 
   pannable = hildon_pannable_area_new ();
   g_object_set (pannable,
-                "mov_mode", 0,
+                "mov_mode", HILDON_MOVEMENT_MODE_HORIZ,
                 "vscrollbar_policy", GTK_POLICY_NEVER,
-                "hscrollbar_policy", GTK_POLICY_NEVER,
+                "hscrollbar_policy", GTK_POLICY_AUTOMATIC,
 /*                "size-request-policy", HILDON_SIZE_REQUEST_CHILDREN, */
                 NULL);
   gtk_widget_show (pannable);
