@@ -385,28 +385,29 @@ hd_available_backgrounds_run (HDAvailableBackgrounds *backgrounds,
                                                             priv->current_view);
 
   g_assert (!priv->user_path);
-
-  background = hd_file_background_new (priv->current_background);
-
-  label = hd_file_background_get_label (HD_FILE_BACKGROUND (background));
-  gtk_list_store_insert_with_values (priv->backgrounds_store,
-                                     &iter,
-                                     -1,
-                                     HD_BACKGROUND_COL_LABEL, label,
-                                     HD_BACKGROUND_COL_OBJECT, background,
-                                     HD_BACKGROUND_COL_VISIBLE, TRUE,
-                                     HD_BACKGROUND_COL_OVI, FALSE,
-                                     -1);
-
-  image_file = hd_file_background_get_image_file (HD_FILE_BACKGROUND (background));
-  hd_background_set_thumbnail_from_file (background,
-                                         GTK_TREE_MODEL (priv->backgrounds_store),
-                                         &iter,
-                                         image_file);
-  g_object_unref (background);
-  priv->user_path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->backgrounds_store),
-                                             &iter);
-
+  if (priv->current_background)
+  {
+    background = hd_file_background_new (priv->current_background);
+    
+    label = hd_file_background_get_label (HD_FILE_BACKGROUND (background));
+    gtk_list_store_insert_with_values (priv->backgrounds_store,
+				       &iter,
+				       -1,
+				       HD_BACKGROUND_COL_LABEL, label,
+				       HD_BACKGROUND_COL_OBJECT, background,
+				       HD_BACKGROUND_COL_VISIBLE, TRUE,
+				       HD_BACKGROUND_COL_OVI, FALSE,
+				       -1);
+    
+    image_file = hd_file_background_get_image_file (HD_FILE_BACKGROUND (background));
+    hd_background_set_thumbnail_from_file (background,
+					   GTK_TREE_MODEL (priv->backgrounds_store),
+					   &iter,
+					   image_file);
+    g_object_unref (background);
+    priv->user_path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->backgrounds_store),
+					       &iter);
+  }
   hd_imageset_background_get_available (backgrounds);
   hd_wallpaper_background_get_available (backgrounds);
   hd_theme_background_get_available (backgrounds);
@@ -444,11 +445,19 @@ hd_available_backgrounds_set_user_selected (HDAvailableBackgrounds *backgrounds,
   priv = backgrounds->priv;
 
   priv->user_background = user_selected_file;
-
-  gtk_tree_model_get_iter (GTK_TREE_MODEL (priv->backgrounds_store),
-                           &iter,
-                           priv->user_path);
-
+  if(priv->user_path)
+  {
+    gtk_tree_model_get_iter (GTK_TREE_MODEL (priv->backgrounds_store),
+			     &iter,
+			     priv->user_path);
+  }
+  else
+  {
+    gtk_list_store_prepend (priv->backgrounds_store,
+			    &iter);
+    priv->user_path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->backgrounds_store),
+					       &iter);
+  }
   background = hd_file_background_new (priv->user_background);
 
   label = hd_file_background_get_label (HD_FILE_BACKGROUND (background));

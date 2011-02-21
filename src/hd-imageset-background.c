@@ -25,6 +25,7 @@
 #endif
 
 #include <glib/gi18n.h>
+#include <gconf/gconf-client.h>
 
 #include "hd-backgrounds.h"
 #include "hd-desktop.h"
@@ -60,6 +61,9 @@ typedef struct
 
 /* .desktop file keys */
 #define KEY_FILE_BACKGROUND_VALUE_TYPE "Background Image"
+
+/* gconf key */
+#define HD_GCONF_KEY_ACTIVE_VIEWS "/apps/osso/hildon-desktop/views/active"
 
 #define HD_IMAGESET_BACKGROUND_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_IMAGESET_BACKGROUND, HDImagesetBackgroundPrivate))
@@ -389,6 +393,24 @@ hd_imageset_background_init_async (HDImagesetBackground *background,
                               result);
 }
 
+static guint
+get_count_active_views()
+{
+  GConfClient* gconf_client = gconf_client_get_default();
+  guint ret = 1;
+  if (GCONF_IS_CLIENT(gconf_client))
+  {
+    GSList* list = gconf_client_get_list (gconf_client, HD_GCONF_KEY_ACTIVE_VIEWS, GCONF_VALUE_INT, NULL);
+    if(list)
+    {
+      ret = g_slist_length(list);
+      g_slist_free(list);
+    }
+    g_object_unref(gconf_client);
+  }
+  return ret;
+}
+
 static void
 load_desktop_file (GFile        *file,
                    GAsyncResult *result,
@@ -403,7 +425,7 @@ load_desktop_file (GFile        *file,
   guint i;
   GError *error = NULL;
   char *type = NULL;
-
+  guint active_views_count;
   g_file_load_contents_finish (file,
                                result,
                                &file_contents,
@@ -462,8 +484,9 @@ load_desktop_file (GFile        *file,
       g_error_free (error);
       goto complete;
     }
+  active_views_count = get_count_active_views();
 
-  for (i = 0; i < HD_DESKTOP_VIEWS; i++)
+  for (i = 0; i < active_views_count; i++)
     {
       gchar *key, *value;
       GFile *image_file;

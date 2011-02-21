@@ -34,6 +34,7 @@
 
 #include "hd-change-background-dialog.h"
 #include "hd-dbus-utils.h"
+#include "hd-desktop.h"
 
 /* Add Image dialog */
 #define RESPONSE_ADD 1
@@ -364,7 +365,7 @@ hd_change_background_dialog_class_init (HDChangeBackgroundDialogClass *klass)
                                                       "Current view",
                                                       "ID of the currently shown view",
                                                       0,
-                                                      3,
+                                                      (HD_DESKTOP_VIEWS)-1,
                                                       0,
                                                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
 
