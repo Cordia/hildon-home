@@ -38,6 +38,7 @@
 #include "hd-activate-views-dialog.h"
 
 #define HD_GCONF_KEY_ACTIVE_VIEWS "/apps/osso/hildon-desktop/views/active"
+#define HD_DESKTOP_VIEWS_MAX 9
 
 /* Images folder */
 #define USER_IMAGES_FOLDER "MyDocs", ".images"
@@ -201,7 +202,7 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
   gtk_icon_view_set_selection_mode (GTK_ICON_VIEW (priv->icon_view),
                                     GTK_SELECTION_MULTIPLE);
   gtk_icon_view_set_columns (GTK_ICON_VIEW (priv->icon_view),
-                             HD_DESKTOP_VIEWS);
+                             HD_DESKTOP_VIEWS_MAX);
 
   renderer = gtk_cell_renderer_pixbuf_new ();
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (priv->icon_view),
