@@ -217,7 +217,7 @@ hd_notification_manager_load_hint (void *data,
         {
           gint64 value_i64;
 
-          sscanf (argv[2], "%Ld", &value_i64);
+          sscanf (argv[2], "%Ld", (long long int *) &value_i64);
           g_value_init (value, G_TYPE_INT64);
           g_value_set_int64 (value, value_i64);
           break;
@@ -688,7 +688,7 @@ hd_notification_manager_db_insert_hint (gpointer key, gpointer value,
       break;
     default:
       g_warning ("Hint `%s' of notification %d has invalid value type %u",
-                 hkey, hinfo->id, G_VALUE_TYPE (hvalue));
+                 hkey, hinfo->id, (unsigned int) G_VALUE_TYPE (hvalue));
       hinfo->result = SQLITE_ERROR;
       return;
     }
