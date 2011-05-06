@@ -1,5 +1,9 @@
 2011-05-06  pk <paiburio-m@yahoo.com>
 
+	Set label-text only on non-resized bookmarks
+
+2011-05-06  pk <paiburio-m@yahoo.com>
+
 	Ability to resize task-shortcuts and bookmarks
 
 	If int gconf-key /apps/osso/hildon-home/task-shortcuts-size

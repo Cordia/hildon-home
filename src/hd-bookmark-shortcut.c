@@ -271,11 +271,15 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
 
   plugin_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
 
-  label = get_label_from_gconf (priv->gconf_client,
-                                plugin_id);
-  gtk_label_set_text (GTK_LABEL (priv->label), 
-                      label);
-  g_free (label);
+  /* Set label-text only on non-resized bookmarks. */
+  if (HD_BOOKMARK_SHORTCUT_WIDTH == HD_BOOKMARK_DEF_SHORTCUT_WIDTH) {
+    label = get_label_from_gconf (priv->gconf_client,
+                                  plugin_id);
+
+    gtk_label_set_text (GTK_LABEL (priv->label), 
+                        label);
+    g_free (label);
+  }
 
   if (priv->thumbnail_icon)
     priv->thumbnail_icon = (cairo_surface_destroy (priv->thumbnail_icon), NULL);
