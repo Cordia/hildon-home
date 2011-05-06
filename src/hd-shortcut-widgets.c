@@ -566,16 +566,32 @@ update_installed_shortcuts (HDShortcutWidgets *widgets)
     task_shortcut_height = HD_TASK_SHORTCUT_HEIGHT ;
   }
 
+  /* Scale backgrounds if needed */
   GdkPixbuf *pixbuf;
-  pixbuf = gdk_pixbuf_new_from_file (HD_TASK_BACKGROUND_IMAGE_FILE, NULL);
-  pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_shortcut_width, task_shortcut_width, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_save (pixbuf, HD_TASK_SCALED_BACKGROUND_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+  int need_to_scale = 0;
+  pixbuf = gdk_pixbuf_new_from_file (HD_TASK_SCALED_BACKGROUND_IMAGE_FILE, NULL);
+  if (pixbuf) {
+    if (gdk_pixbuf_get_width(pixbuf) != task_shortcut_width) {
+      need_to_scale = 1;
+    }
+  } else {
+    need_to_scale = 1;
+  }
   g_object_unref(pixbuf);
 
-  pixbuf = gdk_pixbuf_new_from_file (HD_TASK_BACKGROUND_ACTIVE_IMAGE_FILE, NULL);
-  pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_shortcut_width, task_shortcut_width, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_save (pixbuf, HD_TASK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
-  g_object_unref(pixbuf);
+  if (need_to_scale) {
+    pixbuf = gdk_pixbuf_new_from_file (HD_TASK_BACKGROUND_IMAGE_FILE, NULL);
+    pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_shortcut_width, task_shortcut_width, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_save (pixbuf, HD_TASK_SCALED_BACKGROUND_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+    g_object_unref(pixbuf);
+
+    pixbuf = gdk_pixbuf_new_from_file (HD_TASK_BACKGROUND_ACTIVE_IMAGE_FILE, NULL);
+    pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_shortcut_width, task_shortcut_width, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_save (pixbuf, HD_TASK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+    g_object_unref(pixbuf);
+  }
+
+
 
   /* Get the list of strings of task shortcuts */
   list = gconf_client_get_list (priv->gconf_client,

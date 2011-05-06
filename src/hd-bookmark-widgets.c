@@ -260,21 +260,36 @@ static void update_installed_bookmarks ()
     task_mask_height = HD_BOOKMARK_THUMBNAIL_HEIGHT;
   }
 
+  /* Scale backgrounds if needed */
   GdkPixbuf *pixbuf;
-  pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_BACKGROUND_IMAGE_FILE, NULL);
-  pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_bookmarks_width, task_bookmarks_height, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+  int need_to_scale = 0;
+  pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE, NULL);
+  if (pixbuf) {
+    if (gdk_pixbuf_get_width(pixbuf) != task_bookmarks_width) {
+      need_to_scale = 1;
+    }
+  } else {
+    need_to_scale = 1;
+  }
   g_object_unref(pixbuf);
 
-  pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_BACKGROUND_ACTIVE_IMAGE_FILE, NULL);
-  pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_bookmarks_width, task_bookmarks_height, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
-  g_object_unref(pixbuf);
+  if (need_to_scale) {
+    GdkPixbuf *pixbuf;
+    pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_BACKGROUND_IMAGE_FILE, NULL);
+    pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_bookmarks_width, task_bookmarks_height, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+    g_object_unref(pixbuf);
 
-  pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_THUMBNAIL_MASK_FILE, NULL);
-  pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_mask_width, task_mask_height, GDK_INTERP_BILINEAR);
-  gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_THUMBNAIL_MASK_FILE, "png", NULL, "quality", "100", NULL);
-  g_object_unref(pixbuf);
+    pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_BACKGROUND_ACTIVE_IMAGE_FILE, NULL);
+    pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_bookmarks_width, task_bookmarks_height, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+    g_object_unref(pixbuf);
+
+    pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_THUMBNAIL_MASK_FILE, NULL);
+    pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_mask_width, task_mask_height, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_THUMBNAIL_MASK_FILE, "png", NULL, "quality", "100", NULL);
+    g_object_unref(pixbuf);
+  }
 
 }
 
