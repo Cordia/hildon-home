@@ -1,5 +1,12 @@
 2011-05-06  pk <paiburio-m@yahoo.com>
 
+	Set widget-size of shortcuts with hidden background
+	to ICON_SIZE to prevent invisible overlap.
+
+	https://bugs.maemo.org/show_bug.cgi?id=11990#c23
+
+2011-05-06  pk <paiburio-m@yahoo.com>
+
 	Ability to hide the background of bookmarks
 
 	with boolean gconf-key 
