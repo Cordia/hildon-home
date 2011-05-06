@@ -33,9 +33,29 @@ G_BEGIN_DECLS
 #define HD_IS_TASK_SHORTCUT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), HD_TYPE_TASK_SHORTCUT))
 #define HD_TASK_SHORTCUT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), HD_TYPE_TASK_SHORTCUT, HDTaskShortcutClass))
 
+#define HD_TASK_IMAGES_DIR                   "/etc/hildon/theme/images/"
+#define HD_TASK_BACKGROUND_IMAGE_FILE        HD_TASK_IMAGES_DIR "ApplicationShortcutApplet.png"
+#define HD_TASK_BACKGROUND_ACTIVE_IMAGE_FILE HD_TASK_IMAGES_DIR "ApplicationShortcutAppletPressed.png"
+
+#define HD_TASK_SCALED_BACKGROUND_IMAGE_FILE        HD_TASK_IMAGES_DIR "ApplicationShortcutAppletScaled.png"
+#define HD_TASK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE HD_TASK_IMAGES_DIR "ApplicationShortcutAppletPressedScaled.png"
+
 typedef struct _HDTaskShortcut        HDTaskShortcut;
 typedef struct _HDTaskShortcutClass   HDTaskShortcutClass;
 typedef struct _HDTaskShortcutPrivate HDTaskShortcutPrivate;
+
+/* Default layout size taken from Task navigation layout guide 1.2 */
+#define HD_TASK_DEF_SHORTCUT_WIDTH 96
+#define HD_TASK_DEF_SHORTCUT_HEIGHT 96
+#define HD_TASK_DEF_ICON_WIDTH 64
+#define HD_TASK_DEF_ICON_HEIGHT 64
+
+/* Scaling to comply with task navigation layout guide 1.2 */
+
+#define HD_TASK_SHORTCUT_WIDTH task_shortcut_width
+#define HD_TASK_SHORTCUT_HEIGHT HD_TASK_SHORTCUT_WIDTH
+#define HD_TASK_ICON_WIDTH (SHORTCUT_WIDTH*2/3)
+#define HD_TASK_ICON_HEIGHT (SHORTCUT_HEIGHT*2/3)
 
 struct _HDTaskShortcut
 {

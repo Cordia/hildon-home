@@ -37,6 +37,7 @@
 #include <ftw.h>
 
 #include "hd-shortcut-widgets.h"
+#include "hd-task-shortcut.h"
 
 #define HD_SHORTCUT_WIDGETS_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_SHORTCUT_WIDGETS, HDShortcutWidgetsPrivate))
@@ -45,6 +46,7 @@
 
 #define TASK_SHORTCUT_VIEW_GCONF_KEY "/apps/osso/hildon-desktop/applets/TaskShortcut:%s/view"
 #define TASK_SHORTCUT_POSITION_GCONF_KEY "/apps/osso/hildon-desktop/applets/TaskShortcut:%s/position"
+#define TASK_SHORTCUTS_SIZE_GCONF_KEY "/apps/osso/hildon-home/task-shortcuts-size"
 
 /* Task .desktop file keys */
 #define HD_KEY_FILE_DESKTOP_KEY_TRANSLATION_DOMAIN "X-Text-Domain"
@@ -542,12 +544,38 @@ hd_shortcut_widgets_scan_for_desktop_files (const gchar *directory)
   return FALSE;
 }
 
+extern int task_shortcut_width;
+extern int task_shortcut_height;
+
 static void
 update_installed_shortcuts (HDShortcutWidgets *widgets)
 {
   HDShortcutWidgetsPrivate *priv = widgets->priv;
   GSList *list, *l;
   GError *error = NULL;
+
+  task_shortcut_width = gconf_client_get_int (priv->gconf_client,
+                                  TASK_SHORTCUTS_SIZE_GCONF_KEY, &error);
+  if(error || !task_shortcut_width)
+  {
+    task_shortcut_width = HD_TASK_DEF_SHORTCUT_WIDTH;
+    task_shortcut_height = HD_TASK_DEF_SHORTCUT_HEIGHT;
+  }
+  else
+  {
+    task_shortcut_height = HD_TASK_SHORTCUT_HEIGHT ;
+  }
+
+  GdkPixbuf *pixbuf;
+  pixbuf = gdk_pixbuf_new_from_file (HD_TASK_BACKGROUND_IMAGE_FILE, NULL);
+  pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_shortcut_width, task_shortcut_width, GDK_INTERP_BILINEAR);
+  gdk_pixbuf_save (pixbuf, HD_TASK_SCALED_BACKGROUND_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+  g_object_unref(pixbuf);
+
+  pixbuf = gdk_pixbuf_new_from_file (HD_TASK_BACKGROUND_ACTIVE_IMAGE_FILE, NULL);
+  pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_shortcut_width, task_shortcut_width, GDK_INTERP_BILINEAR);
+  gdk_pixbuf_save (pixbuf, HD_TASK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+  g_object_unref(pixbuf);
 
   /* Get the list of strings of task shortcuts */
   list = gconf_client_get_list (priv->gconf_client,

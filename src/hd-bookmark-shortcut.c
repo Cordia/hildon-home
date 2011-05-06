@@ -35,26 +35,21 @@
 #include "hd-bookmark-shortcut.h"
 #include "hd-dbus-utils.h"
 
-/* Size from Home layout guide 1.2 */
-#define SHORTCUT_WIDTH 176
-#define SHORTCUT_HEIGHT 146
+/* Size is taken from "hd-bookmark-shortcut.h" */
+#define SHORTCUT_WIDTH HD_BOOKMARK_SHORTCUT_WIDTH
+#define SHORTCUT_HEIGHT HD_BOOKMARK_SHORTCUT_HEIGHT
 
-#define THUMBNAIL_WIDTH 160.0
-#define THUMBNAIL_HEIGHT 96.0
+#define THUMBNAIL_WIDTH HD_BOOKMARK_THUMBNAIL_WIDTH
+#define THUMBNAIL_HEIGHT HD_BOOKMARK_THUMBNAIL_HEIGHT
 
-#define BORDER_WIDTH_LEFT 8
-#define BORDER_WIDTH_TOP 8
+#define BORDER_WIDTH_LEFT HD_BOOKMARK_BORDER_WIDTH_LEFT
+#define BORDER_WIDTH_TOP HD_BOOKMARK_BORDER_WIDTH_TOP
 
 #define LABEL_WIDTH (SHORTCUT_WIDTH -                   \
                      (2 * HILDON_MARGIN_DEFAULT) -      \
                      (2 * HILDON_MARGIN_HALF))
 
 #define LABEL_FONT "SmallSystemFont"
-
-#define IMAGES_DIR                   "/etc/hildon/theme/images/"
-#define BACKGROUND_IMAGE_FILE        IMAGES_DIR "WebShortcutAppletBackground.png"
-#define BACKGROUND_ACTIVE_IMAGE_FILE IMAGES_DIR "WebShortcutAppletBackgroundActive.png"
-#define THUMBNAIL_MASK_FILE          IMAGES_DIR "WebShortCutAppletThumbnailMask.png"
 
 /* D-Bus method/interface to load URL in browser */
 #define BROWSER_INTERFACE   "com.nokia.osso_browser"
@@ -67,6 +62,8 @@
 #define HD_BOOKMARK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
                                                                             HD_TYPE_BOOKMARK_SHORTCUT,\
                                                                             HDBookmarkShortcutPrivate))
+
+gint task_bookmarks_width;
 
 struct _HDBookmarkShortcutPrivate
 {
@@ -170,6 +167,37 @@ scale_icon (cairo_surface_t *icon,
   cairo_scale (cr,
                THUMBNAIL_WIDTH / width,
                THUMBNAIL_HEIGHT / height);
+
+  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_surface (cr,
+                            icon,
+                            0.0,
+                            0.0);
+
+  cairo_paint (cr);
+  cairo_destroy (cr);
+
+  return scaled_icon;
+}
+
+static inline cairo_surface_t *
+scale_border (cairo_surface_t *icon,
+              double           width,
+              double           height)
+{
+  cairo_surface_t *scaled_icon;
+  cairo_t *cr;
+
+  scaled_icon = cairo_surface_create_similar (icon,
+                                              cairo_surface_get_content (icon),
+                                              SHORTCUT_WIDTH,
+                                              SHORTCUT_HEIGHT);
+
+  cr = cairo_create (scaled_icon);
+
+  cairo_scale (cr,
+               SHORTCUT_WIDTH / width,
+               SHORTCUT_HEIGHT / height);
 
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
   cairo_set_source_surface (cr,
@@ -659,11 +687,11 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
                     G_CALLBACK (delete_event_cb), applet);
 
   priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                       BACKGROUND_IMAGE_FILE);
+                                                       HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE);
   priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                        BACKGROUND_ACTIVE_IMAGE_FILE);
+                                                       HD_BOOKMARK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE);
   priv->thumb_mask = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                         THUMBNAIL_MASK_FILE);
+                                                       HD_BOOKMARK_SCALED_THUMBNAIL_MASK_FILE);
 
   priv->gconf_client = gconf_client_get_default ();
 }

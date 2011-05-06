@@ -33,15 +33,18 @@
 #include "hd-task-shortcut.h"
 #include "hd-dbus-utils.h"
 
+gint task_shortcut_width;
+gint task_shortcut_height;
+
 /* Layout from Task navigation layout guide 1.2 */
-#define SHORTCUT_WIDTH 96
-#define SHORTCUT_HEIGHT 96
-#define ICON_WIDTH 64
-#define ICON_HEIGHT 64
+#define SHORTCUT_WIDTH HD_TASK_SHORTCUT_WIDTH
+#define SHORTCUT_HEIGHT HD_TASK_SHORTCUT_HEIGHT
+#define ICON_WIDTH HD_TASK_ICON_WIDTH
+#define ICON_HEIGHT HD_TASK_ICON_HEIGHT
 
 #define IMAGES_DIR                   "/etc/hildon/theme/images/"
-#define BACKGROUND_IMAGE_FILE        IMAGES_DIR "ApplicationShortcutApplet.png"
-#define BACKGROUND_ACTIVE_IMAGE_FILE IMAGES_DIR "ApplicationShortcutAppletPressed.png"
+//#define BACKGROUND_IMAGE_FILE        IMAGES_DIR "ApplicationShortcutApplet.png"
+//#define BACKGROUND_ACTIVE_IMAGE_FILE IMAGES_DIR "ApplicationShortcutAppletPressed.png"
 
 /* Private definitions */
 #define HD_TASK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
@@ -77,6 +80,8 @@ hd_task_shortcut_desktop_file_changed_cb (HDShortcutWidgets *manager,
       gboolean throttled;
 
       pixbuf = hd_shortcut_widgets_get_icon (manager, desktop_id);
+
+      pixbuf = gdk_pixbuf_scale_simple(pixbuf, ICON_WIDTH, ICON_WIDTH, GDK_INTERP_BILINEAR);
 
       gtk_image_set_from_pixbuf (GTK_IMAGE (priv->icon),
                                  pixbuf);
@@ -346,7 +351,7 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
 
   priv->icon = gtk_image_new ();
   gtk_widget_show (priv->icon);
-  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), ICON_WIDTH);
+  gtk_image_set_pixel_size (GTK_IMAGE (priv->icon), SHORTCUT_WIDTH);
   gtk_widget_set_size_request (priv->icon, ICON_WIDTH, ICON_HEIGHT);
 
   gtk_container_add (GTK_CONTAINER (applet), alignment);
@@ -355,7 +360,7 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
 
   priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                       BACKGROUND_IMAGE_FILE);
+                                                       HD_TASK_SCALED_BACKGROUND_IMAGE_FILE);
   priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                        BACKGROUND_ACTIVE_IMAGE_FILE);
+                                                        HD_TASK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE);
 }
