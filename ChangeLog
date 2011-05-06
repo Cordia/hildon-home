@@ -1,5 +1,10 @@
 2011-05-06  pk <paiburio-m@yahoo.com>
 
+	Set widget-size of bookmarks with hidden background
+	to THUMBNAIL_WITH & HEIGHT to prevent invisible overlap.
+
+2011-05-06  pk <paiburio-m@yahoo.com>
+
 	Set widget-size of shortcuts with hidden background
 	to ICON_SIZE to prevent invisible overlap.
 
