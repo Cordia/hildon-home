@@ -55,6 +55,7 @@ G_BEGIN_DECLS
 /* Scaling to comply with Home layout guide 1.2 */
 #define HD_BOOKMARK_SHORTCUT_WIDTH task_bookmarks_width
 #define HD_BOOKMARK_SHORTCUT_HEIGHT (task_bookmarks_width / 1.2 )
+#define HD_BOOKMARK_HIDE_BG task_bookmarks_hide_bg
 
 #define HD_BOOKMARK_THUMBNAIL_WIDTH ( HD_BOOKMARK_SHORTCUT_WIDTH / 1.1 )
 #define HD_BOOKMARK_THUMBNAIL_HEIGHT ( HD_BOOKMARK_THUMBNAIL_WIDTH / 1.65 )

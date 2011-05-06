@@ -41,6 +41,7 @@
 #include "hd-bookmark-shortcut.h"
 
 #define TASK_BOOKMARKS_SIZE_GCONF_KEY "/apps/osso/hildon-home/task-bookmarks-size"
+#define TASK_BOOKMARKS_HIDE_BG_GCONF_KEY "/apps/osso/hildon-home/task-bookmarks-hide-bg"
 
 #define HD_BOOKMARK_WIDGETS_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_BOOKMARK_WIDGETS, HDBookmarkWidgetsPrivate))
@@ -60,6 +61,7 @@
 #define ID_SUBSTITUTOR '_'
 
 extern int task_bookmarks_width;
+extern gboolean task_bookmarks_hide_bg;
 
 struct _HDBookmarkWidgetsPrivate
 {
@@ -290,6 +292,10 @@ static void update_installed_bookmarks ()
     gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_THUMBNAIL_MASK_FILE, "png", NULL, "quality", "100", NULL);
     g_object_unref(pixbuf);
   }
+
+  task_bookmarks_hide_bg = gconf_client_get_bool (gconf_client,
+                                               TASK_BOOKMARKS_HIDE_BG_GCONF_KEY, &error);
+  if (error || !task_bookmarks_hide_bg) task_bookmarks_hide_bg = 0;
 
 }
 

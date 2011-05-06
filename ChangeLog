@@ -1,5 +1,12 @@
 2011-05-06  pk <paiburio-m@yahoo.com>
 
+	Ability to hide the background of bookmarks
+
+	with boolean gconf-key 
+	/apps/osso/hildon-home/task-bookmarks-hide-bg
+
+2011-05-06  pk <paiburio-m@yahoo.com>
+
 	Set label-text only on non-resized bookmarks
 
 2011-05-06  pk <paiburio-m@yahoo.com>
