@@ -1,5 +1,23 @@
 2011-05-06  pk <paiburio-m@yahoo.com>
 
+	Set label-text only on non-resized bookmarks
+
+2011-05-06  pk <paiburio-m@yahoo.com>
+
+	Ability to resize task-shortcuts and bookmarks
+
+	If int gconf-key /apps/osso/hildon-home/task-shortcuts-size
+	or /apps/osso/hildon-home/task-bookmarks-size
+	is set, scaled backgrounds are generated and saved to
+	/etc/hildon/theme/images/*Scaled*. These are then used
+	with scaled icons to generate widgets of given size.
+
+	This change is from AsiQue via
+	https://bugs.maemo.org/show_bug.cgi?id=11990 with some
+	whitespace patched.
+
+2011-05-06  pk <paiburio-m@yahoo.com>
+
 	Ability to hide the background of task-shortcuts
 	
 	with boolean gconf-key 

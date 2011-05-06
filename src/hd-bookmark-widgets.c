@@ -38,6 +38,9 @@
 #include <osso_bookmark_parser.h>
 
 #include "hd-bookmark-widgets.h"
+#include "hd-bookmark-shortcut.h"
+
+#define TASK_BOOKMARKS_SIZE_GCONF_KEY "/apps/osso/hildon-home/task-bookmarks-size"
 
 #define HD_BOOKMARK_WIDGETS_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_BOOKMARK_WIDGETS, HDBookmarkWidgetsPrivate))
@@ -55,6 +58,8 @@
 /* Definitions for the ID generation */ 
 #define ID_VALID_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_+?"
 #define ID_SUBSTITUTOR '_'
+
+extern int task_bookmarks_width;
 
 struct _HDBookmarkWidgetsPrivate
 {
@@ -230,6 +235,64 @@ hd_bookmark_widgets_constructed (GObject *object)
   g_free (user_bookmarks_uri);
 }
 
+static void update_installed_bookmarks ()
+{
+  GConfClient *gconf_client;
+  GError *error = NULL;
+  gconf_client = gconf_client_get_default ();
+  gint task_bookmarks_height;
+  gint task_mask_width;
+  gint task_mask_height;
+
+  task_bookmarks_width = gconf_client_get_int (gconf_client,
+                                TASK_BOOKMARKS_SIZE_GCONF_KEY, &error);
+  if(error || !task_bookmarks_width)
+  {
+    task_bookmarks_width = HD_BOOKMARK_DEF_SHORTCUT_WIDTH;
+    task_bookmarks_height = HD_BOOKMARK_DEF_SHORTCUT_HEIGHT;
+    task_mask_width = HD_BOOKMARK_DEF_THUMBNAIL_WIDTH;
+    task_mask_height = HD_BOOKMARK_DEF_THUMBNAIL_HEIGHT;
+  }
+  else
+  {
+    task_bookmarks_height = HD_BOOKMARK_SHORTCUT_HEIGHT;
+    task_mask_width = HD_BOOKMARK_THUMBNAIL_WIDTH;
+    task_mask_height = HD_BOOKMARK_THUMBNAIL_HEIGHT;
+  }
+
+  /* Scale backgrounds if needed */
+  GdkPixbuf *pixbuf;
+  int need_to_scale = 0;
+  pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE, NULL);
+  if (pixbuf) {
+    if (gdk_pixbuf_get_width(pixbuf) != task_bookmarks_width) {
+      need_to_scale = 1;
+    }
+  } else {
+    need_to_scale = 1;
+  }
+  g_object_unref(pixbuf);
+
+  if (need_to_scale) {
+    GdkPixbuf *pixbuf;
+    pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_BACKGROUND_IMAGE_FILE, NULL);
+    pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_bookmarks_width, task_bookmarks_height, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+    g_object_unref(pixbuf);
+
+    pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_BACKGROUND_ACTIVE_IMAGE_FILE, NULL);
+    pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_bookmarks_width, task_bookmarks_height, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE, "png", NULL, "quality", "100", NULL);
+    g_object_unref(pixbuf);
+
+    pixbuf = gdk_pixbuf_new_from_file (HD_BOOKMARK_THUMBNAIL_MASK_FILE, NULL);
+    pixbuf = gdk_pixbuf_scale_simple(pixbuf, task_mask_width, task_mask_height, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_save (pixbuf, HD_BOOKMARK_SCALED_THUMBNAIL_MASK_FILE, "png", NULL, "quality", "100", NULL);
+    g_object_unref(pixbuf);
+  }
+
+}
+
 static void
 hd_bookmark_widgets_init (HDBookmarkWidgets *widgets)
 {
@@ -242,6 +305,7 @@ hd_bookmark_widgets_init (HDBookmarkWidgets *widgets)
                                         0,
                                         GTK_SORT_ASCENDING);
 
+  update_installed_bookmarks();
 }
 
 static void
