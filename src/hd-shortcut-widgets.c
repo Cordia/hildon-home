@@ -42,6 +42,7 @@
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_SHORTCUT_WIDGETS, HDShortcutWidgetsPrivate))
 
 #define TASK_SHORTCUTS_GCONF_KEY "/apps/osso/hildon-home/task-shortcuts"
+#define TASK_SHORTCUTS_HIDE_BG_GCONF_KEY "/apps/osso/hildon-home/task-shortcuts-hide-bg"
 
 #define TASK_SHORTCUT_VIEW_GCONF_KEY "/apps/osso/hildon-desktop/applets/TaskShortcut:%s/view"
 #define TASK_SHORTCUT_POSITION_GCONF_KEY "/apps/osso/hildon-desktop/applets/TaskShortcut:%s/position"
@@ -542,12 +543,18 @@ hd_shortcut_widgets_scan_for_desktop_files (const gchar *directory)
   return FALSE;
 }
 
+extern gboolean task_shortcuts_hide_bg;
+
 static void
 update_installed_shortcuts (HDShortcutWidgets *widgets)
 {
   HDShortcutWidgetsPrivate *priv = widgets->priv;
   GSList *list, *l;
   GError *error = NULL;
+
+  task_shortcuts_hide_bg = gconf_client_get_bool (priv->gconf_client,
+                                TASK_SHORTCUTS_HIDE_BG_GCONF_KEY, &error);
+  if(error || !task_shortcuts_hide_bg) task_shortcuts_hide_bg = 0;
 
   /* Get the list of strings of task shortcuts */
   list = gconf_client_get_list (priv->gconf_client,

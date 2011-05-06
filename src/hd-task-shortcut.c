@@ -38,6 +38,7 @@
 #define SHORTCUT_HEIGHT 96
 #define ICON_WIDTH 64
 #define ICON_HEIGHT 64
+#define SHORTCUT_HIDE_BG task_shortcuts_hide_bg
 
 #define IMAGES_DIR                   "/etc/hildon/theme/images/"
 #define BACKGROUND_IMAGE_FILE        IMAGES_DIR "ApplicationShortcutApplet.png"
@@ -47,6 +48,7 @@
 #define HD_TASK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
                                                                         HD_TYPE_TASK_SHORTCUT,\
                                                                         HDTaskShortcutPrivate))
+gboolean task_shortcuts_hide_bg;
 
 struct _HDTaskShortcutPrivate
 {
@@ -354,8 +356,14 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
 
   gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
 
-  priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                       BACKGROUND_IMAGE_FILE);
-  priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                        BACKGROUND_ACTIVE_IMAGE_FILE);
+  if (!SHORTCUT_HIDE_BG) {
+    priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                         BACKGROUND_IMAGE_FILE);
+    priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                          BACKGROUND_ACTIVE_IMAGE_FILE);
+  } else {
+    priv->bg_image = 0;
+    priv->bg_active = 0;
+  }
+
 }
