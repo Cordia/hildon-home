@@ -181,37 +181,6 @@ scale_icon (cairo_surface_t *icon,
 }
 
 static inline cairo_surface_t *
-scale_border (cairo_surface_t *icon,
-              double           width,
-              double           height)
-{
-  cairo_surface_t *scaled_icon;
-  cairo_t *cr;
-
-  scaled_icon = cairo_surface_create_similar (icon,
-                                              cairo_surface_get_content (icon),
-                                              SHORTCUT_WIDTH,
-                                              SHORTCUT_HEIGHT);
-
-  cr = cairo_create (scaled_icon);
-
-  cairo_scale (cr,
-               SHORTCUT_WIDTH / width,
-               SHORTCUT_HEIGHT / height);
-
-  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-  cairo_set_source_surface (cr,
-                            icon,
-                            0.0,
-                            0.0);
-
-  cairo_paint (cr);
-  cairo_destroy (cr);
-
-  return scaled_icon;
-}
-
-static inline cairo_surface_t *
 scale_icon_if_required (cairo_surface_t *icon)
 {
   cairo_surface_t *scaled_icon;
