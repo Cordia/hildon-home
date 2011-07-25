@@ -218,6 +218,14 @@ add_image_dialog_response (GtkDialog                *dialog,
         {
           GFile *image_file;
 
+          if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+            {
+              gchar *background_path;
+              background_path = hd_background_get_file_for_view (hd_backgrounds_get (), priv->current_view);
+              hd_background_save_portrait_wallpaper (hd_backgrounds_get (), priv->current_view, background_path);
+              g_free (background_path);
+            }
+
           image_file = g_file_new_for_uri (uri);
 
           hd_available_backgrounds_set_user_selected (priv->backgrounds,

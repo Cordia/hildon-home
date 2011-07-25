@@ -48,12 +48,16 @@
 
 #include "hd-backgrounds.h"
 
+#define GCONF_KEY_EDIT_MODE_PORTRAIT "/apps/osso/hildon-desktop/edit_mode_portrait"
+
 #define CACHED_DIR        ".backgrounds"
 #define BACKGROUND_CACHED_PNG CACHED_DIR "/background-%u.png"
+#define BACKGROUND_CACHED_PNG_PORTRAIT CACHED_DIR "/background_portrait-%u.png"
 
 /* Background GConf key */
 #define GCONF_DIR                 "/apps/osso/hildon-desktop/views"
 #define GCONF_BACKGROUND_KEY      GCONF_DIR "/%u/bg-image"
+#define GCONF_BACKGROUND_KEY_PORTRAIT      GCONF_DIR "/%u/bg-image-portrait"
 #define GCONF_CURRENT_DESKTOP_KEY "/apps/osso/hildon-desktop/views/current"
 
 /* Background from theme */
@@ -94,6 +98,10 @@ struct _HDBackgroundsPrivate
 
   GVolumeMonitor *volume_monitor;
   GnomeVFSVolumeMonitor *volume_monitor2;
+
+  /* Stores the last background for the current view. */
+  /* It's used only with separate portrait wallpapers. */
+  gchar *last_landscape_background;
 };
 
 static CacheImageRequestData *cache_image_request_data_new (GFile        *file,
@@ -969,9 +977,14 @@ hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
   GError *local_error = NULL;
 
   /* Create the file objects for the cached background image */
-  dest_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED_PNG,
-                                   g_get_home_dir (),
-                                   view + 1);
+  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+    dest_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED_PNG_PORTRAIT,
+                                     g_get_home_dir (),
+                                     view + 1);
+  else
+    dest_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED_PNG,
+                                     g_get_home_dir (),
+                                     view + 1);
   dest_file = g_file_new_for_path (dest_filename);
 
   /* Create the cached background image */
@@ -1012,7 +1025,10 @@ hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
     {
       gchar *gconf_key, *path;
 
-      path = g_file_get_path (source_file);
+      if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+        path = g_strdup (priv->last_landscape_background);
+      else
+        path = g_file_get_path (source_file);
 
       /* Store background to GConf */
       gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY, view + 1);
@@ -1020,6 +1036,23 @@ hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
                                gconf_key,
                                path,
                                &local_error);
+
+      if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+        {
+          g_free (gconf_key);
+          g_free (path);
+
+          path = g_strdup (priv->last_landscape_background);
+          path = g_file_get_path (source_file);
+
+          /* Store background to GConf */
+          gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY_PORTRAIT, view + 1);
+          gconf_client_set_string (priv->gconf_client,
+                                   gconf_key,
+                                   path,
+                                   &local_error);
+        }
+
       if (local_error)
         {
           g_debug ("%s. Could not set background in GConf for view %u. %s",
@@ -1108,4 +1141,49 @@ hd_backgrounds_set_current_background (HDBackgrounds *backgrounds,
                             TRUE);
 
   g_object_unref (image_file);
+}
+
+gboolean
+hd_backgrounds_is_portrait (HDBackgrounds *backgrounds)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  return gconf_client_get_bool (priv->gconf_client, 
+                                GCONF_KEY_EDIT_MODE_PORTRAIT, NULL);
+}
+
+gchar *
+hd_background_get_file_for_view (HDBackgrounds *backgrounds, guint view)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+  /* Remember to free path! */
+  /* g_free(path) */
+  gchar *gconf_key, *path;
+  GError *error = NULL;
+
+  gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY, view + 1);
+  path = gconf_client_get_string (priv->gconf_client,
+                                  gconf_key,
+                                  &error);
+
+  if (error)
+    {
+      g_debug ("%s. Could not get current view. %s",
+               __FUNCTION__,
+               error->message);
+      g_clear_error (&error);
+    }
+
+  g_free (gconf_key);
+
+  return path;
+}
+
+
+void
+hd_background_save_portrait_wallpaper (HDBackgrounds *backgrounds, guint view, gchar *file)
+{
+  HDBackgroundsPrivate *priv = backgrounds->priv;
+
+  g_free (priv->last_landscape_background);
+  priv->last_landscape_background = g_strdup(file);
 }
