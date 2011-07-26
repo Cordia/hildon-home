@@ -45,6 +45,9 @@
 #define HD_CHANGE_BACKGROUND_DIALOG_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_CHANGE_BACKGROUND_DIALOG, HDChangeBackgroundDialogPrivate))
 
+#define GCONF_DIR                         "/apps/osso/hildon-desktop/views"
+#define GCONF_BACKGROUND_KEY_PORTRAIT      GCONF_DIR "/%u/bg-image-portrait"
+
 enum
 {
   PROP_0,
@@ -220,10 +223,10 @@ add_image_dialog_response (GtkDialog                *dialog,
 
           if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
             {
-              gchar *background_path;
-              background_path = hd_background_get_file_for_view (hd_backgrounds_get (), priv->current_view);
-              hd_background_save_portrait_wallpaper (hd_backgrounds_get (), priv->current_view, background_path);
-              g_free (background_path);
+              gchar *temp;
+              temp = hd_backgrounds_get_file_for_view (hd_backgrounds_get (), priv->current_view);
+              hd_backgrounds_store_landscape_wallpaper (hd_backgrounds_get (), temp);
+              g_free (temp);
             }
 
           image_file = g_file_new_for_uri (uri);

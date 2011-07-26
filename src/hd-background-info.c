@@ -28,6 +28,7 @@
 #include "hd-object-vector.h"
 
 #include "hd-background-info.h"
+#include "hd-backgrounds.h"
 
 /* background info keyfile */
 #define BACKGROUND_INFO_GROUP "Background-Info"
@@ -89,10 +90,14 @@ hd_background_info_init (HDBackgroundInfo *info)
 
   priv = info->priv = HD_BACKGROUND_INFO_GET_PRIVATE (info);
 
-  priv->etags = g_ptr_array_sized_new (HD_DESKTOP_VIEWS);
-  g_ptr_array_set_size (priv->etags, HD_DESKTOP_VIEWS);
+  guint max = HD_DESKTOP_VIEWS;
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+    max += HD_DESKTOP_VIEWS;
 
-  priv->files = hd_object_vector_new_at_size (HD_DESKTOP_VIEWS, NULL);
+  priv->etags = g_ptr_array_sized_new (max);
+  g_ptr_array_set_size (priv->etags, max);
+
+  priv->files = hd_object_vector_new_at_size (max, NULL);
 }
 
 HDBackgroundInfo *
@@ -256,8 +261,11 @@ load_backgrounds_from_key_file (HDBackgroundInfo *info,
                                 GKeyFile         *key_file)
 {
   guint i;
+  guint max = HD_DESKTOP_VIEWS;
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+    max += HD_DESKTOP_VIEWS;
 
-  for (i = 0; i < HD_DESKTOP_VIEWS; i++)
+  for (i = 0; i < max; i++)
     {
       load_background_from_key_file (info,
                                      key_file,
@@ -338,7 +346,11 @@ load_background_info_legacy (HDBackgroundInfo *info,
   if (cache_info)
     {
       guint i;
-      for (i = 0; i < HD_DESKTOP_VIEWS && cache_info[i]; i++)
+      guint max = HD_DESKTOP_VIEWS;
+      if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+        max += HD_DESKTOP_VIEWS;
+
+      for (i = 0; i < max && cache_info[i]; i++)
         {
           GFile *file = g_file_new_for_uri (cache_info[i]);
           hd_object_vector_set_at (priv->files,
@@ -449,7 +461,11 @@ save_background_info_file (HDBackgroundInfo *info)
                           BACKGROUND_INFO_KEY_VERSION,
                           1);
 
-  for (desktop = 0; desktop < HD_DESKTOP_VIEWS; ++desktop)
+  guint max = HD_DESKTOP_VIEWS;
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+    max += HD_DESKTOP_VIEWS;
+
+  for (desktop = 0; desktop < max; ++desktop)
     {
       GFile *file;
       const char *etag;

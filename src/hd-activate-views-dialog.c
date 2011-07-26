@@ -36,6 +36,7 @@
 #include "hd-desktop.h"
 
 #include "hd-activate-views-dialog.h"
+#include "hd-backgrounds.h"
 
 #define HD_GCONF_KEY_ACTIVE_VIEWS "/apps/osso/hildon-desktop/views/active"
 #define HD_DESKTOP_VIEWS_MAX 9
@@ -262,9 +263,14 @@ hd_activate_views_dialog_init (HDActivateViewsDialog *dialog)
       GtkTreeIter iter;
       GtkTreePath *path;
 
-      bg_image = g_strdup_printf ("%s/.backgrounds/background-%u.png",
-                                  g_get_home_dir (),
-                                  i);
+      if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+        bg_image = g_strdup_printf ("%s/.backgrounds/background_portrait-%u.png",
+                                    g_get_home_dir (),
+                                    i);
+      else
+        bg_image = g_strdup_printf ("%s/.backgrounds/background-%u.png",
+                                    g_get_home_dir (),
+                                    i);        
 
       pixbuf = gdk_pixbuf_new_from_file_at_scale (bg_image, 125, 75, TRUE, &error);
 
