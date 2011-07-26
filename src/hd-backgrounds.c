@@ -871,7 +871,7 @@ hd_backgrounds_dipose (GObject *object)
 
   priv->current_theme = (g_free (priv->current_theme), NULL);
 
-  g_object_unref (priv->backup_landscape_wallpaper);
+  priv->backup_landscape_wallpaper = (g_free (priv->backup_landscape_wallpaper), NULL);
 
   G_OBJECT_CLASS (hd_backgrounds_parent_class)->dispose (object);
 }
