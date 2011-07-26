@@ -45,9 +45,6 @@
 #define HD_CHANGE_BACKGROUND_DIALOG_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_CHANGE_BACKGROUND_DIALOG, HDChangeBackgroundDialogPrivate))
 
-#define GCONF_DIR                         "/apps/osso/hildon-desktop/views"
-#define GCONF_BACKGROUND_KEY_PORTRAIT      GCONF_DIR "/%u/bg-image-portrait"
-
 enum
 {
   PROP_0,
