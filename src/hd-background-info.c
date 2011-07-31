@@ -24,8 +24,6 @@
 #include <config.h>
 #endif
 
-#include <string.h>
-
 #include "hd-desktop.h"
 #include "hd-object-vector.h"
 
@@ -263,7 +261,7 @@ load_backgrounds_from_key_file (HDBackgroundInfo *info,
 {
   guint i;
   guint max = HD_DESKTOP_VIEWS;
-  g_warning("!!!!!!! %s", __FUNCTION__);
+
   if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
