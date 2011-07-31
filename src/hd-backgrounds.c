@@ -125,12 +125,6 @@ create_cached_background (HDBackgrounds *backgrounds,
   const char *current_etag;
   gboolean create_cached_background = TRUE;
 
-  if(hd_backgrounds_is_portrait (backgrounds))
-    {
-      if (view < HD_DESKTOP_VIEWS)
-        view += HD_DESKTOP_VIEWS;
-    }
-
   current_file = hd_background_info_get_file (priv->info,
                                               view);
   current_etag = hd_background_info_get_etag (priv->info,
@@ -236,7 +230,7 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
     }
 
   guint max = HD_DESKTOP_VIEWS;
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
   for (i = 0; i < max; i++)
@@ -279,12 +273,6 @@ static GFile *
 get_background_for_view (HDBackgrounds *backgrounds,
                          guint          view)
 {
-  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
-    {
-      if (view < HD_DESKTOP_VIEWS)
-        view += HD_DESKTOP_VIEWS;
-    }
-
   HDBackgroundsPrivate *priv = backgrounds->priv;
   gchar *gconf_key, *path;
   GFile *bg_image = NULL;
@@ -324,7 +312,6 @@ get_background_for_view (HDBackgrounds *backgrounds,
   if (bg_image)
     return bg_image;
 
-
   /* Fallback to default theme */
   bg_image = get_background_for_view_from_theme (backgrounds,
                                                  view,
@@ -335,7 +322,6 @@ get_background_for_view (HDBackgrounds *backgrounds,
                  __FUNCTION__,
                  view);
     }
-
   return bg_image;
 }
 
@@ -386,7 +372,7 @@ background_info_loaded (HDBackgroundInfo *info,
                                        GCONF_CURRENT_DESKTOP_KEY,
                                        &error) - 1;
 
-  if (hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+  if (hd_backgrounds_is_portrait (hd_backgrounds_get ()) && current_view < HD_DESKTOP_VIEWS)
     current_view += HD_DESKTOP_VIEWS;
 
   if (error)
@@ -398,7 +384,7 @@ background_info_loaded (HDBackgroundInfo *info,
     }
 
   guint max = HD_DESKTOP_VIEWS;
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
   current_view = CLAMP (current_view, 0, max - 1);
@@ -703,7 +689,7 @@ hd_backgrounds_startup (HDBackgrounds *backgrounds)
         priv->bg_image_notify[i] = gconf_client_notify_add (priv->gconf_client,
                                                             gconf_key,
                                                             (GConfClientNotifyFunc) gconf_bgimage_notify,
-                                                            GUINT_TO_POINTER (i-HD_DESKTOP_VIEWS),
+                                                            GUINT_TO_POINTER (i - HD_DESKTOP_VIEWS),
                                                             NULL,
                                                             &error);
         if (error)
@@ -843,7 +829,7 @@ hd_backgrounds_dipose (GObject *object)
   HDBackgroundsPrivate *priv = HD_BACKGROUNDS (object)->priv;
   guint i;
   guint max;
-  
+
   if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
     max = HD_DESKTOP_VIEWS * 2;
   else
@@ -922,7 +908,7 @@ hd_backgrounds_get_background (HDBackgrounds *backgrounds,
   HDBackgroundsPrivate *priv;
   guint max = HD_DESKTOP_VIEWS;
 
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
   g_return_val_if_fail (HD_IS_BACKGROUNDS (backgrounds), NULL);
@@ -1043,10 +1029,10 @@ hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
   GError *local_error = NULL;
 
   /* Create the file objects for the cached background image */
-  if(hd_backgrounds_is_portrait (backgrounds))
+  if(view >= HD_DESKTOP_VIEWS)
     dest_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED_PNG_PORTRAIT,
                                      g_get_home_dir (),
-                                     view + 1);
+                                     (view - HD_DESKTOP_VIEWS) + 1);
   else
     dest_filename = g_strdup_printf ("%s/" BACKGROUND_CACHED_PNG,
                                      g_get_home_dir (),
@@ -1103,17 +1089,6 @@ hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
                                path,
                                &local_error);
 
-      if(hd_backgrounds_is_portrait (backgrounds))
-        {
-          g_free (gconf_key);
-          g_free (path);
-          /* Store background to GConf */
-          gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY, view + 1);
-          gconf_client_set_string (priv->gconf_client,
-                                   gconf_key,
-                                   path,
-                                   &local_error);
-        }
       if (local_error)
         {
           g_debug ("%s. Could not set background in GConf for view %u. %s",
@@ -1183,6 +1158,9 @@ hd_backgrounds_set_current_background (HDBackgrounds *backgrounds,
   current_view = gconf_client_get_int (priv->gconf_client,
                                        GCONF_CURRENT_DESKTOP_KEY,
                                        &error) - 1;
+
+  if (hd_backgrounds_is_portrait (hd_backgrounds_get ()) && current_view < HD_DESKTOP_VIEWS)
+    current_view += HD_DESKTOP_VIEWS;
 
   if (error)
     {

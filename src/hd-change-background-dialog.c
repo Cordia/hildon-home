@@ -330,6 +330,11 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                                     TRUE);
           gtk_widget_set_sensitive (GTK_WIDGET (dialog), FALSE);
 
+        if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+          hd_background_set_for_current_view (background,
+                                              priv->current_view + HD_DESKTOP_VIEWS,
+                                              priv->cancellable);
+        else
           hd_background_set_for_current_view (background,
                                               priv->current_view,
                                               priv->cancellable);

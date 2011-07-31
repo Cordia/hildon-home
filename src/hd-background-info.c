@@ -24,6 +24,8 @@
 #include <config.h>
 #endif
 
+#include <string.h>
+
 #include "hd-desktop.h"
 #include "hd-object-vector.h"
 
@@ -87,7 +89,6 @@ static void
 hd_background_info_init (HDBackgroundInfo *info)
 {
   HDBackgroundInfoPrivate *priv;
-
   priv = info->priv = HD_BACKGROUND_INFO_GET_PRIVATE (info);
 
   guint max = HD_DESKTOP_VIEWS;
@@ -262,6 +263,7 @@ load_backgrounds_from_key_file (HDBackgroundInfo *info,
 {
   guint i;
   guint max = HD_DESKTOP_VIEWS;
+  g_warning("!!!!!!! %s", __FUNCTION__);
   if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
@@ -452,7 +454,7 @@ save_background_info_file (HDBackgroundInfo *info)
   GKeyFile *key_file = g_key_file_new ();
   GFile *background_info_file;
   guint desktop;
-  char *contents;
+  gchar *contents;
   gsize length;
   GError *error = NULL;
 
@@ -509,9 +511,10 @@ save_background_info_file (HDBackgroundInfo *info)
                                  NULL);
 
   background_info_file = get_background_info_file ();
+
   g_file_replace_contents (background_info_file,
                            contents,
-                           length,
+                           strlen(contents),
                            NULL,
                            FALSE,
                            G_FILE_CREATE_NONE,
