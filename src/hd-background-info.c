@@ -512,7 +512,7 @@ save_background_info_file (HDBackgroundInfo *info)
 
   g_file_replace_contents (background_info_file,
                            contents,
-                           strlen(contents),
+                           length,
                            NULL,
                            FALSE,
                            G_FILE_CREATE_NONE,
