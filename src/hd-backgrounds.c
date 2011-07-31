@@ -100,7 +100,6 @@ struct _HDBackgroundsPrivate
   GVolumeMonitor *volume_monitor;
   GnomeVFSVolumeMonitor *volume_monitor2;
 
-  gchar *backup_landscape_wallpaper;
   gboolean portrait_wallpaper;
 };
 
@@ -209,7 +208,7 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
                                     const gchar   *backgrounds_desktop)
 {
   GKeyFile *key_file;
-  gchar *bg_image[HD_DESKTOP_VIEWS*2];
+  gchar *bg_image[HD_DESKTOP_VIEWS];
   GFile *background = NULL;
   guint i;
   GError *error = NULL;
@@ -230,7 +229,7 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
     }
 
   guint max = HD_DESKTOP_VIEWS;
-  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+  if(hd_backgrounds_is_portrait (backgrounds))
     max += HD_DESKTOP_VIEWS;
 
   for (i = 0; i < max; i++)
@@ -372,7 +371,7 @@ background_info_loaded (HDBackgroundInfo *info,
                                        GCONF_CURRENT_DESKTOP_KEY,
                                        &error) - 1;
 
-  if (hd_backgrounds_is_portrait (hd_backgrounds_get ()) && current_view < HD_DESKTOP_VIEWS)
+  if (hd_backgrounds_is_portrait (backgrounds) && current_view < HD_DESKTOP_VIEWS)
     current_view += HD_DESKTOP_VIEWS;
 
   if (error)
@@ -384,7 +383,7 @@ background_info_loaded (HDBackgroundInfo *info,
     }
 
   guint max = HD_DESKTOP_VIEWS;
-  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds))
     max += HD_DESKTOP_VIEWS;
 
   current_view = CLAMP (current_view, 0, max - 1);
@@ -680,7 +679,7 @@ hd_backgrounds_startup (HDBackgrounds *backgrounds)
   /* about wallpapers (for portrait mode). For example: */
   /* view with id 11 contains (only) informations about portrait wallpaper for view with */
   /* id 2. */
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds))
     for (i = HD_DESKTOP_VIEWS; i < HD_DESKTOP_VIEWS*2; i++)
       {
         gchar *gconf_key;
@@ -857,8 +856,6 @@ hd_backgrounds_dipose (GObject *object)
 
   priv->current_theme = (g_free (priv->current_theme), NULL);
 
-  priv->backup_landscape_wallpaper = (g_free (priv->backup_landscape_wallpaper), NULL);
-
   G_OBJECT_CLASS (hd_backgrounds_parent_class)->dispose (object);
 }
 
@@ -908,7 +905,7 @@ hd_backgrounds_get_background (HDBackgrounds *backgrounds,
   HDBackgroundsPrivate *priv;
   guint max = HD_DESKTOP_VIEWS;
 
-  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds))
     max += HD_DESKTOP_VIEWS;
 
   g_return_val_if_fail (HD_IS_BACKGROUNDS (backgrounds), NULL);
@@ -1077,10 +1074,7 @@ hd_backgrounds_save_cached_image (HDBackgrounds  *backgrounds,
     {
       gchar *gconf_key, *path;
 
-      if(hd_backgrounds_is_portrait (backgrounds))
-        path = g_strdup(priv->backup_landscape_wallpaper);
-      else
-        path = g_file_get_path (source_file);
+      path = g_file_get_path (source_file);
 
       /* Store background to GConf */
       gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY, view + 1);
@@ -1159,7 +1153,7 @@ hd_backgrounds_set_current_background (HDBackgrounds *backgrounds,
                                        GCONF_CURRENT_DESKTOP_KEY,
                                        &error) - 1;
 
-  if (hd_backgrounds_is_portrait (hd_backgrounds_get ()) && current_view < HD_DESKTOP_VIEWS)
+  if (hd_backgrounds_is_portrait (backgrounds) && current_view < HD_DESKTOP_VIEWS)
     current_view += HD_DESKTOP_VIEWS;
 
   if (error)
@@ -1172,7 +1166,7 @@ hd_backgrounds_set_current_background (HDBackgrounds *backgrounds,
 
   guint max = HD_DESKTOP_VIEWS;
 
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds))
     max += HD_DESKTOP_VIEWS;
 
   current_view = CLAMP (current_view, 0, max - 1);
@@ -1194,44 +1188,7 @@ hd_backgrounds_is_portrait (HDBackgrounds *backgrounds)
   HDBackgroundsPrivate *priv = backgrounds->priv;
   return gconf_client_get_bool (priv->gconf_client, 
                                 GCONF_KEY_EDIT_MODE_PORTRAIT, NULL)
-                               && hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ());
-}
-
-gchar *
-hd_backgrounds_get_file_for_view (HDBackgrounds *backgrounds, guint view)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-  /* Remember to free path! */
-  /* g_free(path) */
-  gchar *gconf_key, *path;
-  GError *error = NULL;
-
-  gconf_key = g_strdup_printf (GCONF_BACKGROUND_KEY, view + 1);
-  path = gconf_client_get_string (priv->gconf_client,
-                                  gconf_key,
-                                  &error);
-
-  if (error)
-    {
-      g_debug ("%s. Could not get current view. %s",
-               __FUNCTION__,
-               error->message);
-      g_clear_error (&error);
-    }
-
-  g_free (gconf_key);
-
-  return path;
-}
-
-
-void
-hd_backgrounds_store_landscape_wallpaper (HDBackgrounds *backgrounds, gchar *file)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-
-  g_free (priv->backup_landscape_wallpaper);
-  priv->backup_landscape_wallpaper = g_strdup(file);
+                               && hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds);
 }
 
 gboolean
