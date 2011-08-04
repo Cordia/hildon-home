@@ -35,21 +35,26 @@
 #include "hd-bookmark-shortcut.h"
 #include "hd-dbus-utils.h"
 
-/* Size is taken from "hd-bookmark-shortcut.h" */
-#define SHORTCUT_WIDTH HD_BOOKMARK_SHORTCUT_WIDTH
-#define SHORTCUT_HEIGHT HD_BOOKMARK_SHORTCUT_HEIGHT
+/* Size from Home layout guide 1.2 */
+#define SHORTCUT_WIDTH 176
+#define SHORTCUT_HEIGHT 146
 
-#define THUMBNAIL_WIDTH HD_BOOKMARK_THUMBNAIL_WIDTH
-#define THUMBNAIL_HEIGHT HD_BOOKMARK_THUMBNAIL_HEIGHT
+#define THUMBNAIL_WIDTH 160.0
+#define THUMBNAIL_HEIGHT 96.0
 
-#define BORDER_WIDTH_LEFT HD_BOOKMARK_BORDER_WIDTH_LEFT
-#define BORDER_WIDTH_TOP HD_BOOKMARK_BORDER_WIDTH_TOP
+#define BORDER_WIDTH_LEFT 8
+#define BORDER_WIDTH_TOP 8
 
 #define LABEL_WIDTH (SHORTCUT_WIDTH -                   \
                      (2 * HILDON_MARGIN_DEFAULT) -      \
                      (2 * HILDON_MARGIN_HALF))
 
 #define LABEL_FONT "SmallSystemFont"
+
+#define IMAGES_DIR                   "/etc/hildon/theme/images/"
+#define BACKGROUND_IMAGE_FILE        IMAGES_DIR "WebShortcutAppletBackground.png"
+#define BACKGROUND_ACTIVE_IMAGE_FILE IMAGES_DIR "WebShortcutAppletBackgroundActive.png"
+#define THUMBNAIL_MASK_FILE          IMAGES_DIR "WebShortCutAppletThumbnailMask.png"
 
 /* D-Bus method/interface to load URL in browser */
 #define BROWSER_INTERFACE   "com.nokia.osso_browser"
@@ -62,8 +67,6 @@
 #define HD_BOOKMARK_SHORTCUT_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE (obj,\
                                                                             HD_TYPE_BOOKMARK_SHORTCUT,\
                                                                             HDBookmarkShortcutPrivate))
-
-gint task_bookmarks_width;
 
 struct _HDBookmarkShortcutPrivate
 {
@@ -240,15 +243,11 @@ hd_bookmark_shortcut_update_from_gconf (HDBookmarkShortcut *shortcut)
 
   plugin_id = hd_plugin_item_get_plugin_id (HD_PLUGIN_ITEM (shortcut));
 
-  /* Set label-text only on non-resized bookmarks. */
-  if (HD_BOOKMARK_SHORTCUT_WIDTH == HD_BOOKMARK_DEF_SHORTCUT_WIDTH) {
-    label = get_label_from_gconf (priv->gconf_client,
-                                  plugin_id);
-
-    gtk_label_set_text (GTK_LABEL (priv->label), 
-                        label);
-    g_free (label);
-  }
+  label = get_label_from_gconf (priv->gconf_client,
+                                plugin_id);
+  gtk_label_set_text (GTK_LABEL (priv->label), 
+                      label);
+  g_free (label);
 
   if (priv->thumbnail_icon)
     priv->thumbnail_icon = (cairo_surface_destroy (priv->thumbnail_icon), NULL);
@@ -660,11 +659,11 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
                     G_CALLBACK (delete_event_cb), applet);
 
   priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                       HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE);
+                                                       BACKGROUND_IMAGE_FILE);
   priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                       HD_BOOKMARK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE);
+                                                        BACKGROUND_ACTIVE_IMAGE_FILE);
   priv->thumb_mask = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                       HD_BOOKMARK_SCALED_THUMBNAIL_MASK_FILE);
+                                                         THUMBNAIL_MASK_FILE);
 
   priv->gconf_client = gconf_client_get_default ();
 }
