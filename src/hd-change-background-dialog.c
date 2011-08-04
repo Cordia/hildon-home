@@ -218,14 +218,6 @@ add_image_dialog_response (GtkDialog                *dialog,
         {
           GFile *image_file;
 
-          if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
-            {
-              gchar *temp;
-              temp = hd_backgrounds_get_file_for_view (hd_backgrounds_get (), priv->current_view);
-              hd_backgrounds_store_landscape_wallpaper (hd_backgrounds_get (), temp);
-              g_free (temp);
-            }
-
           image_file = g_file_new_for_uri (uri);
 
           hd_available_backgrounds_set_user_selected (priv->backgrounds,
@@ -330,6 +322,11 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                                     TRUE);
           gtk_widget_set_sensitive (GTK_WIDGET (dialog), FALSE);
 
+        if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
+          hd_background_set_for_current_view (background,
+                                              priv->current_view + HD_DESKTOP_VIEWS,
+                                              priv->cancellable);
+        else
           hd_background_set_for_current_view (background,
                                               priv->current_view,
                                               priv->cancellable);
