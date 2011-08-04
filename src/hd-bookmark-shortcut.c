@@ -64,7 +64,6 @@
                                                                             HDBookmarkShortcutPrivate))
 
 gint task_bookmarks_width;
-gboolean task_bookmarks_hide_bg;
 
 struct _HDBookmarkShortcutPrivate
 {
@@ -660,15 +659,10 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   g_signal_connect (applet, "delete-event",
                     G_CALLBACK (delete_event_cb), applet);
 
-  if (!HD_BOOKMARK_HIDE_BG) {
-    priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                         HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE);
-    priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
-                                                         HD_BOOKMARK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE);
-  } else {
-    priv->bg_active = 0;
-    priv->bg_image = 0;
-  }
+  priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                       HD_BOOKMARK_SCALED_BACKGROUND_IMAGE_FILE);
+  priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
+                                                       HD_BOOKMARK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE);
   priv->thumb_mask = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
                                                        HD_BOOKMARK_SCALED_THUMBNAIL_MASK_FILE);
 
