@@ -657,11 +657,6 @@ hd_bookmark_shortcut_init (HDBookmarkShortcut *applet)
   gtk_container_add (GTK_CONTAINER (alignment), priv->label);
 
   gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
-  if (!HD_BOOKMARK_HIDE_BG) {
-    gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
-  } else {
-    gtk_widget_set_size_request (GTK_WIDGET (applet), THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-  }
   g_signal_connect (applet, "delete-event",
                     G_CALLBACK (delete_event_cb), applet);
 
