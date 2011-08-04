@@ -208,7 +208,7 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
                                     const gchar   *backgrounds_desktop)
 {
   GKeyFile *key_file;
-  gchar *bg_image[HD_DESKTOP_VIEWS];
+  gchar *bg_image[HD_DESKTOP_VIEWS*2];
   GFile *background = NULL;
   guint i;
   GError *error = NULL;
@@ -229,7 +229,7 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
     }
 
   guint max = HD_DESKTOP_VIEWS;
-  if(hd_backgrounds_is_portrait (backgrounds))
+  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
   for (i = 0; i < max; i++)
@@ -321,6 +321,7 @@ get_background_for_view (HDBackgrounds *backgrounds,
                  __FUNCTION__,
                  view);
     }
+
   return bg_image;
 }
 
@@ -342,6 +343,7 @@ gconf_bgimage_notify (GConfClient *client,
                                 GPOINTER_TO_UINT (user_data),
                                 TRUE,
                                 FALSE);
+
       g_object_unref (bg_image);
     }
 }
@@ -371,7 +373,7 @@ background_info_loaded (HDBackgroundInfo *info,
                                        GCONF_CURRENT_DESKTOP_KEY,
                                        &error) - 1;
 
-  if (hd_backgrounds_is_portrait (backgrounds) && current_view < HD_DESKTOP_VIEWS)
+  if (hd_backgrounds_is_portrait (hd_backgrounds_get ()) && current_view < HD_DESKTOP_VIEWS)
     current_view += HD_DESKTOP_VIEWS;
 
   if (error)
@@ -383,7 +385,7 @@ background_info_loaded (HDBackgroundInfo *info,
     }
 
   guint max = HD_DESKTOP_VIEWS;
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds))
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
   current_view = CLAMP (current_view, 0, max - 1);
@@ -679,7 +681,7 @@ hd_backgrounds_startup (HDBackgrounds *backgrounds)
   /* about wallpapers (for portrait mode). For example: */
   /* view with id 11 contains (only) informations about portrait wallpaper for view with */
   /* id 2. */
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds))
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
     for (i = HD_DESKTOP_VIEWS; i < HD_DESKTOP_VIEWS*2; i++)
       {
         gchar *gconf_key;
@@ -905,7 +907,7 @@ hd_backgrounds_get_background (HDBackgrounds *backgrounds,
   HDBackgroundsPrivate *priv;
   guint max = HD_DESKTOP_VIEWS;
 
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds))
+  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
   g_return_val_if_fail (HD_IS_BACKGROUNDS (backgrounds), NULL);
@@ -1153,7 +1155,7 @@ hd_backgrounds_set_current_background (HDBackgrounds *backgrounds,
                                        GCONF_CURRENT_DESKTOP_KEY,
                                        &error) - 1;
 
-  if (hd_backgrounds_is_portrait (backgrounds) && current_view < HD_DESKTOP_VIEWS)
+  if (hd_backgrounds_is_portrait (hd_backgrounds_get ()) && current_view < HD_DESKTOP_VIEWS)
     current_view += HD_DESKTOP_VIEWS;
 
   if (error)
@@ -1166,7 +1168,7 @@ hd_backgrounds_set_current_background (HDBackgrounds *backgrounds,
 
   guint max = HD_DESKTOP_VIEWS;
 
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds))
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
     max += HD_DESKTOP_VIEWS;
 
   current_view = CLAMP (current_view, 0, max - 1);
@@ -1188,7 +1190,7 @@ hd_backgrounds_is_portrait (HDBackgrounds *backgrounds)
   HDBackgroundsPrivate *priv = backgrounds->priv;
   return gconf_client_get_bool (priv->gconf_client, 
                                 GCONF_KEY_EDIT_MODE_PORTRAIT, NULL)
-                               && hd_backgrounds_is_portrait_wallpaper_enabled (backgrounds);
+                               && hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ());
 }
 
 gboolean
