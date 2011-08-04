@@ -359,15 +359,14 @@ hd_task_shortcut_init (HDTaskShortcut *applet)
   gtk_container_add (GTK_CONTAINER (applet), alignment);
   gtk_container_add (GTK_CONTAINER (alignment), priv->icon);
 
+  gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
 
   if (!SHORTCUT_HIDE_BG) {
-    gtk_widget_set_size_request (GTK_WIDGET (applet), SHORTCUT_WIDTH, SHORTCUT_HEIGHT);
     priv->bg_image = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
                                                        HD_TASK_SCALED_BACKGROUND_IMAGE_FILE);
     priv->bg_active = hd_cairo_surface_cache_get_surface (hd_cairo_surface_cache_get (),
                                                         HD_TASK_SCALED_BACKGROUND_ACTIVE_IMAGE_FILE);
   } else {
-    gtk_widget_set_size_request (GTK_WIDGET (applet), ICON_WIDTH, ICON_WIDTH);
     priv->bg_image = 0;
     priv->bg_active = 0;
   }
