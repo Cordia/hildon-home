@@ -1,3 +1,9 @@
+hildon-home (0.3.71-7) unstable; urgency=low
+
+  * Allow different set of wallpapers for portrait mode
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Wed, 07 Sep 2011 00:02:55 +0300
+
 hildon-home (0.3.71-6) unstable; urgency=low
 
   * Force number of views to 9.
