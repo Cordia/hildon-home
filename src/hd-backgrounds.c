@@ -208,9 +208,8 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
                                     const gchar   *backgrounds_desktop)
 {
   GKeyFile *key_file;
-  gchar *bg_image[HD_DESKTOP_VIEWS*2];
+  gchar *bg_image;
   GFile *background = NULL;
-  guint i;
   GError *error = NULL;
 
   key_file = g_key_file_new ();
@@ -228,20 +227,15 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
       return NULL;
     }
 
-  guint max = HD_DESKTOP_VIEWS;
-  if(hd_backgrounds_is_portrait (hd_backgrounds_get ()))
-    max += HD_DESKTOP_VIEWS;
 
-  for (i = 0; i < max; i++)
-    {
       gchar *key;
 
-      key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, i + 1);
+      key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, view + 1);
 
-      bg_image[i] = g_key_file_get_string (key_file,
-                                           G_KEY_FILE_DESKTOP_GROUP,
-                                           key,
-                                           &error);
+      bg_image = g_key_file_get_string (key_file,
+                                        G_KEY_FILE_DESKTOP_GROUP,
+                                        key,
+                                        &error);
 
       if (error)
         {
@@ -253,17 +247,14 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
         }
 
       g_free (key);
-    }
 
   g_key_file_free (key_file);
 
-  if (bg_image[view])
+  if (bg_image)
     {
-      background = g_file_new_for_path (bg_image[view]);
+      background = g_file_new_for_path (bg_image);
+      g_free (bg_image);
     }
-
-  for (i = 0; i < max; i++)
-    g_free (bg_image[i]);
 
   return background;
 }
