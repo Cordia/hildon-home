@@ -295,12 +295,10 @@ get_background_for_view (HDBackgrounds *backgrounds,
   /* Return bg image if it was stored in GConf */
   if (bg_image)
     {
-        g_warning("\n\n GDBa: %s, FROM GCONF", __FUNCTION__);
       g_free (path);
       return bg_image;
     }
 
-  g_warning("\n\n GDBa: %s, FALLBACK CURRENT", __FUNCTION__);
   /* Fallback to current theme */
   bg_image = get_background_for_view_from_theme (backgrounds,
                                                  view,
@@ -308,7 +306,6 @@ get_background_for_view (HDBackgrounds *backgrounds,
   if (bg_image)
     return bg_image;
 
-  g_warning("\n\n GDBa: %s, FALLBACK DEFAULT", __FUNCTION__);
   /* Fallback to default theme */
   bg_image = get_background_for_view_from_theme (backgrounds,
                                                  view,
@@ -332,7 +329,6 @@ gconf_bgimage_notify (GConfClient *client,
   HDBackgrounds *backgrounds = hd_backgrounds_get ();
   GFile *bg_image;
 
-  g_warning("\n\n GDBa: %s, FROM NOTIFY!", __FUNCTION__);
   bg_image = get_background_for_view (backgrounds,
                                       GPOINTER_TO_UINT (user_data));
   if (bg_image)
