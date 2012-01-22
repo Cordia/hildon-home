@@ -452,10 +452,16 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
   HDBackgroundsPrivate *priv = backgrounds->priv;
   GKeyFile *key_file;
   gchar *current_theme;
-  GFile *bg_image[HD_DESKTOP_VIEWS * 2];
   gint current_view;
   guint i;
   GError *error = NULL;
+  gint max_value = HD_DESKTOP_VIEWS;
+
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+    max_value += HD_DESKTOP_VIEWS;
+
+  GFile *bg_image[max_value];
+
 
   current_theme = get_current_theme ();
   if (g_strcmp0 (priv->current_theme, current_theme) == 0)
@@ -566,13 +572,8 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
       g_clear_error (&error);
     }
 
-  /* Set to 0..3 */
+  /* Set to 0..HD_DESKTOP_VIEWS */
   current_view--;
-
-  int max_value = HD_DESKTOP_VIEWS;  
-
-  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
-    max_value += HD_DESKTOP_VIEWS;
 
   if (current_view >= 0 && current_view < max_value)
     create_cached_background (backgrounds,
