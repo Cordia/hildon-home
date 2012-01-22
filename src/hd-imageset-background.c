@@ -393,6 +393,7 @@ hd_imageset_background_init_async (HDImagesetBackground *background,
                               result);
 }
 
+/*
 static guint
 get_count_active_views()
 {
@@ -409,7 +410,7 @@ get_count_active_views()
     g_object_unref(gconf_client);
   }
   return ret;
-}
+}*/
 
 static void
 load_desktop_file (GFile        *file,
@@ -425,7 +426,6 @@ load_desktop_file (GFile        *file,
   guint i;
   GError *error = NULL;
   char *type = NULL;
-  guint active_views_count;
   g_file_load_contents_finish (file,
                                result,
                                &file_contents,
@@ -484,14 +484,22 @@ load_desktop_file (GFile        *file,
       g_error_free (error);
       goto complete;
     }
-  active_views_count = get_count_active_views();
 
-  for (i = 0; i < active_views_count; i++)
+  int max_value = HD_DESKTOP_VIEWS;  
+
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+    max_value += HD_DESKTOP_VIEWS;
+
+  for (i = 0; i < max_value; i++)
     {
       gchar *key, *value;
       GFile *image_file;
 
-      key = g_strdup_printf ("X-File%u", i + 1);
+      if (i >= HD_DESKTOP_VIEWS)
+        key = g_strdup_printf ("X-Portrait-File%u", i + 1 - HD_DESKTOP_VIEWS);
+      else
+        key = g_strdup_printf ("X-File%u", i + 1);
+
       value = g_key_file_get_string  (key_file,
                                       G_KEY_FILE_DESKTOP_GROUP,
                                       key,
@@ -500,10 +508,10 @@ load_desktop_file (GFile        *file,
 
       if (error)
         {
-          g_simple_async_result_set_from_error (G_SIMPLE_ASYNC_RESULT (init_result),
-                                                error);
           g_error_free (error);
-          goto complete;
+          error = NULL;          
+          g_free (value);
+          continue;
         }
 
       g_strstrip (value);

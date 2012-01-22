@@ -1,3 +1,9 @@
+hildon-home (0.3.71-9) unstable; urgency=low
+
+  * Image sets support up to 9 desktops & portrait wallpapers.
+
+ -- Mohammad Abu-Garbeyyeh <mohammad7410@gmail.com>  Sun, 22 Jan 2012 15:23:18 +0100
+
 hildon-home (0.3.71-8) unstable; urgency=low
 
   * Fixed portrait wallpapers.

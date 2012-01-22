@@ -67,6 +67,7 @@
 #define DEFAULT_THEME_DIR            "/usr/share/themes/default"
 #define DEFAULT_BACKGROUNDS_DESKTOP  DEFAULT_THEME_DIR "/backgrounds/theme_bg.desktop"
 #define BACKGROUNDS_DESKTOP_KEY_FILE "X-File%u"
+#define BACKGROUNDS_DESKTOP_KEY_FILE_PORTRAIT "X-Portrait-File%u"
 
 #define HD_BACKGROUNDS_GET_PRIVATE(object) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((object), HD_TYPE_BACKGROUNDS, HDBackgroundsPrivate))
@@ -230,7 +231,10 @@ get_background_for_view_from_theme (HDBackgrounds *backgrounds,
 
       gchar *key;
 
-      key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, view + 1);
+      if(view >= HD_DESKTOP_VIEWS)
+        key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE_PORTRAIT, view + 1 - HD_DESKTOP_VIEWS);
+      else
+        key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE, view + 1);        
 
       bg_image = g_key_file_get_string (key_file,
                                         G_KEY_FILE_DESKTOP_GROUP,
@@ -291,10 +295,12 @@ get_background_for_view (HDBackgrounds *backgrounds,
   /* Return bg image if it was stored in GConf */
   if (bg_image)
     {
+        g_warning("\n\n GDBa: %s, FROM GCONF", __FUNCTION__);
       g_free (path);
       return bg_image;
     }
 
+  g_warning("\n\n GDBa: %s, FALLBACK CURRENT", __FUNCTION__);
   /* Fallback to current theme */
   bg_image = get_background_for_view_from_theme (backgrounds,
                                                  view,
@@ -302,6 +308,7 @@ get_background_for_view (HDBackgrounds *backgrounds,
   if (bg_image)
     return bg_image;
 
+  g_warning("\n\n GDBa: %s, FALLBACK DEFAULT", __FUNCTION__);
   /* Fallback to default theme */
   bg_image = get_background_for_view_from_theme (backgrounds,
                                                  view,
@@ -325,6 +332,7 @@ gconf_bgimage_notify (GConfClient *client,
   HDBackgrounds *backgrounds = hd_backgrounds_get ();
   GFile *bg_image;
 
+  g_warning("\n\n GDBa: %s, FROM NOTIFY!", __FUNCTION__);
   bg_image = get_background_for_view (backgrounds,
                                       GPOINTER_TO_UINT (user_data));
   if (bg_image)
@@ -448,7 +456,7 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
   HDBackgroundsPrivate *priv = backgrounds->priv;
   GKeyFile *key_file;
   gchar *current_theme;
-  GFile *bg_image[HD_DESKTOP_VIEWS];
+  GFile *bg_image[HD_DESKTOP_VIEWS * 2];
   gint current_view;
   guint i;
   GError *error = NULL;
@@ -511,11 +519,48 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
       g_free (key);
     }
 
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ())) {
+    for (i = 0; i < HD_DESKTOP_VIEWS; i++)
+      {
+        gchar *key;
+        gchar *path;
+
+        key = g_strdup_printf (BACKGROUNDS_DESKTOP_KEY_FILE_PORTRAIT, i + 1);
+
+        path = g_key_file_get_string (key_file,
+                                      G_KEY_FILE_DESKTOP_GROUP,
+                                      key,
+                                      &error);
+
+        if (error)
+          {
+            g_debug ("%s. Could not load background defintion for theme %s. %s",
+                     __FUNCTION__,
+                     backgrounds_desktop,
+                     error->message);
+            g_clear_error (&error);
+            g_free (key);
+            g_key_file_free (key_file);
+            return;
+          }
+
+        if (path)
+          bg_image[HD_DESKTOP_VIEWS + i] = g_file_new_for_path (path);
+
+        g_free (path);
+        g_free (key);
+      }
+    }
+
+
   g_key_file_free (key_file);
 
   current_view = gconf_client_get_int (priv->gconf_client,
                                        GCONF_CURRENT_DESKTOP_KEY,
                                        &error);
+
+  if (hd_backgrounds_is_portrait (hd_backgrounds_get ()) && (current_view - 1) < HD_DESKTOP_VIEWS)
+    current_view += HD_DESKTOP_VIEWS;
 
   if (error)
     {
@@ -528,15 +573,22 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
   /* Set to 0..3 */
   current_view--;
 
-  if (current_view >= 0 && current_view < HD_DESKTOP_VIEWS)
+  int max_value = HD_DESKTOP_VIEWS;  
+
+  if(hd_backgrounds_is_portrait_wallpaper_enabled (hd_backgrounds_get ()))
+    max_value += HD_DESKTOP_VIEWS;
+
+  if (current_view >= 0 && current_view < max_value)
     create_cached_background (backgrounds,
                               bg_image[current_view],
                               current_view,
                               FALSE,
                               TRUE);
 
+
+
   /* Update cache for other views */
-  for (i = 0; i < HD_DESKTOP_VIEWS; i++)
+  for (i = 0; i < max_value; i++)
     {
       if (i != current_view)
         {
@@ -548,7 +600,7 @@ update_backgrounds_from_theme (HDBackgrounds *backgrounds,
         }
     }
 
-  for (i = 0; i < HD_DESKTOP_VIEWS; i++)
+  for (i = 0; i < max_value; i++)
     g_object_unref (bg_image[i]);
 
   hd_command_thread_pool_push_idle (priv->thread_pool,
