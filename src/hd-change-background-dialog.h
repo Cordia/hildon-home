@@ -59,6 +59,7 @@ struct _HDChangeBackgroundDialogClass
 GType      hd_change_background_dialog_get_type (void);
 
 GtkWidget *hd_change_background_dialog_new      (guint current_view);
+gboolean   hd_change_background_dialog_is_portrait (void);
 
 G_END_DECLS
 
