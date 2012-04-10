@@ -101,7 +101,6 @@ struct _HDBackgroundsPrivate
   GnomeVFSVolumeMonitor *volume_monitor2;
 
   gboolean portrait_wallpaper;
-  gboolean is_portrait;
 };
 
 static CacheImageRequestData *cache_image_request_data_new (GFile        *file,
@@ -650,8 +649,6 @@ hd_backgrounds_startup (HDBackgrounds *backgrounds)
   gchar *cached_dir;
   guint i;
   GError *error = NULL;
-
-  priv->is_portrait = FALSE;
 
   /* Get current theme */
   priv->current_theme = get_current_theme ();
@@ -1231,12 +1228,4 @@ hd_backgrounds_is_portrait_wallpaper_enabled (HDBackgrounds *backgrounds)
   HDBackgroundsPrivate *priv = backgrounds->priv;
 
   return priv->portrait_wallpaper;
-}
-
-void
-hd_backgrounds_set_portrait (HDBackgrounds *backgrounds, gboolean is_portrait)
-{
-  HDBackgroundsPrivate *priv = backgrounds->priv;
-
-  priv->is_portrait = is_portrait;
 }
