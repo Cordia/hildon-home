@@ -262,6 +262,9 @@ hd_change_background_dialog_response (GtkDialog *dialog,
                                                                   "modal", FALSE,
                                                                   NULL);
 
+      if (hd_change_background_dialog_is_portrait ())
+        gtk_widget_set_size_request (GTK_WIDGET (add_image), -1, 654);
+
       /* Filter for shown mime-types: JPG, GIF, PNG, BMP, TIFF, sketch.png */
       filter = gtk_file_filter_new ();
       gtk_file_filter_add_mime_type (filter, "image/jpeg");
@@ -431,7 +434,10 @@ hd_change_background_dialog_init (HDChangeBackgroundDialog *dialog)
   gtk_widget_show (priv->selector);
   gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), priv->selector);
 
-  gtk_widget_set_size_request (GTK_WIDGET (dialog), -1, 358);
+  if (hd_change_background_dialog_is_portrait ())
+    gtk_widget_set_size_request (GTK_WIDGET (dialog), -1, 678);
+  else
+    gtk_widget_set_size_request (GTK_WIDGET (dialog), -1, 358);
 }
 
 GtkWidget *

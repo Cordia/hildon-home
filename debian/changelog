@@ -1,3 +1,10 @@
+hildon-home (0.3.71-10) unstable; urgency=low
+
+  * Remove depracted GConf key.
+  * Resize background dialog in portrait mode.
+
+ -- Tomasz Pieniazek <t.pieniazek@gazeta.pl>  Tue, 10 Apr 2012 20:32:53 +0200
+
 hildon-home (0.3.71-9) unstable; urgency=low
 
   * Image sets support up to 9 desktops & portrait wallpapers.
