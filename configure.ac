@@ -74,7 +74,7 @@ PKG_CHECK_MODULES(HILDON_HOME,
                    libhildondesktop-1	>= 2.1.37	dnl
 		   gnome-vfs-2.0	>= 2.8.3	dnl
 		   sqlite3				dnl
-		   osso-bookmark-engine			dnl
+		   dnl HAVE_BOOKMARKS osso-bookmark-engine			dnl
 		   mce 					dnl
 		   libosso                              dnl
 		   hildon-thumbnail])

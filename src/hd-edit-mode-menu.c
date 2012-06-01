@@ -155,9 +155,11 @@ hd_edit_mode_menu_show (GtkWidget *widget)
   update_menu_button_visibility (priv->shortcuts_button,
                                  hd_shortcut_widgets_get ());
 
+#ifdef HAVE_BOOKMARKS
   /* Update Add bookmark button */
   update_menu_button_visibility (priv->bookmarks_button,
                                  hd_bookmark_widgets_get ());
+#endif
 
   /* Update Add widget button */
   update_menu_button_visibility (priv->widgets_button,
@@ -262,10 +264,12 @@ hd_edit_mode_menu_init (HDEditModeMenu *menu)
 
   priv->bookmarks_button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE,
                                                                 "home_me_select_bookmarks"));
+#ifdef HAVE_BOOKMARKS
   g_signal_connect_after (priv->bookmarks_button, "clicked",
                           G_CALLBACK (select_widgets_clicked_cb), hd_bookmark_widgets_get ());
   hildon_app_menu_append (HILDON_APP_MENU (menu),
                           GTK_BUTTON (priv->bookmarks_button));
+#endif
 
   priv->widgets_button = gtk_button_new_with_label (dgettext (GETTEXT_PACKAGE,
                                                               "home_me_select_widgets"));

@@ -395,6 +395,7 @@ main (int argc, char **argv)
                   "shortcut-type",  HD_TYPE_TASK_SHORTCUT,
                   "throttled",      !!conf, NULL);
 
+#ifdef HAVE_BOOKMARKS
   /* Bookmark Shortcuts */
   hd_bookmark_widgets_get ();
   hd_shortcuts_bookmarks =
@@ -402,6 +403,7 @@ main (int argc, char **argv)
                   "gconf-key",      HD_GCONF_KEY_HILDON_HOME_BOOKMARK_SHORTCUTS,
                   "shortcut-type",  HD_TYPE_BOOKMARK_SHORTCUT,
                   "throttled",      !!conf, NULL);
+#endif
 
   /* D-Bus */
   hd_hildon_home_dbus_get ();

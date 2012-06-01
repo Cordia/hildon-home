@@ -62,8 +62,6 @@ hildon_home_SOURCES = \
 	hd-backgrounds.h		\
 	hd-background-info.c		\
 	hd-background-info.h		\
-	hd-bookmark-shortcut.c		\
-	hd-bookmark-shortcut.h		\
 	hd-cairo-surface-cache.c	\
 	hd-cairo-surface-cache.h	\
 	hd-change-background-dialog.c	\
@@ -84,8 +82,6 @@ hildon_home_SOURCES = \
 	hd-task-shortcut.h		\
 	hd-shortcut-widgets.c		\
 	hd-shortcut-widgets.h		\
-	hd-bookmark-widgets.c		\
-	hd-bookmark-widgets.h		\
 	hd-led-pattern.c                \
 	hd-led-pattern.h		\
 	hd-multi-map.c			\
