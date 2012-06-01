@@ -128,6 +128,7 @@ nodist_hildon_home_SOURCES = \
 
 hildon_home_LDFLAGS = \
 	$(HILDON_HOME_LIBS)		\
+	$(X11_LIBS)			\
 	$(MAEMO_LAUNCHER_LIBS)
 
 hildon_sv_notification_daemon_CFLAGS = \
