@@ -26,8 +26,10 @@
 
 #include <glib/gi18n.h>
 
+#ifdef HAVE_HILDON_FM
 #include <hildon/hildon-file-chooser-dialog.h>
 #include <hildon/hildon-file-selection.h>
+#endif
 
 #include "hd-available-backgrounds.h"
 #include "hd-backgrounds.h"
@@ -200,6 +202,7 @@ hd_change_background_dialog_set_property (GObject      *object,
     }
 }
 
+#ifdef HAVE_HILDON_FM
 static void
 add_image_dialog_response (GtkDialog                *dialog,
                            gint                      response_id,
@@ -229,6 +232,7 @@ add_image_dialog_response (GtkDialog                *dialog,
 
   gtk_widget_destroy (GTK_WIDGET (dialog));
 }
+#endif
 
 static gboolean
 background_set_cb (gpointer data)
@@ -247,6 +251,7 @@ hd_change_background_dialog_response (GtkDialog *dialog,
 
   if (response_id == RESPONSE_ADD)
     {
+#ifdef HAVE_HILDON_FM
       GtkWidget *add_image;
       GtkFileFilter *filter;
       gchar *images_folder;
@@ -291,7 +296,8 @@ hd_change_background_dialog_response (GtkDialog *dialog,
 
       /* Show Add Image dialog */
       gtk_dialog_run (GTK_DIALOG (add_image));
-    }
+#endif
+	}
   else if (response_id == GTK_RESPONSE_ACCEPT)
     {
       GtkTreeIter iter;

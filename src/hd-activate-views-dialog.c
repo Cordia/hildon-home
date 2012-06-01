@@ -28,8 +28,10 @@
 
 #include <glib/gi18n.h>
 
+#ifdef HAVE_HILDON_FM
 #include <hildon/hildon-file-chooser-dialog.h>
 #include <hildon/hildon-file-selection.h>
+#endif
 
 #include <gconf/gconf-client.h>
 
