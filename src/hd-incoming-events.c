@@ -32,8 +32,10 @@
 #include <hildon/hildon.h>
 
 #include <dbus/dbus-glib-bindings.h>
+#ifdef HAVE_DSME
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
+#endif
 
 #include <osso-mem.h>
 
@@ -881,6 +883,7 @@ show_preview_window (HDIncomingEvents *ie)
   notifications_update_window (ns,
                                priv->preview_window);
 
+#ifdef HAVE_DSME
   /* Send dbus request to mce to turn display backlight on */
   if (priv->mce_proxy)
     {
@@ -890,6 +893,7 @@ show_preview_window (HDIncomingEvents *ie)
       dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
                                   G_TYPE_INVALID, G_TYPE_INVALID);
     }
+#endif
 
   gtk_widget_show (priv->preview_window);
 }
@@ -1112,6 +1116,7 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
   if ((G_VALUE_HOLDS_BOOLEAN (p) && g_value_get_boolean (p)) ||
       (G_VALUE_HOLDS_UCHAR (p) && g_value_get_uchar (p)))
     {
+#ifdef HAVE_DSME
       /* Send dbus request to mce to turn display backlight on */
       if (priv->mce_proxy)
         {
@@ -1121,6 +1126,7 @@ hd_incoming_events_notified (HDNotificationManager  *nm,
           dbus_g_proxy_call_no_reply (priv->mce_proxy, MCE_DISPLAY_ON_REQ,
                                       G_TYPE_INVALID, G_TYPE_INVALID);
         }
+#endif
       return;      
     }
 
@@ -1440,6 +1446,7 @@ hd_incoming_events_system_bus_signal_handler (DBusConnection *conn,
                                               DBusMessage    *msg,
                                               void           *data)
 {
+#ifdef HAVE_DSME
   HDIncomingEvents *ie = data;
   HDIncomingEventsPrivate *priv = ie->priv;
   const char *value;
@@ -1510,11 +1517,13 @@ hd_incoming_events_system_bus_signal_handler (DBusConnection *conn,
             hd_notification_manager_db_commit_now (hd_notification_manager_get ());
         }
     }
+#endif
 
   return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
 
+#ifdef HAVE_DSME
 static void
 devlock_mode_get_notify (DBusGProxy       *proxy,
                          DBusGProxyCall   *call,
@@ -1556,6 +1565,7 @@ devlock_mode_get_notify (DBusGProxy       *proxy,
       g_error_free (error);
     }
 }
+#endif
 
 static GdkFilterReturn
 filter_property_changed (GdkXEvent *xevent,
@@ -1676,14 +1686,17 @@ hd_incoming_events_init (HDIncomingEvents *ie)
     {
       DBusConnection *sysbus_conn;
 
+#ifdef HAVE_DSME
       priv->mce_proxy = dbus_g_proxy_new_for_name (connection,
                                                    MCE_SERVICE,
                                                    MCE_REQUEST_PATH,
                                                    MCE_REQUEST_IF);
+#endif
 
       /* The proxy for signals */
       sysbus_conn = dbus_g_connection_get_connection (connection);
       
+#ifdef HAVE_DSME
       dbus_bus_add_match (sysbus_conn,
                           "type='signal', "
                           "interface='" MCE_SIGNAL_IF "', "
@@ -1694,11 +1707,13 @@ hd_incoming_events_init (HDIncomingEvents *ie)
                           "interface='" MCE_SIGNAL_IF "', "
                           "member='" MCE_DISPLAY_SIG "'",
                           NULL);
+#endif
       dbus_connection_add_filter (sysbus_conn,
                                   hd_incoming_events_system_bus_signal_handler,
                                   ie,
                                   NULL);
 
+#ifdef HAVE_DSME
       /* Get current lock mode */
       dbus_g_proxy_begin_call (priv->mce_proxy,
                                MCE_DEVLOCK_MODE_GET,
@@ -1708,6 +1723,7 @@ hd_incoming_events_init (HDIncomingEvents *ie)
                                G_TYPE_INVALID);
 
       g_debug ("%s. Got mce Proxy", __FUNCTION__);
+#endif
     }
 
   session_connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);

@@ -24,8 +24,10 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_DSME
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
+#endif
 
 #include "hd-dbus-utils.h"
 
@@ -60,7 +62,9 @@ static void            activate_pattern   (HDLedPattern *pattern);
 static void            deactivate_pattern (HDLedPattern *pattern);
 
 static GHashTable      *get_pattern_map            (void);
+#ifdef HAVE_DSME
 static DBusGProxy      *get_mce_proxy              (void);
+#endif
 
 G_DEFINE_TYPE (HDLedPattern, hd_led_pattern, G_TYPE_INITIALLY_UNOWNED);
 
@@ -142,6 +146,7 @@ hd_led_pattern_constructed (GObject *object)
 static void
 activate_pattern (HDLedPattern *pattern)
 {
+#ifdef HAVE_DSME
   HDLedPatternPrivate *priv = pattern->priv;
   DBusGProxy *mce_proxy;
 
@@ -167,11 +172,13 @@ activate_pattern (HDLedPattern *pattern)
       else
         g_debug ("%s. Activated LED pattern: %s", __FUNCTION__, priv->name);
     }
+#endif
 }
 
 static void
 deactivate_pattern (HDLedPattern *pattern)
 {
+#ifdef HAVE_DSME
   HDLedPatternPrivate *priv = pattern->priv;
   DBusGProxy *mce_proxy;
 
@@ -188,8 +195,10 @@ deactivate_pattern (HDLedPattern *pattern)
                                   G_TYPE_INVALID,
                                   G_TYPE_INVALID);
     }
+#endif
 }
 
+#ifdef HAVE_DSME
 static DBusGProxy *
 get_mce_proxy (void)
 {
@@ -210,6 +219,7 @@ get_mce_proxy (void)
 
   return mce_proxy;
 }
+#endif
 
 static void
 hd_led_pattern_dispose (GObject *object)
@@ -260,6 +270,7 @@ hd_led_pattern_set_property (GObject      *object,
     }
 }
 
+#ifdef HAVE_DSME
 const static char *default_notification_pattern[] = 
 {
   "PatternCommunicationCall",
@@ -269,10 +280,12 @@ const static char *default_notification_pattern[] =
   "PatternCommonNotification",
   NULL
 };
+#endif
 
 void
 hd_led_pattern_deactivate_all (void)
 {
+#ifdef HAVE_DSME
   DBusGProxy *mce_proxy;
   guint i;
 
@@ -294,4 +307,5 @@ hd_led_pattern_deactivate_all (void)
                                       G_TYPE_INVALID);
         }
     }
+#endif
 }

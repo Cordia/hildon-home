@@ -75,7 +75,7 @@ PKG_CHECK_MODULES(HILDON_HOME,
 		   gnome-vfs-2.0	>= 2.8.3	dnl
 		   sqlite3				dnl
 		   dnl HAVE_BOOKMARKS osso-bookmark-engine			dnl
-		   mce 					dnl
+		   dnl HAVE_DSME mce 					dnl
 		   libosso                              dnl
 		   dnl HAVE_THUMBNAILS hildon-thumbnail
 		  ])
