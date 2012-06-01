@@ -24,7 +24,9 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_THUMBNAILS
 #include <hildon-thumbnail-factory.h>
+#endif
 
 #include "hd-background.h"
 
@@ -34,7 +36,9 @@
 
 struct _HDBackgroundPrivate
 {
+#ifdef HAVE_THUMBNAILS
   HildonThumbnailFactory *thumbnail_factory;
+#endif
 };
 
 G_DEFINE_ABSTRACT_TYPE (HDBackground, hd_background, G_TYPE_OBJECT);
@@ -42,10 +46,12 @@ G_DEFINE_ABSTRACT_TYPE (HDBackground, hd_background, G_TYPE_OBJECT);
 static void
 hd_background_dispose (GObject *object)
 {
+#ifdef HAVE_THUMBNAILS
   HDBackgroundPrivate *priv = HD_BACKGROUND (object)->priv;
 
   if (priv->thumbnail_factory)
     priv->thumbnail_factory = (g_object_unref (priv->thumbnail_factory), NULL);
+#endif
 
   G_OBJECT_CLASS (hd_background_parent_class)->dispose (object);
 }
@@ -67,9 +73,12 @@ hd_background_init (HDBackground *background)
 
   background->priv = priv;
 
+#ifdef HAVE_THUMBNAILS
   priv->thumbnail_factory = hildon_thumbnail_factory_get_instance ();
+#endif
 }
 
+#ifdef HAVE_THUMBNAILS
 static void
 image_set_thumbnail_callback (HildonThumbnailFactory *self,
                               GdkPixbuf              *thumbnail,
@@ -95,6 +104,7 @@ image_set_thumbnail_callback (HildonThumbnailFactory *self,
       gtk_tree_path_free (path);
     }
 }
+#endif
 
 void
 hd_background_set_thumbnail_from_file (HDBackground *background,
@@ -102,7 +112,9 @@ hd_background_set_thumbnail_from_file (HDBackground *background,
                                        GtkTreeIter  *iter,
                                        GFile        *file)
 {
+#ifdef HAVE_THUMBNAILS
   HDBackgroundPrivate *priv = background->priv;
+#endif
   GtkTreePath *path;
   GtkTreeRowReference *reference;
   char *uri;
@@ -112,6 +124,7 @@ hd_background_set_thumbnail_from_file (HDBackground *background,
 
   uri = g_file_get_uri (file);
 
+#ifdef HAVE_THUMBNAILS
   hildon_thumbnail_factory_request_pixbuf (priv->thumbnail_factory,
                                            uri,
                                            80, 60,
@@ -120,6 +133,7 @@ hd_background_set_thumbnail_from_file (HDBackground *background,
                                            image_set_thumbnail_callback,
                                            reference,
                                            (GDestroyNotify) gtk_tree_row_reference_free);
+#endif
 
   gtk_tree_path_free (path);
   g_free (uri);

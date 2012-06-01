@@ -77,7 +77,8 @@ PKG_CHECK_MODULES(HILDON_HOME,
 		   dnl HAVE_BOOKMARKS osso-bookmark-engine			dnl
 		   mce 					dnl
 		   libosso                              dnl
-		   hildon-thumbnail])
+		   dnl HAVE_THUMBNAILS hildon-thumbnail
+		  ])
 
 AC_SUBST(HILDON_HOME_LIBS)
 AC_SUBST(HILDON_HOME_CFLAGS)
